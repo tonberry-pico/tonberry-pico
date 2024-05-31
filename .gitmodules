@@ -1,0 +1,3 @@
+[submodule "software/lib/micropython"]
+	path = software/lib/micropython
+	url = ssh://git@git.ka.blankertz.org:2222/TonBERRY/micropython.git
