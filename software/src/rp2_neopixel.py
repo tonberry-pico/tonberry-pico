@@ -69,9 +69,10 @@ class NeoPixel:
         return tuple((self.buf[i] >> (self.ORDER[b] * 8)) & 0xff for b in range(self.bpp))
 
     def fill(self, v):
-        # todo: optimize?
-        for i in range(self.n):
-            self[i] = v
+        val = 0
+        for b in range(self.bpp):
+            val |= v[b] << (self.ORDER[b] * 8)
+        self.buf = array('I', [val]*self.n)
 
     def write(self):
         self.statemachine.put(self.buf)
