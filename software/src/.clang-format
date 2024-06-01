@@ -1,0 +1,6 @@
+# -*- mode: yaml -*-
+
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+BreakBeforeBraces: WebKit # Only break at start of functions

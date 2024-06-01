@@ -1,0 +1,14 @@
+name: Check code formatting
+on:
+  push:
+
+jobs:
+  Check-C-Format:
+    runs-on: ubuntu-22.04-full
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Run clang format
+        run: |
+          cmake software -B build
+          cmake --build build -- check-format
