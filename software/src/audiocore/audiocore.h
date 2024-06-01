@@ -23,9 +23,11 @@
 // core1 All access must hold "lock" unless otherwise noted
 struct audiocore_shared_context {
     spin_lock_t *lock;
-    int out_pin, sideset_base,
-        samplerate; // Set by module.c before core1 is launched and then never
-                    // changed, can be read without lock
+
+    // Set by module.c before core1 is launched and then never changed, can be read without lock
+    int out_pin, sideset_base, samplerate;
+
+    // Must hold lock
     uint32_t audio_buffer[AUDIO_BUFFER_SIZE];
     int audio_buffer_write, audio_buffer_read;
     int underruns;

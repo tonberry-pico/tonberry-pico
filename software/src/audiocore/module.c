@@ -19,6 +19,11 @@ struct audiocore_Context_obj {
     mp_obj_base_t base;
 };
 
+/*
+ * audiocore.Context.deinit(self)
+ *
+ * Deinitializes the audiocore.Context and shuts down processing on core1
+ */
 static mp_obj_t audiocore_Context_deinit(mp_obj_t self_in)
 {
     struct audiocore_Context_obj *self = MP_OBJ_TO_PTR(self_in);
@@ -26,11 +31,19 @@ static mp_obj_t audiocore_Context_deinit(mp_obj_t self_in)
     multicore_fifo_pop_blocking();
     (void)self;
     initialized = false;
-    mp_printf(MP_PYTHON_PRINTER, "Free audiocore Context\n");
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(audiocore_Context_deinit_obj, audiocore_Context_deinit);
 
+/*
+ * (copied, buf_space, undderuns) = audiocore.Context.put(self, buffer)
+ *
+ * Copies as many integers as possible from the buffer to the audiocore ring buffer for playback.
+ * 'buffer' must be any object supporting the buffer protocol with data in unsigned int (array typecode 'I')
+ * format. The actual number of elements copied is returned in 'copied', the remaining free ring buffer space
+ * is in 'buf_space', and the total number of buffer underruns since initialization of the audiocore Context
+ * is in 'underruns'.
+ */
 static mp_obj_t audiocore_Context_put(mp_obj_t self_in, mp_obj_t buffer)
 {
     struct audiocore_Context_obj *self = MP_OBJ_TO_PTR(self_in);
@@ -72,6 +85,17 @@ const mp_obj_type_t audiocore_Context_type;
 MP_DEFINE_CONST_OBJ_TYPE(audiocore_Context_type, MP_QSTR_Context, MP_TYPE_FLAG_NONE, locals_dict,
                          &audiocore_Context_locals_dict);
 
+/*
+ * audiocore.init(pin, sideset, samplerate)
+ * Returns: audiocore.Context
+ *
+ * Initialize the audiocore module, starting the audio processing on core1 and initializing the I2S driver.
+ * The pin parameter specifies the I2S data pin, the sideset parameter specifies the I2S LRCLK pin, the
+ * BCLK must be on pin sideset+1.
+ * Samplerate should be 44100 or 48000.
+ * Only a single audiocore.Context may exist at a time.
+ * Return a audiocore.Context object on success, raises a OSError or ValueError on failure.
+ */
 static mp_obj_t audiocore_init(mp_obj_t pin_obj, mp_obj_t sideset_obj, mp_obj_t samplerate_obj)
 {
     if (initialized)
