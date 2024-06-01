@@ -8,8 +8,10 @@
 
 void core1_main(void)
 {
-    if (!i2s_init(shared_context.out_pin, shared_context.sideset_base, shared_context.samplerate))
+    if (!i2s_init(shared_context.out_pin, shared_context.sideset_base, shared_context.samplerate)) {
         multicore_fifo_push_blocking(MP_EIO);
+        return;
+    }
 
     multicore_fifo_push_blocking(0);
     uint32_t cmd;
