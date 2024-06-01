@@ -44,14 +44,13 @@ async def rainbow(np, period=10):
 
 
 samplerate = 44100
-hz = 441 # 344.53125
-count = 100 # 128
+hz = 441
+count = 100
 amplitude = 0x1fff
 buf = array('I', range(count))
 for i in range(len(buf)):
-     val = int(sin(i * hz / samplerate * 2 * pi)*amplitude) & 0xffff
-     buf[i] = (val << 16) | val
-     # print(hex(buf[i]))
+    val = int(sin(i * hz / samplerate * 2 * pi)*amplitude) & 0xffff
+    buf[i] = (val << 16) | val
 
 
 async def output_sound(audioctx):
@@ -60,9 +59,7 @@ async def output_sound(audioctx):
     while True:
         pushed, avail, underruns = audioctx.put(buf[pos:])
         pos = (pos + pushed) % len(buf)
-        # pushed, avail = audioctx.put(array('I', range(pos, pos+100)))
-        # pos += pushed
-        #print(f"pushed {pushed}, pos {pos}, avail {avail}")
+        # print(f"pushed {pushed}, pos {pos}, avail {avail}")
         if underruns > known_underruns:
             print(f"{underruns:x}")
             known_underruns = underruns
@@ -94,7 +91,8 @@ def list_sd():
 delay_sum = 0
 delay_count = 0
 max_delay = 0
-    
+
+
 async def latency_test():
     global delay_sum
     global delay_count

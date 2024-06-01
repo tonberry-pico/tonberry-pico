@@ -12,3 +12,18 @@ jobs:
         run: |
           cmake software -B build
           cmake --build build -- check-format
+  Check-Python-Flake8:
+    runs-on: ubuntu-22.04-full
+    steps:
+      - name: Get Flake8
+        run: |
+          python -m venv flake-venv
+          flake-venv/bin/pip install flake8==7.0
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          path: git
+      - name: Check python
+        run: |
+          cd git/software/src &&
+          find . -iname '*.py' -exec ../../../flake-venv/bin/flake8 {} +
