@@ -5,6 +5,7 @@
 
 #include <hardware/sync.h>
 
+#include <stdint.h>
 #include <string.h>
 
 /* Access rules
