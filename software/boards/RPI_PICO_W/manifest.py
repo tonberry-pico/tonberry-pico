@@ -6,3 +6,5 @@ require("bundle-networking")
 require("aioble")
 
 module("rp2_neopixel.py", "../../src")
+require("sdcard")
+require("aiorepl")

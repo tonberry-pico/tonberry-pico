@@ -14,17 +14,18 @@ T1 = 2
 T2 = 5
 T3 = 3
 
+
 @asm_pio(sideset_init=(PIO.OUT_LOW), fifo_join=PIO.JOIN_TX, autopull=True,
          out_shiftdir=PIO.SHIFT_LEFT)
 def _ws2812_pio(T1=T1, T2=T2, T3=T3):
-    label("bitloop")
-    out(x, 1).side(0).delay(T3-1)
-    jmp(not_x, "do_zero").side(1) [T1-1]
-    label("do_one")
-    jmp("bitloop").side(1) [T2-1]
-    label("do_zero")
-    nop().side(0) [T2-1]
-    wrap()
+    label("bitloop")  # noqa:F821
+    out(x, 1).side(0).delay(T3-1)  # noqa:F821
+    jmp(not_x, "do_zero").side(1).delay(T1-1)  # noqa:F821
+    label("do_one")  # noqa:F821
+    jmp("bitloop").side(1).delay(T2-1)  # noqa:F821
+    label("do_zero")  # noqa:F821
+    nop().side(0).delay(T2-1)  # noqa:F821
+    wrap()  # noqa:F821
 
 
 class NeoPixel:

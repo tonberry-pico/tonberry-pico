@@ -1,0 +1,22 @@
+name: Run unit tests on host
+on:
+  push:
+
+jobs:
+  Run-Unit-Tests:
+    runs-on: ubuntu-22.04-full
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Build and test
+        run: |
+          cmake software -B build
+          cmake --build build
+          ctest --test-dir build
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-xml
+          path: build/junit.xml
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}

@@ -7,5 +7,7 @@ while [ ! -e "$DEVICEPATH" ] ; do sleep 1; echo 'Waiting for RP2...'; done
 
 set -eu
 
+while [ ! -e "$DEVICEPATH" ] ; do sleep 1; echo 'Waiting for RP2...'; done
+
 udisksctl mount -b "$DEVICEPATH"
 cp "$IMAGEPATH" "$(findmnt "$DEVICEPATH" -n -o TARGET)"
