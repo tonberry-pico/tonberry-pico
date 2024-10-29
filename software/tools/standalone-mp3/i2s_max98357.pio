@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024 Matthias Blankertz <matthias@blankertz.org>
+
+	.program i2s_max98357
+	.side_set 2
+
+	.lang_opt python sideset_init = pico.PIO.OUT_LOW
+	.lang_opt python out_init = pico.PIO.OUT_LOW
+	.lang_opt python out_shiftdir = pcio.PIO.SHIFT_LEFT
+	.lang_opt python autopull = True
+	
+// data - DOUT
+// sideset - 2-BCLK, 1-LRCLK
+
+	set	x,15			side 0
+	nop				side 1
+startup_loop:
+	nop				side 2
+	jmp	x-- startup_loop	side 3
+	nop				side 0
+	set	x, 14			side 1
+
+left_loop:
+	.wrap_target
+	out	pins, 1			side 0
+	jmp	x-- left_loop		side 1
+	out	pins, 1			side 2
+	set	x, 14			side 3
+right_loop:	
+	out	pins, 1			side 2
+	jmp	x-- right_loop		side 3
+	out	pins, 1			side 0
+	set	x, 14			side 1
+	.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline void i2s_max98357_program_init(PIO pio, uint sm, uint offset, uint pin, uint sideset, uint samplerate) {
+    pio_gpio_init(pio, pin);
+    pio_gpio_init(pio, sideset);
+    pio_gpio_init(pio, sideset+1);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, sideset, 2, true);
+
+    pio_sm_config c = i2s_max98357_program_get_default_config(offset);
+    sm_config_set_out_pins(&c, pin, 1);
+    sm_config_set_sideset_pins(&c, sideset);
+    sm_config_set_out_shift(&c, false, true, 32);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+    const unsigned i2s_freq = samplerate * 2 * 16 * 2;
+    const float div = clock_get_hz(clk_sys) / (float)i2s_freq;
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+    //pio_sm_set_enabled(pio, sm, true);
+}
+%}
