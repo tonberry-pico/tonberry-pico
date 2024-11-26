@@ -30,23 +30,6 @@ def main():
                 if stat == reader.OK:
                     print("Card detected {}  uid={}".format(hex(int.from_bytes(bytes(uid),"little",False)).upper(),reader.tohexstring(uid)))
 
-                    if reader.IsNTAG():
-                        print("Got NTAG{}".format(reader.NTAG))
-                        reader.MFRC522_Dump_NTAG(Start=0,End=reader.NTAG_MaxPage)
-                        #print("Write Page 5  to 0x1,0x2,0x3,0x4  in 2 second")
-                        #utime.sleep(2)
-                        #data = [1,2,3,4]
-                        #reader.writeNTAGPage(5,data)
-                        #reader.MFRC522_Dump_NTAG(uid,Start=5,End=6)
-                    else:
-                        (stat, tag_type) = reader.request(reader.REQIDL)
-                        if stat == reader.OK:
-                            (stat, uid2) = reader.SelectTagSN()
-                            if stat == reader.OK:
-                                if uid != uid2:
-                                    continue
-                                defaultKey = [255,255,255,255,255,255]
-                                reader.MFRC522_DumpClassic1K(uid,Start=0, End=64, keyA=defaultKey)
                     PreviousCard = uid
                 else:
                     pass
