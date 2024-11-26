@@ -2,10 +2,11 @@ from mfrc522 import MFRC522
 import utime
 
 
-def uidToString(uid):
-    mystring = ""
-    for i in uid:
-        mystring = "%02X" % i + mystring
+def uid_to_string(uid):
+    mystring = "0x"
+    # The mfrc522 lib returns all tested uids in inverse order
+    for i in reversed(uid):
+        mystring += "%02X" % i
     return mystring
 
 def main():
@@ -15,26 +16,26 @@ def main():
     print("Please place card on reader")
     print("")
 
-    PreviousCard = [0]
+    previous_uid = [0]
 
     try:
         while True:
             reader.init()
 
-            (stat, tag_type) = reader.request(reader.REQIDL)
-            #print('request stat:',stat,' tag_type:',tag_type)
+            # For now we omit the tag type
+            (stat, _) = reader.request(reader.REQIDL)
             if stat == reader.OK:
                 (stat, uid) = reader.SelectTagSN()
-                if uid == PreviousCard:
+                if uid == previous_uid:
                     continue
                 if stat == reader.OK:
-                    print("Card detected {}  uid={}".format(hex(int.from_bytes(bytes(uid),"little",False)).upper(),reader.tohexstring(uid)))
+                    print(uid_to_string(uid))
 
-                    PreviousCard = uid
+                    previous_uid = uid
                 else:
                     pass
             else:
-                PreviousCard=[0]
+                previous_uid=[0]
             utime.sleep_ms(50)
 
     except KeyboardInterrupt:
