@@ -24,7 +24,7 @@ async def get_tag_uid(reader: MFRC522, poll_interval_ms: int = 50) -> list:
 
 
 def main():
-    reader = MFRC522(spi_id=1,sck=10,miso=12,mosi=11,cs=13,rst=9)
+    reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9)
 
     print("")
     print("Please place card on reader")
@@ -32,6 +32,7 @@ def main():
 
     uid = asyncio.run(get_tag_uid(reader))
     print(f"Found tag with uid {uid_to_string(uid)}")
+
 
 if __name__ == "__main__":
     main()
