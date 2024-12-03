@@ -8,3 +8,5 @@ require("aioble")
 module("rp2_neopixel.py", "../../src")
 require("sdcard")
 require("aiorepl")
+
+module("mfrc522.py", "../../lib/micropython-mfrc522/")
