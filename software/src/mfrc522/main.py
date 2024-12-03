@@ -3,10 +3,7 @@ import asyncio
 
 
 def uid_to_string(uid: list):
-    uid_string = "0x"
-    for i in uid:
-        uid_string += f'{i:02x}'
-    return uid_string
+    return '0x' + ''.join(f'{i:02x}' for i in uid)
 
 
 async def get_tag_uid(reader: MFRC522, poll_interval_ms: int = 50) -> list:
