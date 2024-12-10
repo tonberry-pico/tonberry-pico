@@ -27,3 +27,14 @@ jobs:
         run: |
           cd git/software/src &&
           find . -iname '*.py' -exec ../../../flake-venv/bin/flake8 {} +
+  Check-Bash-Shellcheck:
+    runs-on: ubuntu-22.04-full
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          path: git
+      - name: Check bash scripts
+        run: |
+          cd git/software &&
+          find . -path ./lib -prune -o -name "*.sh" -exec shellcheck {} +
