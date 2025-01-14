@@ -1,6 +1,6 @@
 [submodule "software/lib/micropython"]
 	path = software/lib/micropython
-	url = ssh://git@git.ka.blankertz.org:2222/TonBERRY/micropython.git
+	url = ../micropython.git
 [submodule "software/lib/micropython-mfrc522"]
 	path = software/lib/micropython-mfrc522
-	url = https://git.ka.blankertz.org/TonBERRY/micropython-mfrc522.git
+	url = ../micropython-mfrc522.git
