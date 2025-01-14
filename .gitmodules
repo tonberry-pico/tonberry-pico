@@ -4,3 +4,6 @@
 [submodule "software/lib/micropython-mfrc522"]
 	path = software/lib/micropython-mfrc522
 	url = ../micropython-mfrc522.git
+[submodule "software/lib/microdot"]
+	path = software/lib/microdot
+	url = ../microdot.git
