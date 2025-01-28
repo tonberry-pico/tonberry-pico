@@ -35,6 +35,14 @@ def uid_to_string(uid: list):
 
 
 async def get_tag_uid(reader: MFRC522, poll_interval_ms: int = 50) -> list:
+    '''
+    The maximum measured delay with poll_interval_ms=50 and a reader with tocard_retries=5 is
+    15.9 ms:
+        delay (min / max / avg) [µs]: (360 / 15945 / 1.892923e-06)
+
+    The maximum measured delay dropped to 11.6 ms by setting tocard_retries=1:
+        delay (min / max / avg) [µs]: (368 / 11696 / 6.204211e-06)
+    '''
     while True:
         reader.init()
 
@@ -49,7 +57,7 @@ async def get_tag_uid(reader: MFRC522, poll_interval_ms: int = 50) -> list:
 
 
 def main():
-    reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=5)
+    reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=1)
 
     print("")
     print("Please place card on reader")
