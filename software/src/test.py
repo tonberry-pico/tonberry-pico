@@ -9,11 +9,11 @@ import micropython
 import os
 import time
 from array import array
-from machine import Pin, SPI
+from machine import Pin
 from math import pi, sin, pow
 from micropython import const
 from rp2_neopixel import NeoPixel
-from sdcard import SDCard
+from rp2_sd import SDCard
 
 micropython.alloc_emergency_exception_buf(100)
 
@@ -73,9 +73,8 @@ machine.mem32[0x4001c004 + 8*4] = 0x67
 
 
 def list_sd():
-    sd_spi = SPI(0, sck=Pin(2), mosi=Pin(3), miso=Pin(4))
     try:
-        sd = SDCard(sd_spi, Pin(5), 25000000)
+        sd = SDCard(mosi=Pin(3), miso=Pin(4), sck=Pin(2), ss=Pin(5), baudrate=15000000)
     except OSError:
         for i in range(leds):
             np[i] = (255, 0, 0)
@@ -83,9 +82,9 @@ def list_sd():
         return
     try:
         os.mount(sd, '/sd')
-        print(os.listdir('/sd'))
-    except OSError:
-        pass
+        print(os.listdir(b'/sd'))
+    except OSError as ex:
+        print(f"{ex}")
 
 
 delay_sum = 0
