@@ -1,7 +1,4 @@
 #include "hardware/pio.h"
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
 
 #include "sd_spi.h"
 #include "sd_util.h"
@@ -69,7 +66,7 @@ static void __time_critical_func(sd_spi_read_blocking)(uint8_t wrdata, uint8_t *
     assert(pio_sm_is_rx_fifo_empty(SD_PIO, sd_spi_context.spi_sm));
 }
 
-static void sd_spi_dma_isr(void)
+static void __time_critical_func(sd_spi_dma_isr)(void)
 {
     if (dma_channel_get_irq0_status(sd_spi_context.spi_dma_rd)) {
         dma_channel_acknowledge_irq0(sd_spi_context.spi_dma_rd);
@@ -120,9 +117,10 @@ void sd_spi_wait_complete(void)
 
 bool sd_cmd_read_is_complete(void) { return sd_spi_context.sd_dma_context.state == DMA_IDLE; }
 
-static void sd_spi_read_dma(uint8_t wrdata, uint8_t *data, size_t len)
+static bool sd_spi_read_dma(uint8_t wrdata, uint8_t *data, size_t len)
 {
-    assert(sd_spi_context.sd_dma_context.state == DMA_IDLE);
+    if (sd_spi_context.sd_dma_context.state != DMA_IDLE)
+        return false;
     channel_config_set_chain_to(&sd_spi_context.spi_dma_rd_cfg, sd_spi_context.spi_dma_rd);
     channel_config_set_irq_quiet(&sd_spi_context.spi_dma_rd_cfg, false);
     dma_channel_configure(sd_spi_context.spi_dma_rd, &sd_spi_context.spi_dma_rd_cfg,
@@ -134,6 +132,7 @@ static void sd_spi_read_dma(uint8_t wrdata, uint8_t *data, size_t len)
     sd_spi_context.sd_dma_context.read_buf = data;
     sd_spi_context.sd_dma_context.wrdata = wrdata;
     dma_start_channel_mask((1 << sd_spi_context.spi_dma_rd) | (1 << sd_spi_context.spi_dma_wr));
+    return true;
 }
 
 static void sd_spi_cmd_send(const uint8_t cmd, const uint32_t arg)
@@ -193,7 +192,8 @@ bool sd_cmd_read_start(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data
     }
     if (!got_r1 || buf[0] != 0x00)
         goto abort;
-    sd_spi_read_dma(0xff, data, datalen);
+    if (!sd_spi_read_dma(0xff, data, datalen))
+        goto abort;
     return true;
 
 abort:
@@ -204,10 +204,10 @@ abort:
 
 bool sd_cmd_read_complete(void)
 {
-    uint8_t buf[1];
+    uint8_t buf;
     sd_spi_wait_complete();
     gpio_put(sd_spi_context.ss, true);
-    sd_spi_read_blocking(0xff, buf, 1);
+    sd_spi_read_blocking(0xff, &buf, 1);
     return (sd_spi_context.sd_dma_context.read_token_buf == 0xfe);
 }
 

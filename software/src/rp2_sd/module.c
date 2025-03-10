@@ -67,12 +67,12 @@ static mp_obj_t sdcard_readblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj_
     mp_buffer_info_t bufinfo;
     if (!mp_get_buffer(buf_obj, &bufinfo, MP_BUFFER_WRITE))
         mp_raise_ValueError("Not a write buffer");
-    if (bufinfo.len % 512 != 0)
+    if (bufinfo.len % SD_SECTOR_SIZE != 0)
         mp_raise_ValueError("Buffer length is invalid");
-    const int nblocks = bufinfo.len / 512;
+    const int nblocks = bufinfo.len / SD_SECTOR_SIZE;
     for (int block = 0; block < nblocks; block++) {
         // TODO: Implement CMD18 read multiple blocks
-        if (!sd_readblock(&self->sd_context, start_block + block, bufinfo.buf + block * 512))
+        if (!sd_readblock(&self->sd_context, start_block + block, bufinfo.buf + block * SD_SECTOR_SIZE))
             mp_raise_OSError(MP_EIO);
     }
     return mp_const_none;
@@ -87,7 +87,7 @@ static mp_obj_t sdcard_ioctl(mp_obj_t self_obj, mp_obj_t op_obj, mp_obj_t arg_ob
     case 4:
         return mp_obj_new_int(self->sd_context.blocks);
     case 5:
-        return mp_obj_new_int(512);
+        return mp_obj_new_int(SD_SECTOR_SIZE);
     default:
         return mp_const_none;
     }

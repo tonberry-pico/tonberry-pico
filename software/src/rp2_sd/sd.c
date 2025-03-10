@@ -61,28 +61,28 @@ static bool sd_check_interface_condition(void)
 
 static bool sd_send_op_cond(void)
 {
-    uint8_t buf[1];
+    uint8_t buf;
     bool use_acmd = true;
     for (int timeout = 0; timeout < 500; ++timeout) {
         bool result = false;
         if (use_acmd)
-            result = sd_acmd(41, 0x40000000, 1, buf);
+            result = sd_acmd(41, 0x40000000, 1, &buf);
         else
-            result = sd_cmd(1, 0x40000000, 1, buf);
+            result = sd_cmd(1, 0x40000000, 1, &buf);
         if (!result) {
-            if (use_acmd && buf[0] & SD_R1_ILLEGAL_COMMAND) {
+            if (use_acmd && buf & SD_R1_ILLEGAL_COMMAND) {
 #ifdef SD_DEBUG
                 printf("sd_init: card does not understand ACMD41, try CMD1...\n");
 #endif
                 continue;
-            } else if (buf[0] != 0x01) {
+            } else if (buf != 0x01) {
                 printf("sd_init: send_op_cond failed\n");
                 return false;
             } else {
                 continue;
             }
         }
-        if (buf[0] == 0x00) {
+        if (buf == 0x00) {
             return true;
         }
     }
@@ -162,7 +162,7 @@ static bool sd_read_csd(struct sd_context *sd_context)
             break;
         }
         case 1: {
-            blocksize = 512;
+            blocksize = SD_SECTOR_SIZE;
             const unsigned c_size = (buf[7] & 0x3f) << 16 | buf[8] << 8 | buf[9];
             blocks = (c_size + 1) * 1024;
             version = 2;
@@ -241,19 +241,19 @@ bool sd_deinit(struct sd_context *sd_context)
     return true;
 }
 
-bool sd_readblock(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[static 512])
+bool sd_readblock(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[static SD_SECTOR_SIZE])
 {
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
 
-    return sd_cmd_read(17, sector_num, 512, buffer);
+    return sd_cmd_read(17, sector_num, SD_SECTOR_SIZE, buffer);
 }
 
-bool sd_readblock_start(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[static 512])
+bool sd_readblock_start(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[static SD_SECTOR_SIZE])
 {
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
-    return sd_cmd_read_start(17, sector_num, 512, buffer);
+    return sd_cmd_read_start(17, sector_num, SD_SECTOR_SIZE, buffer);
 }
 
 bool sd_readblock_complete(struct sd_context *sd_context)
