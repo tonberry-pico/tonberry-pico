@@ -3,21 +3,20 @@
 
 import aiorepl
 import asyncio
-import audiocore
 import machine
 import micropython
 import os
 import time
-from array import array
 from machine import Pin
 from math import pi, sin, pow
 from micropython import const
+
+# Own modules
+from audiocore import Audiocore
 from rp2_neopixel import NeoPixel
 from rp2_sd import SDCard
 
 micropython.alloc_emergency_exception_buf(100)
-
-asyncio.create_task(aiorepl.task())
 
 leds = const(10)
 brightness = 0.5
@@ -43,27 +42,35 @@ async def rainbow(np, period=10):
             await asyncio.sleep_ms(20 - (now - before))
 
 
-samplerate = 44100
-hz = 441
-count = 100
-amplitude = 0x1fff
-buf = array('I', range(count))
-for i in range(len(buf)):
-    val = int(sin(i * hz / samplerate * 2 * pi)*amplitude) & 0xffff
-    buf[i] = (val << 16) | val
-
-
-async def output_sound(audioctx):
-    pos = 0
+async def play_mp3(audiocore, mp3file):
+    _, avail, _ = audioctx.put(b'')
     known_underruns = 0
     while True:
-        pushed, avail, underruns = audioctx.put(buf[pos:])
-        pos = (pos + pushed) % len(buf)
-        # print(f"pushed {pushed}, pos {pos}, avail {avail}")
+        data = mp3file.read(avail)
+        if avail > 0 and len(data) == 0:
+            # End of file
+            break
+        pos = 0
+        while pos < len(data):
+            pushed, avail, underruns = audioctx.put(data[pos:])
+            if pushed == 0:
+                await asyncio.sleep_ms(0)
+            else:
+                await asyncio.sleep_ms(0)
+            pos += pushed
         if underruns > known_underruns:
             print(f"{underruns:x}")
             known_underruns = underruns
-        await asyncio.sleep(0)
+    audioctx.flush()
+    print("Decoding ended")
+
+
+async def play_mp3s(audiocore, mp3files):
+    for name in mp3files:
+        print(b'Playing ' + name)
+        with open(name, "rb") as testfile:
+            await play_mp3(audiocore, testfile)
+        await asyncio.sleep_ms(1000)
 
 
 # Set 8 mA drive strength and fast slew rate
@@ -120,9 +127,14 @@ list_sd()
 asyncio.create_task(rainbow(np))
 
 # Test audio
-audioctx = audiocore.init(Pin(8), Pin(6), samplerate)
-asyncio.create_task(output_sound(audioctx))
+audioctx = Audiocore(Pin(8), Pin(6))
 
-asyncio.create_task(latency_test())
+# high prio for proc 1
+machine.mem32[0x40030000 + 0x00] = 0x10
 
+testfiles = [b'/sd/' + name for name in os.listdir(b'/sd') if name.endswith(b'mp3')]
+
+asyncio.create_task(play_mp3s(audioctx, testfiles))
+
+asyncio.create_task(aiorepl.task())
 asyncio.get_event_loop().run_forever()

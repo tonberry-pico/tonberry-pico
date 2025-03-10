@@ -8,8 +8,9 @@ pico_generate_pio_header(usermod_audiocore ${CMAKE_CURRENT_LIST_DIR}/i2s_max9835
 
 target_sources(usermod_audiocore INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/audiocore.c
-    ${CMAKE_CURRENT_LIST_DIR}/module.c
     ${CMAKE_CURRENT_LIST_DIR}/i2s.c
+    ${CMAKE_CURRENT_LIST_DIR}/module.c
+    ${CMAKE_CURRENT_LIST_DIR}/mp3.c
     ${CMAKE_CURRENT_BINARY_DIR}/i2s_max98357.pio.h
 )
 
