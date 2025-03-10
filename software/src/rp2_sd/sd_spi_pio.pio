@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024 Matthias Blankertz <matthias@blankertz.org>
+
+	.program sd_spi_pio
+        .side_set 1
+
+        //      data - MISO MOSI
+        //      sideset - SCK
+
+        // normal SPI
+normal:
+        .wrap_target
+        out pins, 1     side 0 [1]
+        in  pins, 1     side 1 [1]
+        .wrap
+        // Special "wait for token" repeated read SPI
+wait_loop:
+        pull block      side 0 [0]
+        mov  osr, x     side 0 [0]
+        set  y, 8       side 0 [0]
+read_loop:      
+        out  pins, 1    side 0 [1]
+        in   pins, 1    side 1 [0]
+        jmp  y--, read_loop     side 1 [0]
+        mov  isr, y     side 0 [0]
+        jmp  x != y, wait_done  side 0 [0]
+        set  y, 0       side 0 [0]
+        mov  y, isr     side 0 [0]
+        jmp  wait_loop  side 0 [0]
+wait_done:
+        push block      side 0 [0]
+        jmp normal      side 0 [0]
+        
+% c-sdk {
+#include "hardware/clocks.h"
+
+#include <stdio.h>
+#include <math.h>
+
+static inline void sd_spi_pio_program_init(PIO pio, uint sm, uint offset, uint mosi, uint miso, uint sck, uint bitrate) {
+    pio_gpio_init(pio, mosi);
+    pio_gpio_init(pio, miso);
+    pio_gpio_init(pio, sck);
+    pio_sm_set_consecutive_pindirs(pio, sm, mosi, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, miso, 1, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, sck, 1, true);
+
+    pio_sm_config c = sd_spi_pio_program_get_default_config(offset);
+    sm_config_set_out_pins(&c, mosi, 1);
+    sm_config_set_in_pins(&c, miso);
+    sm_config_set_sideset_pins(&c, sck);
+    sm_config_set_out_shift(&c, false, true, 8);
+    sm_config_set_in_shift(&c, false, true, 8);
+
+    const unsigned pio_freq = bitrate*4;
+    const float div = clock_get_hz(clk_sys) / (float)pio_freq;
+    // for some reason, small clkdiv values (even integer ones) cause issues
+    sm_config_set_clkdiv(&c, div < 2.5f ? 2.5f : div);
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}
