@@ -1,0 +1,8 @@
+# Image: git.ka.blankertz.org/tonberry/tonberry-pico/build:latest
+FROM gitea/runner-images:ubuntu-22.04
+
+# Install gcc-arm-none-eabi
+RUN apt update && \
+    DEBIAN_FRONTEND=noninteractive \
+	apt install -y --no-install-recommends cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
+    && apt clean && rm -rf /var/lib/apt/lists/*
