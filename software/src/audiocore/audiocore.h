@@ -79,6 +79,10 @@ void __time_critical_func(volume_adjust)(int16_t *buf, size_t samples, uint16_t 
 
 void core1_main(void);
 
+// For data sent from core1 to core0, signals that this is a return value from some function call
+// Otherwise it it just a trigger to wake core0 and the data can be discarded.
+#define AUDIOCORE_FIFO_DATA_FLAG 0x80000000
+
 // SHUTDOWN - no arguments - return 0
 #define AUDIOCORE_CMD_SHUTDOWN 0xdeadc0de
 

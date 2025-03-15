@@ -55,17 +55,18 @@ unsigned multicore_fifo_pop_blocking(void)
 }
 
 bool multicore_fifo_rvalid(void) { return multicore_fifo_pop_blocking_cb; }
+bool multicore_fifo_wready(void) { return true; }
 
 void test_audiocore_handles_i2sinit_failure(void)
 {
     i2s_init_return = false;
     core1_main();
-    TEST_ASSERT_EQUAL(multicore_fifo_push_last, MP_EIO);
+    TEST_ASSERT_EQUAL(AUDIOCORE_FIFO_DATA_FLAG | MP_EIO, multicore_fifo_push_last);
 }
 
 unsigned audiocore_init_deinit_pop_cb(void)
 {
-    TEST_ASSERT_EQUAL(0, multicore_fifo_push_last);
+    TEST_ASSERT_EQUAL(AUDIOCORE_FIFO_DATA_FLAG | 0, multicore_fifo_push_last);
     TEST_ASSERT_TRUE(i2s_initialized);
     return AUDIOCORE_CMD_SHUTDOWN;
 }
@@ -76,7 +77,7 @@ void test_audiocore_init_deinit(void)
     i2s_init_return = true;
 
     core1_main();
-    TEST_ASSERT_EQUAL(0, multicore_fifo_push_last);
+    TEST_ASSERT_EQUAL(AUDIOCORE_FIFO_DATA_FLAG | 0, multicore_fifo_push_last);
     TEST_ASSERT_FALSE(i2s_initialized);
 }
 

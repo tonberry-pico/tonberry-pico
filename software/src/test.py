@@ -43,21 +43,13 @@ async def rainbow(np, period=10):
 
 
 async def play_mp3(audiocore, mp3file):
-    _, avail, _ = audioctx.put(b'')
     known_underruns = 0
     while True:
-        data = mp3file.read(avail)
-        if avail > 0 and len(data) == 0:
+        data = mp3file.read(4096)
+        if len(data) == 0:
             # End of file
             break
-        pos = 0
-        while pos < len(data):
-            pushed, avail, underruns = audioctx.put(data[pos:])
-            if pushed == 0:
-                await asyncio.sleep_ms(0)
-            else:
-                await asyncio.sleep_ms(0)
-            pos += pushed
+        _, _, underruns = await audioctx.async_put(data)
         if underruns > known_underruns:
             print(f"{underruns:x}")
             known_underruns = underruns
@@ -66,6 +58,7 @@ async def play_mp3(audiocore, mp3file):
 
 
 async def play_mp3s(audiocore, mp3files):
+    audiocore.set_volume(64)
     for name in mp3files:
         print(b'Playing ' + name)
         with open(name, "rb") as testfile:

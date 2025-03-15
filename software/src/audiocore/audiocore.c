@@ -14,6 +14,26 @@ void __time_critical_func(volume_adjust)(int16_t *buf, size_t samples, uint16_t 
     }
 }
 
+static void __time_critical_func(send_fifo_response)(uint32_t data)
+{
+    multicore_fifo_push_blocking(AUDIOCORE_FIFO_DATA_FLAG | data);
+}
+
+#ifndef UNIT_TESTING
+static void __time_critical_func(send_consume_notify)(void)
+{
+    if (multicore_fifo_wready())
+        sio_hw->fifo_wr = 0;
+}
+#else
+// Don't do optimization with raw HW access in unit test environment
+static void send_consume_notify(void)
+{
+    if (multicore_fifo_wready())
+        multicore_fifo_push_blocking(0);
+}
+#endif
+
 void __time_critical_func(core1_main)(void)
 {
     uint32_t ret = 0;
@@ -27,7 +47,7 @@ void __time_critical_func(core1_main)(void)
         goto out_i2s;
     }
 
-    multicore_fifo_push_blocking(0);
+    send_fifo_response(0);
     uint32_t current_volume = AUDIOCORE_MAX_VOLUME >> 4;
     bool flushing = false;
     while (running) {
@@ -42,14 +62,18 @@ void __time_critical_func(core1_main)(void)
             case AUDIOCORE_CMD_SET_VOLUME: {
                 const uint32_t new_volume = multicore_fifo_pop_blocking();
                 if (new_volume > AUDIOCORE_MAX_VOLUME) {
-                    multicore_fifo_push_blocking(1);
+                    send_fifo_response(1);
                 } else {
                     current_volume = new_volume;
-                    multicore_fifo_push_blocking(0);
+                    send_fifo_response(0);
                 }
             } break;
             case AUDIOCORE_CMD_FLUSH:
-                flushing = true;
+                if (playing) {
+                    flushing = true;
+                } else {
+                    send_fifo_response(0);
+                }
                 break;
             default:
                 break;
@@ -65,6 +89,7 @@ void __time_critical_func(core1_main)(void)
                 }
                 volume_adjust((int16_t *)buf, 2304, current_volume);
                 i2s_commit_buf(buf);
+                send_consume_notify();
                 continue;
             }
             /* mp3_decode returned false: not enough data in buffer */
@@ -73,7 +98,9 @@ void __time_critical_func(core1_main)(void)
                 i2s_stop();
                 playing = false;
                 flushing = false;
-                multicore_fifo_push_blocking(0);
+                send_fifo_response(0);
+            } else {
+                send_consume_notify();
             }
         }
 
@@ -84,5 +111,5 @@ void __time_critical_func(core1_main)(void)
 out_i2s:
     i2s_deinit();
 out:
-    multicore_fifo_push_blocking(ret);
+    send_fifo_response(ret);
 }

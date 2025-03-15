@@ -6,6 +6,7 @@
 // Include MicroPython API.
 #include "py/mperrno.h"
 #include "py/runtime.h"
+#include "shared/runtime/mpirq.h"
 
 // This module is RP2 specific
 #include "mphalport.h"
@@ -18,8 +19,40 @@ static bool initialized = false;
 
 struct audiocore_obj {
     mp_obj_base_t base;
+    mp_irq_obj_t *irq_obj;
+    uint32_t fifo_read_value;
 };
 const mp_obj_type_t audiocore_type;
+
+static struct audiocore_obj *the_audiocore_obj = NULL;
+
+static void __time_critical_func(fifo_isr)(void)
+{
+    if (!multicore_fifo_rvalid())
+        return;
+    const uint32_t val = sio_hw->fifo_rd;
+    if (!the_audiocore_obj)
+        return;
+    if (val & AUDIOCORE_FIFO_DATA_FLAG)
+        the_audiocore_obj->fifo_read_value = val;
+    if (the_audiocore_obj->irq_obj)
+        mp_irq_handler(the_audiocore_obj->irq_obj);
+}
+
+static const mp_irq_methods_t audiocore_irq_methods = {};
+
+static uint32_t get_fifo_read_value_blocking(struct audiocore_obj *obj)
+{
+    while (true) {
+        const long flags = save_and_disable_interrupts();
+        const uint32_t value = obj->fifo_read_value;
+        obj->fifo_read_value = 0;
+        restore_interrupts(flags);
+        if (value & AUDIOCORE_FIFO_DATA_FLAG)
+            return value & ~AUDIOCORE_FIFO_DATA_FLAG;
+        __wfi();
+    }
+}
 
 /*
  * audiocore.Context.deinit(self)
@@ -30,8 +63,10 @@ static mp_obj_t audiocore_deinit(mp_obj_t self_in)
 {
     struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
     multicore_fifo_push_blocking(AUDIOCORE_CMD_SHUTDOWN);
-    multicore_fifo_pop_blocking();
-    (void)self;
+    get_fifo_read_value_blocking(self);
+    irq_set_enabled(SIO_IRQ_PROC0, false);
+    irq_remove_handler(SIO_IRQ_PROC0, &fifo_isr);
+    the_audiocore_obj = NULL;
     initialized = false;
     return mp_const_none;
 }
@@ -86,10 +121,9 @@ static MP_DEFINE_CONST_FUN_OBJ_2(audiocore_put_obj, audiocore_put);
 static mp_obj_t audiocore_flush(mp_obj_t self_in)
 {
     struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
-    (void)self;
     multicore_fifo_push_blocking(AUDIOCORE_CMD_FLUSH);
     __sev();
-    multicore_fifo_pop_blocking();
+    get_fifo_read_value_blocking(self);
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(audiocore_flush_obj, audiocore_flush);
@@ -105,14 +139,13 @@ static MP_DEFINE_CONST_FUN_OBJ_1(audiocore_flush_obj, audiocore_flush);
 static mp_obj_t audiocore_set_volume(mp_obj_t self_in, mp_obj_t volume_obj)
 {
     struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
-    (void)self;
     const int volume = mp_obj_get_int(volume_obj);
     if (volume < 0 || volume > 255)
         mp_raise_ValueError("volume out of range");
     multicore_fifo_push_blocking(AUDIOCORE_CMD_SET_VOLUME);
     multicore_fifo_push_blocking(AUDIOCORE_MAX_VOLUME * volume / 255);
     __sev();
-    const uint32_t ret = multicore_fifo_pop_blocking();
+    const uint32_t ret = get_fifo_read_value_blocking(self);
     if (ret != 0)
         mp_raise_OSError(MP_EINVAL);
     return mp_const_none;
@@ -132,10 +165,11 @@ static uint32_t __scratch_y("core1_stack") core1_stack[1024];
  */
 static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    enum { ARG_pin, ARG_sideset };
+    enum { ARG_pin, ARG_sideset, ARG_handler };
     static const mp_arg_t allowed_args[] = {
         {MP_QSTR_pin, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         {MP_QSTR_sideset, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+        {MP_QSTR_handler, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
     };
     if (initialized)
         mp_raise_OSError(MP_EBUSY);
@@ -150,6 +184,16 @@ static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_ob
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     const mp_hal_pin_obj_t pin = mp_hal_get_pin_obj(args[ARG_pin].u_obj);
     const mp_hal_pin_obj_t sideset_pin = mp_hal_get_pin_obj(args[ARG_sideset].u_obj);
+    if (args[ARG_handler].u_obj != MP_OBJ_NULL) {
+        obj->irq_obj = mp_irq_new(&audiocore_irq_methods, MP_OBJ_FROM_PTR(obj));
+        obj->irq_obj->handler = args[ARG_handler].u_obj;
+        obj->irq_obj->ishard = false;
+    } else {
+        obj->irq_obj = NULL;
+    }
+    the_audiocore_obj = obj;
+    irq_set_exclusive_handler(SIO_IRQ_PROC0, &fifo_isr);
+    irq_set_enabled(SIO_IRQ_PROC0, true);
     shared_context.mp3_buffer_write = shared_context.mp3_buffer_read = shared_context.underruns = 0;
     memset(shared_context.mp3_buffer, 0, MP3_BUFFER_PREAREA + MP3_BUFFER_SIZE);
     multicore_reset_core1();
@@ -157,9 +201,12 @@ static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_ob
     shared_context.sideset_base = sideset_pin;
     initialized = true;
     multicore_launch_core1_with_stack(&core1_main, core1_stack, sizeof(core1_stack));
-    uint32_t result = multicore_fifo_pop_blocking();
+    uint32_t result = get_fifo_read_value_blocking(obj);
     if (result != 0) {
         multicore_reset_core1();
+        irq_set_enabled(SIO_IRQ_PROC0, false);
+        irq_remove_handler(SIO_IRQ_PROC0, &fifo_isr);
+        the_audiocore_obj = NULL;
         initialized = false;
         mp_raise_OSError(result);
     }
@@ -187,7 +234,7 @@ MP_DEFINE_CONST_OBJ_TYPE(audiocore_type, MP_QSTR_Audiocore, MP_TYPE_FLAG_NONE, l
                          make_new, &audiocore_make_new);
 
 static const mp_rom_map_elem_t audiocore_module_globals_table[] = {
-    {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_audiocore)},
+    {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR__audiocore)},
     {MP_ROM_QSTR(MP_QSTR_Audiocore), MP_ROM_PTR(&audiocore_type)},
 };
 static MP_DEFINE_CONST_DICT(audiocore_module_globals, audiocore_module_globals_table);
@@ -196,4 +243,4 @@ const mp_obj_module_t audiocore_cmodule = {
     .base = {&mp_type_module},
     .globals = (mp_obj_dict_t *)&audiocore_module_globals,
 };
-MP_REGISTER_MODULE(MP_QSTR_audiocore, audiocore_cmodule);
+MP_REGISTER_MODULE(MP_QSTR__audiocore, audiocore_cmodule);

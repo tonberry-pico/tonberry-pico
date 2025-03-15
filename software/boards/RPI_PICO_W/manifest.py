@@ -11,3 +11,5 @@ require("aiorepl")
 
 module("mfrc522.py", "../../lib/micropython-mfrc522/")
 module("microdot.py", "../../lib/microdot/src/microdot/")
+
+module("audiocore.py", "../../src/audiocore")

@@ -102,6 +102,7 @@ void i2s_stop(void)
     } while (have_data);
     const long flags = save_and_disable_interrupts();
     i2s_context.playback_active = false;
+    shared_context.underruns = 0;
     restore_interrupts(flags);
     // Workaround rp2040 E13
     dma_channel_set_irq1_enabled(i2s_context.dma_ch, false);
