@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2024 Matthias Blankertz <matthias@blankertz.org>
+# Copyright (c) 2024-2025 Matthias Blankertz <matthias@blankertz.org>
 
 import aiorepl
 import asyncio
@@ -13,6 +13,7 @@ from micropython import const
 
 # Own modules
 from audiocore import Audiocore
+from mp3player import MP3Player
 from rp2_neopixel import NeoPixel
 from rp2_sd import SDCard
 
@@ -40,30 +41,6 @@ async def rainbow(np, period=10):
         now = time.ticks_ms()
         if before + 20 > now:
             await asyncio.sleep_ms(20 - (now - before))
-
-
-async def play_mp3(audiocore, mp3file):
-    known_underruns = 0
-    while True:
-        data = mp3file.read(4096)
-        if len(data) == 0:
-            # End of file
-            break
-        _, _, underruns = await audioctx.async_put(data)
-        if underruns > known_underruns:
-            print(f"{underruns:x}")
-            known_underruns = underruns
-    audioctx.flush()
-    print("Decoding ended")
-
-
-async def play_mp3s(audiocore, mp3files):
-    audiocore.set_volume(64)
-    for name in mp3files:
-        print(b'Playing ' + name)
-        with open(name, "rb") as testfile:
-            await play_mp3(audiocore, testfile)
-        await asyncio.sleep_ms(1000)
 
 
 # Set 8 mA drive strength and fast slew rate
@@ -122,12 +99,15 @@ asyncio.create_task(rainbow(np))
 # Test audio
 audioctx = Audiocore(Pin(8), Pin(6))
 
+player = MP3Player(audioctx)
+
 # high prio for proc 1
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 testfiles = [b'/sd/' + name for name in os.listdir(b'/sd') if name.endswith(b'mp3')]
+player.set_playlist(testfiles)
+asyncio.create_task(player.task())
 
-asyncio.create_task(play_mp3s(audioctx, testfiles))
 
-asyncio.create_task(aiorepl.task())
+asyncio.create_task(aiorepl.task({'player': player}))
 asyncio.get_event_loop().run_forever()
