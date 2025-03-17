@@ -9,6 +9,7 @@
 
 // This module is RP2 specific
 #include "mphalport.h"
+#include <pico/platform/sections.h>
 
 #include <string.h>
 
@@ -74,6 +75,7 @@ static mp_obj_t audiocore_Context_put(mp_obj_t self_in, mp_obj_t buffer)
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(audiocore_Context_put_obj, audiocore_Context_put);
 
+static uint32_t __scratch_y("core1_stack") core1_stack[1024];
 static const mp_rom_map_elem_t audiocore_Context_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&audiocore_Context_deinit_obj)},
     {MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&audiocore_Context_deinit_obj)},
@@ -123,7 +125,7 @@ static mp_obj_t audiocore_init(mp_obj_t pin_obj, mp_obj_t sideset_obj, mp_obj_t 
     shared_context.sideset_base = sideset_pin;
     shared_context.samplerate = samplerate;
     initialized = true;
-    multicore_launch_core1(&core1_main);
+    multicore_launch_core1_with_stack(&core1_main, core1_stack, sizeof(core1_stack));
     uint32_t result = multicore_fifo_pop_blocking();
     if (result != 0) {
         multicore_reset_core1();

@@ -1,0 +1,20 @@
+---
+name: Build RPi Pico firmware image
+on:
+  push:
+
+jobs:
+  Build-Firmware:
+    runs-on: tonberry-build
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Initialize submodules
+        run: cd software && ./update-submodules.sh
+      - name: Build
+        run: cd software && ./build.sh
+      - name: Upload firmware
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware-RPi-Pico-W
+          path: software/lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware.uf2
