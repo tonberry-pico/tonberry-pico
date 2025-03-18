@@ -35,4 +35,16 @@ async def index(request):
     print(f"  cookies: {request.cookies}")
     return "TonberryPico says 'Hello World!'"
 
+
+@app.route('/v1/api/playback/control', methods=['POST'])
+async def playback_control(request):
+    if not request.json:
+        return {'success': False}
+
+    # Example:
+    # curl -H "Content-Type: application/json" --data '{"action": "play", "target_type": "audio_file", "target_id": "1234"}' http://192.168.4.1/v1/api/playback/control
+    print(f'Calling {request.json["action"]} on {request.json["target_type"]} with id \
+            {request.json["target_id"]}')
+
+
 app.run(port=80)
