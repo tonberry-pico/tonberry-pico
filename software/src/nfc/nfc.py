@@ -28,7 +28,7 @@ class Nfc:
     asyncio.run(main())
     '''
     def __init__(self):
-        self.reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=10)
+        self.reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
         self.last_uid = None
         self.last_uid_timestamp = None
         self.task = asyncio.create_task(self._reader_poll_task())
@@ -62,3 +62,13 @@ class Nfc:
         Returns the last read nfc tag uid alongside with the timestamp it was stored at.
         '''
         return self.last_uid, self.last_uid_timestamp
+
+
+if __name__ == '__main__':
+    async def main():
+        n = Nfc()
+        while True:
+            await asyncio.sleep_ms(500)
+            print(f'{n.get_last_uid()}')
+
+    asyncio.run(main())
