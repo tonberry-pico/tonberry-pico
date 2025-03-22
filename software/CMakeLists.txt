@@ -33,6 +33,7 @@ function(make_unity_test )
     target_link_libraries(${MAKE_UNITY_TEST_NAME} PUBLIC unity::framework)
     target_include_directories(${MAKE_UNITY_TEST_NAME}
         PRIVATE ${MAKE_UNITY_TEST_INCLUDES})
+    target_compile_definitions(${MAKE_UNITY_TEST_NAME} PRIVATE UNIT_TESTING)
 
     add_test(NAME ${MAKE_UNITY_TEST_NAME}
         COMMAND sh -c "$<TARGET_FILE:${MAKE_UNITY_TEST_NAME}> > ${PROJECT_BINARY_DIR}/reports/${MAKE_UNITY_TEST_NAME}.testresults"

@@ -1,23 +1,23 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2024 Matthias Blankertz <matthias@blankertz.org>
+# Copyright (c) 2024-2025 Matthias Blankertz <matthias@blankertz.org>
 
 import aiorepl
 import asyncio
-import audiocore
 import machine
 import micropython
 import os
 import time
-from array import array
 from machine import Pin
 from math import pi, sin, pow
 from micropython import const
+
+# Own modules
+from audiocore import Audiocore
+from mp3player import MP3Player
 from rp2_neopixel import NeoPixel
 from rp2_sd import SDCard
 
 micropython.alloc_emergency_exception_buf(100)
-
-asyncio.create_task(aiorepl.task())
 
 leds = const(10)
 brightness = 0.5
@@ -41,29 +41,6 @@ async def rainbow(np, period=10):
         now = time.ticks_ms()
         if before + 20 > now:
             await asyncio.sleep_ms(20 - (now - before))
-
-
-samplerate = 44100
-hz = 441
-count = 100
-amplitude = 0x1fff
-buf = array('I', range(count))
-for i in range(len(buf)):
-    val = int(sin(i * hz / samplerate * 2 * pi)*amplitude) & 0xffff
-    buf[i] = (val << 16) | val
-
-
-async def output_sound(audioctx):
-    pos = 0
-    known_underruns = 0
-    while True:
-        pushed, avail, underruns = audioctx.put(buf[pos:])
-        pos = (pos + pushed) % len(buf)
-        # print(f"pushed {pushed}, pos {pos}, avail {avail}")
-        if underruns > known_underruns:
-            print(f"{underruns:x}")
-            known_underruns = underruns
-        await asyncio.sleep(0)
 
 
 # Set 8 mA drive strength and fast slew rate
@@ -120,9 +97,17 @@ list_sd()
 asyncio.create_task(rainbow(np))
 
 # Test audio
-audioctx = audiocore.init(Pin(8), Pin(6), samplerate)
-asyncio.create_task(output_sound(audioctx))
+audioctx = Audiocore(Pin(8), Pin(6))
 
-asyncio.create_task(latency_test())
+player = MP3Player(audioctx)
 
+# high prio for proc 1
+machine.mem32[0x40030000 + 0x00] = 0x10
+
+testfiles = [b'/sd/' + name for name in os.listdir(b'/sd') if name.endswith(b'mp3')]
+player.set_playlist(testfiles)
+asyncio.create_task(player.task())
+
+
+asyncio.create_task(aiorepl.task({'player': player}))
 asyncio.get_event_loop().run_forever()

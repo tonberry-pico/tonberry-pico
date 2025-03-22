@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2024 Matthias Blankertz <matthias@blankertz.org>
+// Copyright (c) 2024-2025 Matthias Blankertz <matthias@blankertz.org>
 
 #pragma once
 
@@ -17,7 +17,12 @@
  * communication between the cores.
  */
 
-#define AUDIO_BUFFER_SIZE 2048
+#define MP3_BUFFER_ALIGN (sizeof(uintptr_t))
+#define MP3_BUFFER_SIZE 4096
+#define MP3_BUFFER_PREAREA 1048
+
+_Static_assert(MP3_BUFFER_PREAREA % MP3_BUFFER_ALIGN == 0,
+               "Prearea must be a multiple of machine word size for alignment");
 
 // Context shared between the micropython runtime on core0 and the audio task on
 // core1 All access must hold "lock" unless otherwise noted
@@ -27,59 +32,63 @@ struct audiocore_shared_context {
     // Set by module.c before core1 is launched and then never changed, can be read without lock
     int out_pin, sideset_base, samplerate;
 
-    // Must hold lock
-    uint32_t audio_buffer[AUDIO_BUFFER_SIZE];
-    int audio_buffer_write, audio_buffer_read;
+    // Must hold lock. The indices 0..MP3_BUFFER_PREAREA-1 may only be read and written on core1 (no
+    // lock needed) The buffer is aligned to, and MP3_BUFFER_PREAREA is a multiple of, the machine
+    // word size to prevent these accesses from crossing word boundaries.
+    char mp3_buffer[MP3_BUFFER_PREAREA + MP3_BUFFER_SIZE] __attribute__((aligned(MP3_BUFFER_ALIGN)));
+    int mp3_buffer_write, mp3_buffer_read;
     int underruns;
 };
 
 extern struct audiocore_shared_context shared_context;
 
-static inline unsigned audiocore_get_audio_buffer_space(void)
+/* Must hold audiocore_shared_context.lock */
+static inline unsigned audiocore_get_buffer_space(void)
 {
-    if (shared_context.audio_buffer_write >= shared_context.audio_buffer_read)
-        return AUDIO_BUFFER_SIZE - 1 - (shared_context.audio_buffer_write - shared_context.audio_buffer_read);
+    if (shared_context.mp3_buffer_write >= shared_context.mp3_buffer_read)
+        return MP3_BUFFER_SIZE - 1 - (shared_context.mp3_buffer_write - shared_context.mp3_buffer_read);
     else
-        return shared_context.audio_buffer_read - shared_context.audio_buffer_write - 1;
+        return shared_context.mp3_buffer_read - shared_context.mp3_buffer_write - 1;
 }
 
-static inline unsigned audiocore_get_audio_buffer_avail(void)
+/* Must hold audiocore_shared_context.lock */
+static inline unsigned audiocore_get_buffer_avail(void)
 {
-    if (shared_context.audio_buffer_write >= shared_context.audio_buffer_read)
-        return shared_context.audio_buffer_write - shared_context.audio_buffer_read;
+    if (shared_context.mp3_buffer_write >= shared_context.mp3_buffer_read)
+        return shared_context.mp3_buffer_write - shared_context.mp3_buffer_read;
     else
-        return AUDIO_BUFFER_SIZE - (shared_context.audio_buffer_read - shared_context.audio_buffer_write);
+        return MP3_BUFFER_SIZE - (shared_context.mp3_buffer_read - shared_context.mp3_buffer_write);
 }
 
-static inline void audiocore_audio_buffer_put(const uint32_t *restrict src, const size_t len)
+/* Must hold audiocore_shared_context.lock */
+static inline void audiocore_buffer_put(const char *restrict src, const size_t len)
 {
-    const unsigned end_samples = AUDIO_BUFFER_SIZE - shared_context.audio_buffer_write;
-    memcpy(shared_context.audio_buffer + shared_context.audio_buffer_write, src,
-           4 * ((end_samples >= len) ? len : end_samples));
-    if (end_samples < len) {
-        memcpy(shared_context.audio_buffer, src + end_samples, 4 * (len - end_samples));
-        shared_context.audio_buffer_write = len - end_samples;
+    const unsigned end_bytes = MP3_BUFFER_SIZE - shared_context.mp3_buffer_write;
+    memcpy(shared_context.mp3_buffer + MP3_BUFFER_PREAREA + shared_context.mp3_buffer_write, src,
+           ((end_bytes >= len) ? len : end_bytes));
+    if (end_bytes < len) {
+        memcpy(shared_context.mp3_buffer + MP3_BUFFER_PREAREA, src + end_bytes, len - end_bytes);
+        shared_context.mp3_buffer_write = len - end_bytes;
     } else {
-        shared_context.audio_buffer_write += len;
+        shared_context.mp3_buffer_write += len;
     }
-    shared_context.audio_buffer_write %= AUDIO_BUFFER_SIZE;
+    shared_context.mp3_buffer_write %= MP3_BUFFER_SIZE;
 }
 
-static inline void audiocore_audio_buffer_get(uint32_t *restrict dst, const size_t len)
-{
-    const unsigned end_samples = AUDIO_BUFFER_SIZE - shared_context.audio_buffer_read;
-    memcpy(dst, shared_context.audio_buffer + shared_context.audio_buffer_read,
-           4 * ((end_samples >= len) ? len : end_samples));
-    if (end_samples < len) {
-        memcpy(dst + end_samples, shared_context.audio_buffer, 4 * (len - end_samples));
-        shared_context.audio_buffer_read = len - end_samples;
-    } else {
-        shared_context.audio_buffer_read += len;
-    }
-    shared_context.audio_buffer_read %= AUDIO_BUFFER_SIZE;
-}
+void __time_critical_func(volume_adjust)(int16_t *buf, size_t samples, uint16_t scalef);
 
 void core1_main(void);
 
+// For data sent from core1 to core0, signals that this is a return value from some function call
+// Otherwise it it just a trigger to wake core0 and the data can be discarded.
+#define AUDIOCORE_FIFO_DATA_FLAG 0x80000000
+
 // SHUTDOWN - no arguments - return 0
 #define AUDIOCORE_CMD_SHUTDOWN 0xdeadc0de
+
+// FLUSH - signals end of file and stop decoding when buffer empty - no arguments - return 0 when decoding is finished
+#define AUDIOCORE_CMD_FLUSH 0xdeadc0dd
+
+#define AUDIOCORE_MAX_VOLUME 0x8000u
+// SET VOLUME - one argument: uint32_t range 0 to AUDIOCORE_MAX_VOLUME - return 0 if volume changed, 1 on error
+#define AUDIOCORE_CMD_SET_VOLUME 0xdead0001

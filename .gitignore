@@ -3,3 +3,5 @@ hardware/tonberry-pico/tonberry-pico-backups/
 *.kicad_sch-bak
 *.kicad_sch.lck
 software/build
+compile_commands.json
+.dir-locals.el
