@@ -41,6 +41,9 @@ static void __time_critical_func(fifo_isr)(void)
 
 static const mp_irq_methods_t audiocore_irq_methods = {};
 
+// Poke core1 if it is currently waiting for an event (__wfe)
+static __always_inline void wake_core1(void) { __sev(); }
+
 static uint32_t get_fifo_read_value_blocking(struct audiocore_obj *obj)
 {
     while (true) {
@@ -98,7 +101,7 @@ static mp_obj_t audiocore_put(mp_obj_t self_in, mp_obj_t buffer)
         to_copy = buf_space;
     if (to_copy > 0) {
         audiocore_buffer_put(bufinfo.buf, to_copy);
-        __sev();
+        wake_core1();
     }
     const unsigned underruns = shared_context.underruns;
     spin_unlock(shared_context.lock, flags);
@@ -122,7 +125,7 @@ static mp_obj_t audiocore_flush(mp_obj_t self_in)
 {
     struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
     multicore_fifo_push_blocking(AUDIOCORE_CMD_FLUSH);
-    __sev();
+    wake_core1();
     get_fifo_read_value_blocking(self);
     return mp_const_none;
 }
@@ -144,7 +147,7 @@ static mp_obj_t audiocore_set_volume(mp_obj_t self_in, mp_obj_t volume_obj)
         mp_raise_ValueError("volume out of range");
     multicore_fifo_push_blocking(AUDIOCORE_CMD_SET_VOLUME);
     multicore_fifo_push_blocking(AUDIOCORE_MAX_VOLUME * volume / 255);
-    __sev();
+    wake_core1();
     const uint32_t ret = get_fifo_read_value_blocking(self);
     if (ret != 0)
         mp_raise_OSError(MP_EINVAL);
