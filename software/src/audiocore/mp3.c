@@ -72,7 +72,7 @@ static void __time_critical_func(mp3_consume_data)(size_t bytes_used)
     spin_unlock(shared_context.lock, flags);
 }
 
-bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static 1152], unsigned *samplerate)
+bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate)
 {
     unsigned char *readptr;
     size_t bytes_avail = mp3_get_continuous_data(&readptr);
@@ -124,7 +124,7 @@ bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static 1152], unsigned *s
 #endif
     *samplerate = info.samprate;
 
-    if (info.outputSamps != 2304) {
+    if (info.outputSamps != MP3_FRAME_SIZE * 2) {
 #ifdef MP3_DEBUG
         printf("Unexpected number of output samples: %d\n", info.outputSamps);
 #endif

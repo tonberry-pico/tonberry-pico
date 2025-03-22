@@ -7,6 +7,8 @@
 
 #include "py/mperrno.h"
 
+_Static_assert(MP3_FRAME_SIZE == I2S_DMA_BUF_SIZE, "i2s buffer size must match MP3 frame size");
+
 void __time_critical_func(volume_adjust)(int16_t *buf, size_t samples, uint16_t scalef)
 {
     for (size_t pos = 0; pos < samples; ++pos) {
@@ -87,7 +89,7 @@ void __time_critical_func(core1_main)(void)
                     i2s_play(samplerate);
                     playing = true;
                 }
-                volume_adjust((int16_t *)buf, 2304, current_volume);
+                volume_adjust((int16_t *)buf, MP3_FRAME_SIZE * 2, current_volume);
                 i2s_commit_buf(buf);
                 send_consume_notify();
                 continue;

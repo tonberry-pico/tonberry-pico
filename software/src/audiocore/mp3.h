@@ -6,9 +6,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define MP3_FRAME_SIZE 1152
+
 bool mp3_init(void);
 void mp3_deinit(void);
 
-bool mp3_decode(uint32_t pcm_buf[static 1152], unsigned *samplerate);
+bool mp3_decode(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate);
 
 void mp3_reset(void);
