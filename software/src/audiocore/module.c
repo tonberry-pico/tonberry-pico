@@ -155,8 +155,6 @@ static mp_obj_t audiocore_set_volume(mp_obj_t self_in, mp_obj_t volume_obj)
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(audiocore_set_volume_obj, audiocore_set_volume);
 
-static uint32_t __scratch_y("core1_stack") core1_stack[1024];
-
 /*
  * Audiocore(pin, sideset)
  *
@@ -203,7 +201,7 @@ static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_ob
     shared_context.out_pin = pin;
     shared_context.sideset_base = sideset_pin;
     initialized = true;
-    multicore_launch_core1_with_stack(&core1_main, core1_stack, sizeof(core1_stack));
+    multicore_launch_core1(&core1_main);
     uint32_t result = get_fifo_read_value_blocking(obj);
     if (result != 0) {
         multicore_reset_core1();
