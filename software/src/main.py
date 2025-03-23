@@ -12,7 +12,8 @@ from math import pi, sin, pow
 
 # Own modules
 from app import TimerManager, TagPlaybackManager
-from audiocore import Audiocore
+from audiocore import AudioContext
+from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
@@ -52,32 +53,57 @@ machine.mem32[0x4001c004 + 8*4] = 0x67
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 
-# Setup SD card
-try:
-    sd = SDCard(mosi=Pin(3), miso=Pin(4), sck=Pin(2), ss=Pin(5), baudrate=15000000)
-    os.mount(sd, '/sd')
-except OSError as ex:
-    print(f'Failed to setup SD card: {ex}')
+class SDContext:
+    def __init__(self, mosi, miso, sck, ss, baudrate):
+        self.mosi = mosi
+        self.miso = miso
+        self.sck = sck
+        self.ss = ss
+        self.baudrate = baudrate
 
-# Setup LEDs
-pin = Pin.board.GP16
-np = NeoPixel(pin, 10, sm=1)
-asyncio.create_task(rainbow(np))
+    def __enter__(self):
+        self.sdcard = SDCard(self.mosi, self.miso, self.sck, self.ss, self.baudrate)
+        try:
+            os.mount(self.sdcard, '/sd')
+        except Exception:
+            self.sdcard.deinit()
+            raise
+        return self
 
-# Setup MP3 player
-audioctx = Audiocore(Pin(8), Pin(6))
-player = MP3Player(audioctx)
-player.set_volume(128)
-asyncio.create_task(player.task())
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            os.umount('/sd')
+        finally:
+            self.sdcard.deinit()
 
-# Setup app
-timer_manager = TimerManager(True)
-playback_manager = TagPlaybackManager(timer_manager, player)
 
-# Setup NFC
-nfc = Nfc(playback_manager.onTagChange)
+def run():
+    asyncio.new_event_loop()
+    # Setup LEDs
+    pin = Pin.board.GP16
+    np = NeoPixel(pin, 10, sm=1)
+    asyncio.create_task(rainbow(np))
 
-# Start
-asyncio.create_task(aiorepl.task({'player': player, 'timer_manager': timer_manager,
-                                  'playback_manager': playback_manager}))
-asyncio.get_event_loop().run_forever()
+    # Setup MP3 player
+    with SDContext(mosi=Pin(3), miso=Pin(4), sck=Pin(2), ss=Pin(5), baudrate=15000000), \
+         AudioContext(Pin(8), Pin(6)) as audioctx:
+        player = MP3Player(audioctx)
+        player.set_volume(128)
+        asyncio.create_task(player.task())
+
+        # Setup app
+        timer_manager = TimerManager(True)
+        playback_manager = TagPlaybackManager(timer_manager, player)
+
+        # Setup NFC
+        reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
+        nfc = Nfc(reader, playback_manager.onTagChange)
+
+        # Start
+        asyncio.create_task(aiorepl.task({'player': player, 'timer_manager': timer_manager,
+                                          'playback_manager': playback_manager, 'nfc': nfc}))
+        asyncio.get_event_loop().run_forever()
+
+
+if __name__ == '__main__':
+    run()
