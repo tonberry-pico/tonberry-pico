@@ -8,6 +8,7 @@ import time
 
 from mfrc522 import MFRC522
 
+
 class Nfc:
     '''
     This class implements an asyncio task which continuously polls the mfrc522 nfc reader. If a new
