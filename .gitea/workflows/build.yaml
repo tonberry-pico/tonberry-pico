@@ -18,3 +18,8 @@ jobs:
         with:
           name: firmware-RPi-Pico-W
           path: software/lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware.uf2
+      - name: Upload firmware w/ filesystem
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware-RPi-Pico-W-with-fs
+          path: software/lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware-filesystem.uf2

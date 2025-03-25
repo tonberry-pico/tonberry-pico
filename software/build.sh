@@ -11,4 +11,25 @@ set -eu
        USER_C_MODULES="$TOPDIR"/src/micropython.cmake -j "$(nproc)"
 )
 
-echo "Output in lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware.uf2"
+( cd tools/mklittlefs
+  make -j "$(nproc)"
+)
+
+PICOTOOL=picotool
+if ! command -v $PICOTOOL >/dev/null 2>&1; then
+    echo "system picotool not found, checking SDK build dir"
+    PICOTOOL=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/_deps/picotool-build/picotool
+    if ! command -v $PICOTOOL >/dev/null 2>&1; then
+       echo "No picotool found, exiting"
+       exit 1
+    fi
+fi
+BUILDDIR=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
+tools/mklittlefs/mklittlefs -p 256 -s 868352 -c src/ $BUILDDIR/filesystem.bin
+truncate -s 2M $BUILDDIR/firmware-filesystem.bin
+dd if=$BUILDDIR/firmware.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k
+dd if=$BUILDDIR/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
+$PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin $BUILDDIR/firmware-filesystem.uf2
+
+echo "Output in $BUILDDIR/firmware.uf2"
+echo "Image with filesystem in $BUILDDIR/firmware-filesystem.uf2"
