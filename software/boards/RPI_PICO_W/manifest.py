@@ -9,7 +9,10 @@ module("rp2_neopixel.py", "../../src")
 require("sdcard")
 require("aiorepl")
 
+# Third party modules
 module("mfrc522.py", "../../lib/micropython-mfrc522/")
 module("microdot.py", "../../lib/microdot/src/microdot/")
 
+# TonberryPico modules
 module("audiocore.py", "../../src/audiocore")
+package("nfc", base_path="../../src/")
