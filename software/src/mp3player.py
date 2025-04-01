@@ -12,6 +12,7 @@ class MP3Player:
         self.command_event = asyncio.Event()
         self.playlist = []
         self.mp3task = None
+        self.volume = 128
 
     def set_playlist(self, mp3files):
         """
@@ -52,7 +53,11 @@ class MP3Player:
         """
         Set volume (0..255).
         """
+        self.volume = volume
         self.audiocore.set_volume(volume)
+
+    def get_volume(self) -> int:
+        return self.volume
 
     def _send_command(self, command: str):
         self.commands.append(command)
