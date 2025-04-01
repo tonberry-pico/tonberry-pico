@@ -50,7 +50,7 @@ add_test(NAME generate-xml-report
 set_tests_properties(clean-reports PROPERTIES FIXTURES_SETUP "Report")
 set_tests_properties(generate-xml-report PROPERTIES FIXTURES_CLEANUP "Report")
 
-add_subdirectory(src/audiocore)
+add_subdirectory(modules/audiocore)
 
 add_custom_target(check-format
     find . -iname '*.[ch]' -exec clang-format -Werror --dry-run {} +
