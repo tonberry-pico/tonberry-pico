@@ -1,76 +1,22 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
-import asyncio
-import heapq
+from collections import namedtuple
 import os
 import time
 
 
-class TimerManager:
-    def __init__(self, timer_debug=False):
-        self.timers = []
-        self.timer_debug = timer_debug
-        self.task = asyncio.create_task(self._timer_worker())
-        self.worker_event = asyncio.Event()
-
-    def schedule(self, when, what):
-        cur_nearest = self.timers[0][0] if len(self.timers) > 0 else None
-        heapq.heappush(self.timers, (when, what))
-        if cur_nearest is None or cur_nearest > self.timers[0][0]:
-            # New timer is closer than previous closest timer
-            if self.timer_debug:
-                print(f'cur_nearest: {cur_nearest}, new next: {self.timers[0][0]}')
-                print("schedule: wake")
-            self.worker_event.set()
-
-    def cancel(self, what):
-        try:
-            (when, _), i = next(filter(lambda item: item[0][1] == what, zip(self.timers, range(len(self.timers)))))
-        except StopIteration:
-            return False
-        del self.timers[i]
-        heapq.heapify(self.timers)
-        if i == 0:
-            # Cancel timer was closest timer
-            if self.timer_debug:
-                print("cancel: wake")
-            self.worker_event.set()
-        return True
-
-    async def _timer_worker(self):
-        while True:
-            if len(self.timers) == 0:
-                # Nothing to do
-                await self.worker_event.wait()
-                if self.timer_debug:
-                    print("_timer_worker: event 0")
-                self.worker_event.clear()
-                continue
-            cur_nearest = self.timers[0][0]
-            wait_time = cur_nearest - time.ticks_ms()
-            if wait_time > 0:
-                if self.timer_debug:
-                    print(f"_timer_worker: next is {self.timers[0]}, sleep {wait_time} ms")
-                try:
-                    await asyncio.wait_for_ms(self.worker_event.wait(), wait_time)
-                    if self.timer_debug:
-                        print("_timer_worker: event 1")
-                    # got woken up due to event
-                    self.worker_event.clear()
-                    continue
-                except asyncio.TimeoutError:
-                    pass
-            _, callback = heapq.heappop(self.timers)
-            callback()
+Dependencies = namedtuple('PlayerAppDependencies', ('mp3player', 'timermanager', 'nfcreader', 'buttons'))
 
 
-class TagPlaybackManager:
-    def __init__(self, timer_manager, player):
+class PlayerApp:
+    def __init__(self, deps: Dependencies):
         self.current_tag = None
         self.current_tag_time = time.ticks_ms()
-        self.timer_manager = timer_manager
-        self.player = player
+        self.timer_manager = deps.timermanager(self)
+        self.player = deps.mp3player(self)
+        self.nfc = deps.nfcreader(self)
+        self.buttons = deps.buttons(self) if deps.buttons is not None else None
 
     def onTagChange(self, new_tag):
         if new_tag is not None:
@@ -100,3 +46,11 @@ class TagPlaybackManager:
             print('Tag gone, stopping playback')
             self.current_tag = None
             self.player.stop()
+
+    def onButtonPressed(self, what):
+        if what == self.buttons.VOLUP:
+            self.player.set_volume(min(255, self.player.get_volume()+1))
+        elif what == self.buttons.VOLDOWN:
+            self.player.set_volume(max(0, self.player.get_volume()-1))
+        elif what == self.buttons.NEXT:
+            self.player.play_next()

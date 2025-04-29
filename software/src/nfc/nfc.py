@@ -8,6 +8,15 @@ import asyncio
 import time
 
 from mfrc522 import MFRC522
+try:
+    from typing import TYPE_CHECKING  # type: ignore
+except ImportError:
+    TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import typing
+
+    class TagCallback(typing.Protocol):
+        def onTagChange(self, uid: list[int]) -> None: ...
 
 
 class Nfc:
@@ -29,11 +38,11 @@ class Nfc:
 
     asyncio.run(main())
     '''
-    def __init__(self, reader: MFRC522, onTagChange=None):
+    def __init__(self, reader: MFRC522, cb: TagCallback | None = None):
         self.reader = reader
-        self.last_uid = None
-        self.last_uid_timestamp = None
-        self.onTagChange = onTagChange
+        self.last_uid: list[int] | None = None
+        self.last_uid_timestamp: int | None = None
+        self.cb = cb
         self.task = asyncio.create_task(self._reader_poll_task())
 
     @staticmethod
@@ -43,7 +52,7 @@ class Nfc:
         '''
         return '0x' + ''.join(f'{i:02x}' for i in uid)
 
-    def _read_tag_sn(self) -> list[int]:
+    def _read_tag_sn(self) -> list[int] | None:
         (stat, _) = self.reader.request(self.reader.REQIDL)
         if stat == self.reader.OK:
             (stat, uid) = self.reader.SelectTagSN()
@@ -64,8 +73,8 @@ class Nfc:
             if uid is not None:
                 self.last_uid = uid
                 self.last_uid_timestamp = time.ticks_us()
-            if self.onTagChange is not None and last_callback_uid != uid:
-                self.onTagChange(uid)
+            if self.cb is not None and last_callback_uid != uid:
+                self.cb.onTagChange(uid)
                 last_callback_uid = uid
 
             await asyncio.sleep_ms(poll_interval_ms)

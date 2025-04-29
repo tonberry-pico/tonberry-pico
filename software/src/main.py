@@ -11,13 +11,14 @@ from machine import Pin
 from math import pi, sin, pow
 
 # Own modules
-from app import TimerManager, TagPlaybackManager
+import app
 from audiocore import AudioContext
 from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
 from rp2_sd import SDCard
+from utils import Buttons, TimerManager
 
 micropython.alloc_emergency_exception_buf(100)
 
@@ -51,47 +52,6 @@ machine.mem32[0x4001c004 + 7*4] = 0x67
 machine.mem32[0x4001c004 + 8*4] = 0x67
 # high prio for proc 1
 machine.mem32[0x40030000 + 0x00] = 0x10
-
-
-class Buttons:
-    def __init__(self, player, pin_volup=17, pin_voldown=19, pin_next=18):
-        self._VOLUP = micropython.const(1)
-        self._VOLDOWN = micropython.const(2)
-        self._NEXT = micropython.const(3)
-        self.player = player
-        self.buttons = {machine.Pin(pin_volup, machine.Pin.IN, machine.Pin.PULL_UP): self._VOLUP,
-                        machine.Pin(pin_voldown, machine.Pin.IN, machine.Pin.PULL_UP): self._VOLDOWN,
-                        machine.Pin(pin_next, machine.Pin.IN, machine.Pin.PULL_UP): self._NEXT}
-        self.int_flag = asyncio.ThreadSafeFlag()
-        self.pressed = []
-        self.last = {}
-        for button in self.buttons.keys():
-            button.irq(handler=self._interrupt, trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING)
-
-    def _interrupt(self, button):
-        keycode = self.buttons[button]
-        last = self.last.get(keycode, 0)
-        now = time.ticks_ms()
-        self.last[keycode] = now
-        if now - last < 10:
-            # debounce, discard
-            return
-        if button.value() == 0:
-            # print(f'B{keycode} {now}')
-            self.pressed.append(keycode)
-            self.int_flag.set()
-
-    async def task(self):
-        while True:
-            await self.int_flag.wait()
-            while len(self.pressed) > 0:
-                what = self.pressed.pop()
-                if what == self._VOLUP:
-                    self.player.set_volume(min(255, self.player.get_volume()+1))
-                elif what == self._VOLDOWN:
-                    self.player.set_volume(max(0, self.player.get_volume()-1))
-                elif what == self._NEXT:
-                    self.player.play_next()
 
 
 class SDContext:
@@ -132,20 +92,21 @@ def run():
         player.set_volume(32)
         asyncio.create_task(player.task())
 
-        buttons = Buttons(player)
-        asyncio.create_task(buttons.task())
-
-        # Setup app
         timer_manager = TimerManager(True)
-        playback_manager = TagPlaybackManager(timer_manager, player)
 
         # Setup NFC
         reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
-        nfc = Nfc(reader, playback_manager.onTagChange)
+
+        # Setup app
+        deps = app.Dependencies(mp3player=lambda _: player,
+                                timermanager=lambda _: timer_manager,
+                                nfcreader=lambda the_app: Nfc(reader, the_app),
+                                buttons=lambda the_app: Buttons(the_app))
+        the_app = app.PlayerApp(deps)
 
         # Start
         asyncio.create_task(aiorepl.task({'player': player, 'timer_manager': timer_manager,
-                                          'playback_manager': playback_manager, 'nfc': nfc}))
+                                          'app': the_app}))
         asyncio.get_event_loop().run_forever()
 
 
