@@ -1,0 +1,60 @@
+@startuml
+
+component "Application Context" {
+    component PlayerApp [
+        PlayerApp
+        - manages playlists
+          - random or sequential
+          - resumable or not
+    ]
+    component MP3Player [
+        MP3Player
+        - stream bytes to core1
+        - track playback position in time and bytes
+    ]
+    component LED [
+        LED
+    ]
+    component NFCReader [
+        NFCReader
+        - poll nfc
+    ]
+    component Button [
+        Button
+        - debounce
+        - key repeat
+    ]
+}
+
+component Filesystem {
+    component MP3
+    component Database
+}
+
+[PlayerApp] -left-> [MP3Player] : startPlayback(file)
+[PlayerApp] -left-> [MP3Player] : stop()
+[PlayerApp] -left-> [MP3Player] : pause() : current_position
+
+[PlayerApp] -up-> [LED] : set()
+
+[MP3Player] -down-> [Audiocore] : mp3_bytestream
+[MP3Player] -down-> [Audiocore] : volume
+
+[Audiocore] -up-> [MP3Player] : position
+
+
+[PlayerApp] -up--> [Filesystem] : readdir
+[PlayerApp] -up--> [Filesystem] : open
+
+[NFCReader] -left-> [PlayerApp] : onTagChanged
+
+[NFCReader] <--> [MFRC522]
+
+[Button] -left-> [PlayerApp] : onButtonEvent
+
+[Button] <--> [GPIO]
+
+[WebAPI] <---> [PlayerApp] : ? (e.g. stop)
+[WebAPI] ---> [Filesystem]
+
+@enduml
