@@ -7,3 +7,6 @@
 [submodule "software/lib/microdot"]
 	path = software/lib/microdot
 	url = ../microdot.git
+[submodule "software/tools/mklittlefs"]
+	path = software/tools/mklittlefs
+	url = https://github.com/earlephilhower/mklittlefs.git

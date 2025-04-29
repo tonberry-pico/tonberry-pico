@@ -5,7 +5,7 @@ require("bundle-networking")
 # Bluetooth
 require("aioble")
 
-module("rp2_neopixel.py", "../../src")
+module("rp2_neopixel.py", "../../modules")
 require("sdcard")
 require("aiorepl")
 
@@ -14,5 +14,4 @@ module("mfrc522.py", "../../lib/micropython-mfrc522/")
 module("microdot.py", "../../lib/microdot/src/microdot/")
 
 # TonberryPico modules
-module("audiocore.py", "../../src/audiocore")
-package("nfc", base_path="../../src/")
+module("audiocore.py", "../../modules/audiocore")
