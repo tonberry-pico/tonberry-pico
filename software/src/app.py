@@ -4,16 +4,17 @@
 from collections import namedtuple
 import os
 import time
+from utils import TimerManager
 
 
-Dependencies = namedtuple('PlayerAppDependencies', ('mp3player', 'timermanager', 'nfcreader', 'buttons'))
+Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons'))
 
 
 class PlayerApp:
     def __init__(self, deps: Dependencies):
         self.current_tag = None
         self.current_tag_time = time.ticks_ms()
-        self.timer_manager = deps.timermanager(self)
+        self.timer_manager = TimerManager()
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self)
         self.buttons = deps.buttons(self) if deps.buttons is not None else None

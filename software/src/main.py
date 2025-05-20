@@ -92,20 +92,17 @@ def run():
         player.set_volume(32)
         asyncio.create_task(player.task())
 
-        timer_manager = TimerManager(True)
-
         # Setup NFC
         reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
 
         # Setup app
         deps = app.Dependencies(mp3player=lambda _: player,
-                                timermanager=lambda _: timer_manager,
                                 nfcreader=lambda the_app: Nfc(reader, the_app),
                                 buttons=lambda the_app: Buttons(the_app))
         the_app = app.PlayerApp(deps)
 
         # Start
-        asyncio.create_task(aiorepl.task({'player': player, 'timer_manager': timer_manager,
+        asyncio.create_task(aiorepl.task({'timer_manager': TimerManager(),
                                           'app': the_app}))
         asyncio.get_event_loop().run_forever()
 

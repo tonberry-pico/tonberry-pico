@@ -5,13 +5,20 @@ import asyncio
 import heapq
 import time
 
+TIMER_DEBUG = True
 
-class TimerManager:
-    def __init__(self, timer_debug=False):
-        self.timers = []
-        self.timer_debug = timer_debug
-        self.task = asyncio.create_task(self._timer_worker())
-        self.worker_event = asyncio.Event()
+
+class TimerManager(object):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(TimerManager, cls).__new__(cls)
+            cls._instance.timers = []
+            cls._instance.timer_debug = TIMER_DEBUG
+            cls._instance.task = asyncio.create_task(cls._instance._timer_worker())
+            cls._instance.worker_event = asyncio.Event()
+        return cls._instance
 
     def schedule(self, when, what):
         cur_nearest = self.timers[0][0] if len(self.timers) > 0 else None
