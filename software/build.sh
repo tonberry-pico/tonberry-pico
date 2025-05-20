@@ -25,7 +25,10 @@ if ! command -v $PICOTOOL >/dev/null 2>&1; then
     fi
 fi
 BUILDDIR=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
-tools/mklittlefs/mklittlefs -p 256 -s 868352 -c src/ $BUILDDIR/filesystem.bin
+FS_STAGE_DIR=$(mktemp -d)
+trap 'rm -rf $FS_STAGE_DIR' EXIT
+find src/ -iname '*.py' | cpio -pdm "$FS_STAGE_DIR"
+tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/src $BUILDDIR/filesystem.bin
 truncate -s 2M $BUILDDIR/firmware-filesystem.bin
 dd if=$BUILDDIR/firmware.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k
 dd if=$BUILDDIR/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
