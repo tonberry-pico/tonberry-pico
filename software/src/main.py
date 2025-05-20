@@ -88,15 +88,12 @@ def run():
     # Setup MP3 player
     with SDContext(mosi=Pin(3), miso=Pin(4), sck=Pin(2), ss=Pin(5), baudrate=15000000), \
          AudioContext(Pin(8), Pin(6)) as audioctx:
-        player = MP3Player(audioctx)
-        player.set_volume(32)
-        asyncio.create_task(player.task())
 
         # Setup NFC
         reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
 
         # Setup app
-        deps = app.Dependencies(mp3player=lambda _: player,
+        deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
                                 nfcreader=lambda the_app: Nfc(reader, the_app),
                                 buttons=lambda the_app: Buttons(the_app))
         the_app = app.PlayerApp(deps)

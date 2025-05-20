@@ -21,8 +21,14 @@ class PlayerApp:
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self)
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
+        self.mp3file = None
         self.volume_pos = 3
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])
+
+    def __del__(self):
+        if self.mp3file is not None:
+            self.mp3file.close()
+            self.mp3file = None
 
     def onTagChange(self, new_tag):
         if new_tag is not None:
@@ -43,7 +49,7 @@ class PlayerApp:
                 self.player.stop()
                 return
             testfiles.sort()
-            self.player.set_playlist(testfiles)
+            self._set_playlist(testfiles)
         else:
             self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
 
@@ -61,4 +67,27 @@ class PlayerApp:
             self.volume_pos = max(self.volume_pos - 1, 0)
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         elif what == self.buttons.NEXT:
-            self.player.play_next()
+            self._play_next()
+
+    def onPlaybackDone(self):
+        self.mp3file.close()
+        self.mp3file = None
+        self._play_next()
+
+    def _set_playlist(self, files: list[bytes]):
+        self.playlist_pos = 0
+        self.playlist = files
+        self._play(self.playlist[self.playlist_pos])
+
+    def _play_next(self):
+        if self.playlist_pos + 1 < len(self.playlist):
+            self.playlist_pos += 1
+            self._play(self.playlist[self.playlist_pos])
+
+    def _play(self, filename: bytes):
+        if self.mp3file is not None:
+            self.player.stop()
+            self.mp3file.close()
+            self.mp3file = None
+        self.mp3file = open(filename, 'rb')
+        self.player.play(self.mp3file)
