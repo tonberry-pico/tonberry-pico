@@ -1,12 +1,22 @@
 '''
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Stefan Kratochwil (Kratochwil-LA@gmx.de)
+Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 '''
 
 import asyncio
 import time
 
 from mfrc522 import MFRC522
+try:
+    from typing import TYPE_CHECKING  # type: ignore
+except ImportError:
+    TYPE_CHECKING = False
+if TYPE_CHECKING:
+    import typing
+
+    class TagCallback(typing.Protocol):
+        def onTagChange(self, uid: list[int]) -> None: ...
 
 
 class Nfc:
@@ -28,10 +38,11 @@ class Nfc:
 
     asyncio.run(main())
     '''
-    def __init__(self, reader: MFRC522):
+    def __init__(self, reader: MFRC522, cb: TagCallback | None = None):
         self.reader = reader
-        self.last_uid = None
-        self.last_uid_timestamp = None
+        self.last_uid: list[int] | None = None
+        self.last_uid_timestamp: int | None = None
+        self.cb = cb
         self.task = asyncio.create_task(self._reader_poll_task())
 
     @staticmethod
@@ -41,20 +52,30 @@ class Nfc:
         '''
         return '0x' + ''.join(f'{i:02x}' for i in uid)
 
+    def _read_tag_sn(self) -> list[int] | None:
+        (stat, _) = self.reader.request(self.reader.REQIDL)
+        if stat == self.reader.OK:
+            (stat, uid) = self.reader.SelectTagSN()
+            if stat == self.reader.OK:
+                return uid
+        return None
+
     async def _reader_poll_task(self, poll_interval_ms: int = 50):
         '''
         Periodically polls the nfc reader. Stores tag uid and timestamp if a new tag was found.
         '''
+        last_callback_uid = None
         while True:
             self.reader.init()
 
             # For now we omit the tag type
-            (stat, _) = self.reader.request(self.reader.REQIDL)
-            if stat == self.reader.OK:
-                (stat, uid) = self.reader.SelectTagSN()
-                if stat == self.reader.OK:
-                    self.last_uid = uid
-                    self.last_uid_timestamp = time.ticks_us()
+            uid = self._read_tag_sn()
+            if uid is not None:
+                self.last_uid = uid
+                self.last_uid_timestamp = time.ticks_us()
+            if self.cb is not None and last_callback_uid != uid:
+                self.cb.onTagChange(uid)
+                last_callback_uid = uid
 
             await asyncio.sleep_ms(poll_interval_ms)
 

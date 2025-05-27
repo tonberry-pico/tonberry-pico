@@ -96,6 +96,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(sdcard_ioctl_obj, sdcard_ioctl);
 
 static const mp_rom_map_elem_t sdcard_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&sdcard_deinit_obj)},
+    {MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&sdcard_deinit_obj)},
     {MP_ROM_QSTR(MP_QSTR_ioctl), MP_ROM_PTR(&sdcard_ioctl_obj)},
     {MP_ROM_QSTR(MP_QSTR_readblocks), MP_ROM_PTR(&sdcard_readblocks_obj)},
 };

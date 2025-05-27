@@ -5,9 +5,11 @@ from asyncio import ThreadSafeFlag
 class Audiocore:
     def __init__(self, pin, sideset):
         self.notify = ThreadSafeFlag()
-        self._audiocore = _audiocore.Audiocore(pin, sideset, self._interrupt)
+        self.pin = pin
+        self.sideset = sideset
+        self._audiocore = _audiocore.Audiocore(self.pin, self.sideset, self._interrupt)
 
-    def __del__(self):
+    def deinit(self):
         self._audiocore.deinit()
 
     def _interrupt(self, _):
@@ -35,3 +37,16 @@ class Audiocore:
             if pos >= len(buffer):
                 return (pos, buf_space, underruns)
             await self.notify.wait()
+
+
+class AudioContext:
+    def __init__(self, pin, sideset):
+        self.pin = pin
+        self.sideset = sideset
+
+    def __enter__(self):
+        self._audiocore = Audiocore(self.pin, self.sideset)
+        return self._audiocore
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._audiocore.deinit()
