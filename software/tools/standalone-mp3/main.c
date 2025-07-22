@@ -29,17 +29,8 @@ void __time_critical_func(volume_adjust)(int16_t *restrict buf, size_t samples, 
     }
 }
 
-int __time_critical_func(main)()
+static int __time_critical_func(play_mp3)(struct sd_context *sd_context)
 {
-    stdio_init_all();
-    printf("sysclk is %d Hz\n", clock_get_hz(clk_sys));
-
-    struct sd_context sd_context;
-
-    if (!sd_init(&sd_context, 3, 4, 2, 5, 15000000)) {
-        return 1;
-    }
-
     HMP3Decoder mp3dec = MP3InitDecoder();
 
     if (!i2s_init(44100)) {
@@ -48,21 +39,20 @@ int __time_critical_func(main)()
 
     uint8_t mp3buffer[4 * 512];
     for (int i = 0; i < sizeof(mp3buffer) / 512; ++i) {
-        sd_readblock(&sd_context, i, mp3buffer + 512 * i);
+        sd_readblock(sd_context, i, mp3buffer + 512 * i);
     }
     size_t next_sector = sizeof(mp3buffer) / 512;
 
     unsigned char *readptr = mp3buffer;
     int bytes_left = sizeof(mp3buffer);
 
-    int pos = 0;
     bool first = true;
     bool pending_read = false;
     bool synced = false;
     while (true) {
         /* Get some input data */
-        if (pending_read && sd_readblock_is_complete(&sd_context)) {
-            sd_readblock_complete(&sd_context);
+        if (pending_read && sd_readblock_is_complete(sd_context)) {
+            sd_readblock_complete(sd_context);
             bytes_left += 512;
             pending_read = false;
         }
@@ -74,7 +64,7 @@ int __time_critical_func(main)()
                 memmove(mp3buffer, readptr, bytes_left);
                 readptr = mp3buffer;
             }
-            sd_readblock_start(&sd_context, next_sector++, readptr + bytes_left);
+            sd_readblock_start(sd_context, next_sector++, readptr + bytes_left);
             pending_read = true;
         }
         if (bytes_left == 0) {
@@ -115,7 +105,7 @@ int __time_critical_func(main)()
                 readptr = old_readptr;
                 bytes_left = old_bytes_left;
                 printf("INDATA_UNDERFLOW\n");
-                sd_readblock_complete(&sd_context);
+                sd_readblock_complete(sd_context);
                 continue;
             } else /*if (status== ERR_MP3_MAINDATA_UNDERFLOW)*/ {
                 --bytes_left;
@@ -143,6 +133,50 @@ int __time_critical_func(main)()
 
         i2s_commit_buf(buf);
     }
+}
+
+static void write_test(struct sd_context *sd_context)
+{
+    uint8_t data_buffer[4096];
+    do {
+        for (int i = 0; i < sizeof(data_buffer) / SD_SECTOR_SIZE; ++i) {
+            sd_readblock(sd_context, i, data_buffer + SD_SECTOR_SIZE * i);
+        }
+
+        for (int line = 0; line < 32; ++line) {
+            printf("%04hx ", line * 16);
+            for (int item = 0; item < 16; ++item) {
+                printf("%02hhx%c", data_buffer[line * 16 + item], (item == 15) ? '\n' : ' ');
+            }
+        }
+
+        for (int i = 0; i < SD_SECTOR_SIZE; ++i) {
+            data_buffer[i] ^= 0xff;
+        }
+
+        sd_writeblock(sd_context, 0, data_buffer);
+        sleep_ms(1000);
+    } while (data_buffer[SD_SECTOR_SIZE - 1] != 0xAA);
+}
+
+int main()
+{
+    stdio_init_all();
+    printf("sysclk is %d Hz\n", clock_get_hz(clk_sys));
+
+    struct sd_context sd_context;
+
+    if (!sd_init(&sd_context, 3, 4, 2, 5, 15000000)) {
+        return 1;
+    }
+
+#ifdef WRITE_TEST
+    write_test(&sd_context);
+#endif
+
+#ifdef PLAY_TEST
+    play_mp3(&sd_context);
+#endif
 
     printf("Done.\n");
 }

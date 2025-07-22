@@ -9,6 +9,9 @@ include(../../lib/micropython/lib/pico-sdk/pico_sdk_init.cmake)
 
 project(standalone_mp3)
 
+option(ENABLE_WRITE_TEST "Enable write test" OFF)
+option(ENABLE_PLAY_TEST "Enable mp3 playback test" OFF)
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
@@ -28,6 +31,14 @@ add_executable(standalone_mp3
     ${SD_LIB_SRCS}
 )
 
+if(ENABLE_WRITE_TEST)
+    target_compile_definitions(standalone_mp3 PRIVATE WRITE_TEST)
+endif()
+
+if(ENABLE_PLAY_TEST)
+    target_compile_definitions(standalone_mp3 PRIVATE PLAY_TEST)
+endif()
+
 pico_generate_pio_header(standalone_mp3 ${SD_LIB_DIR}/sd_spi_pio.pio)
 
 pico_generate_pio_header(standalone_mp3 ${CMAKE_CURRENT_LIST_DIR}/i2s_max98357.pio)
@@ -36,7 +47,7 @@ add_subdirectory(../../lib/helix_mp3 helix_mp3)
 
 target_link_libraries(standalone_mp3 PRIVATE pico_stdlib hardware_dma hardware_spi hardware_sync hardware_pio helix_mp3)
 target_include_directories(standalone_mp3 PRIVATE ${SD_LIB_DIR})
-target_compile_options(standalone_mp3 PRIVATE -Og)
+target_compile_options(standalone_mp3 PRIVATE -Og -DSD_DEBUG)
 
 
 pico_add_extra_outputs(standalone_mp3)

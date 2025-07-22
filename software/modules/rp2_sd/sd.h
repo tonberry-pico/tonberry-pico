@@ -21,3 +21,5 @@ bool sd_readblock(struct sd_context *context, size_t sector_num, uint8_t buffer[
 bool sd_readblock_start(struct sd_context *context, size_t sector_num, uint8_t buffer[static SD_SECTOR_SIZE]);
 bool sd_readblock_complete(struct sd_context *context);
 bool sd_readblock_is_complete(struct sd_context *context);
+
+bool sd_writeblock(struct sd_context *context, size_t sector_num, uint8_t buffer[const static SD_SECTOR_SIZE]);

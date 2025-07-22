@@ -79,6 +79,25 @@ static mp_obj_t sdcard_readblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj_
 }
 static MP_DEFINE_CONST_FUN_OBJ_3(sdcard_readblocks_obj, sdcard_readblocks);
 
+static mp_obj_t sdcard_writeblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj_t buf_obj)
+{
+    struct sdcard_obj *self = MP_OBJ_TO_PTR(self_obj);
+    const int start_block = mp_obj_get_int(block_obj);
+    mp_buffer_info_t bufinfo;
+    if (!mp_get_buffer(buf_obj, &bufinfo, MP_BUFFER_READ))
+        mp_raise_ValueError("Not a read buffer");
+    if (bufinfo.len % SD_SECTOR_SIZE != 0)
+        mp_raise_ValueError("Buffer length is invalid");
+    const int nblocks = bufinfo.len / SD_SECTOR_SIZE;
+    for (int block = 0; block < nblocks; block++) {
+        // TODO: Implement CMD25 write multiple blocks
+        if (!sd_writeblock(&self->sd_context, start_block + block, bufinfo.buf + block * SD_SECTOR_SIZE))
+            mp_raise_OSError(MP_EIO);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(sdcard_writeblocks_obj, sdcard_writeblocks);
+
 static mp_obj_t sdcard_ioctl(mp_obj_t self_obj, mp_obj_t op_obj, mp_obj_t arg_obj)
 {
     struct sdcard_obj *self = MP_OBJ_TO_PTR(self_obj);
@@ -99,6 +118,7 @@ static const mp_rom_map_elem_t sdcard_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&sdcard_deinit_obj)},
     {MP_ROM_QSTR(MP_QSTR_ioctl), MP_ROM_PTR(&sdcard_ioctl_obj)},
     {MP_ROM_QSTR(MP_QSTR_readblocks), MP_ROM_PTR(&sdcard_readblocks_obj)},
+    {MP_ROM_QSTR(MP_QSTR_writeblocks), MP_ROM_PTR(&sdcard_writeblocks_obj)},
 };
 static MP_DEFINE_CONST_DICT(sdcard_locals_dict, sdcard_locals_dict_table);
 

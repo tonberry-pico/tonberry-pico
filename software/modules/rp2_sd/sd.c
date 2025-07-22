@@ -265,3 +265,11 @@ bool sd_readblock_complete(struct sd_context *sd_context)
 }
 
 bool sd_readblock_is_complete(struct sd_context *sd_context) { return sd_cmd_read_is_complete(); }
+
+bool sd_writeblock(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[const static SD_SECTOR_SIZE])
+{
+    if (!sd_context->initialized || sector_num >= sd_context->blocks)
+        return false;
+
+    return sd_cmd_write(24, sector_num, SD_SECTOR_SIZE, buffer);
+}

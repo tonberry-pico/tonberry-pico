@@ -25,3 +25,5 @@ void sd_spi_dbg_clk(const int div, const int frac);
 bool sd_cmd_read_start(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[static datalen]);
 bool sd_cmd_read_complete(void);
 bool sd_cmd_read_is_complete(void);
+
+bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen]);
