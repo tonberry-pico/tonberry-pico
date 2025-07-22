@@ -208,6 +208,16 @@ bool sd_cmd_read_complete(void)
     sd_spi_wait_complete();
     gpio_put(sd_spi_context.ss, true);
     sd_spi_read_blocking(0xff, &buf, 1);
+#ifdef SD_READ_CRC_CHECK
+    const uint16_t expect_crc = sd_crc16(sd_spi_context.sd_dma_context.len, sd_spi_context.sd_dma_context.read_buf);
+    const uint16_t act_crc = sd_spi_context.sd_dma_context.crc_buf[0] << 8 | sd_spi_context.sd_dma_context.crc_buf[1];
+    if (act_crc != expect_crc) {
+#ifdef SD_DEBUG
+        printf("read CRC fail: got %04hx, expected %04hx\n", act_crc, expect_crc);
+#endif
+        return false;
+    }
+#endif
     return (sd_spi_context.sd_dma_context.read_token_buf == 0xfe);
 }
 

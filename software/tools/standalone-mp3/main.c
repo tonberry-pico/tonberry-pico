@@ -140,7 +140,10 @@ static void write_test(struct sd_context *sd_context)
     uint8_t data_buffer[4096];
     do {
         for (int i = 0; i < sizeof(data_buffer) / SD_SECTOR_SIZE; ++i) {
-            sd_readblock(sd_context, i, data_buffer + SD_SECTOR_SIZE * i);
+            if (!sd_readblock(sd_context, i, data_buffer + SD_SECTOR_SIZE * i)) {
+                printf("sd_readblock(%d) failed\n", i);
+                return;
+            }
         }
 
         for (int line = 0; line < 32; ++line) {
@@ -154,7 +157,10 @@ static void write_test(struct sd_context *sd_context)
             data_buffer[i] ^= 0xff;
         }
 
-        sd_writeblock(sd_context, 0, data_buffer);
+        if(!sd_writeblock(sd_context, 0, data_buffer)) {
+            printf("sd_writeblock failed\n");
+            return;
+        }
         sleep_ms(1000);
     } while (data_buffer[SD_SECTOR_SIZE - 1] != 0xAA);
 }
