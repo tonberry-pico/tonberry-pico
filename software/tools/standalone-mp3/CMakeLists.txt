@@ -11,6 +11,8 @@ project(standalone_mp3)
 
 option(ENABLE_WRITE_TEST "Enable write test" OFF)
 option(ENABLE_PLAY_TEST "Enable mp3 playback test" OFF)
+option(ENABLE_SD_READ_CRC "Enable crc check when reading from sd card" OFF)
+option(ENABLE_SD_DEBUG "Enable debug output for sd card driver" OFF)
 
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
@@ -37,6 +39,14 @@ endif()
 
 if(ENABLE_PLAY_TEST)
     target_compile_definitions(standalone_mp3 PRIVATE PLAY_TEST)
+endif()
+
+if(ENABLE_SD_READ_CRC)
+    target_compile_definitions(standalone_mp3 PRIVATE SD_READ_CRC_CHECK)
+endif()
+
+if(ENABLE_SD_DEBUG)
+    target_compile_definitions(standalone_mp3 PRIVATE SD_DEBUG)
 endif()
 
 pico_generate_pio_header(standalone_mp3 ${SD_LIB_DIR}/sd_spi_pio.pio)
