@@ -208,7 +208,72 @@ bool sd_cmd_read_complete(void)
     sd_spi_wait_complete();
     gpio_put(sd_spi_context.ss, true);
     sd_spi_read_blocking(0xff, &buf, 1);
+#ifdef SD_READ_CRC_CHECK
+    const uint16_t expect_crc = sd_crc16(sd_spi_context.sd_dma_context.len, sd_spi_context.sd_dma_context.read_buf);
+    const uint16_t act_crc = sd_spi_context.sd_dma_context.crc_buf[0] << 8 | sd_spi_context.sd_dma_context.crc_buf[1];
+    if (act_crc != expect_crc) {
+#ifdef SD_DEBUG
+        printf("read CRC fail: got %04hx, expected %04hx\n", act_crc, expect_crc);
+#endif
+        return false;
+    }
+#endif
     return (sd_spi_context.sd_dma_context.read_token_buf == 0xfe);
+}
+
+bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen])
+{
+    uint8_t buf[2];
+    const uint16_t crc = sd_crc16(datalen, data);
+    sd_spi_cmd_send(cmd, arg);
+    // Read up to 8 garbage bytes (0xff), followed by R1 (MSB is zero)
+    bool got_r1 = false;
+    for (int timeout = 0; timeout < 8; ++timeout) {
+        sd_spi_read_blocking(0xff, buf, 1);
+        if (!(buf[0] & 0x80)) {
+            got_r1 = true;
+            break;
+        }
+    }
+    if (!got_r1 || buf[0] != 0x00)
+        goto abort;
+    buf[0] = 0xfe;
+    sd_spi_write_blocking(buf, 1);
+    sd_spi_write_blocking(data, datalen);
+    buf[0] = crc >> 8;
+    buf[1] = crc;
+    sd_spi_write_blocking(buf, 2);
+    sd_spi_read_blocking(0xff, buf, 1);
+    if ((buf[0] & 0x1f) != 0x5) {
+#ifdef SD_DEBUG
+        printf("Write fail: %2hhx\n", buf[0]);
+#endif
+        goto abort;
+    }
+
+    int timeout = 0;
+    bool got_done = false;
+    for (timeout = 0; timeout < 8192; ++timeout) {
+        sd_spi_read_blocking(0xff, buf, 1);
+        if (buf[0] != 0x0) {
+            got_done = true;
+            break;
+        }
+    }
+#ifdef SD_DEBUG
+    printf("dbg write end: %d, %2hhx\n", timeout, buf[0]);
+#endif
+    if (!got_done)
+        goto abort;
+
+    gpio_put(sd_spi_context.ss, true);
+    sd_spi_read_blocking(0xff, buf, 1);
+    return true;
+
+abort:
+    gpio_put(sd_spi_context.ss, true);
+    sd_spi_read_blocking(0xff, buf, 1);
+    return false;
 }
 
 bool sd_spi_init(int mosi, int miso, int sck, int ss)
@@ -243,6 +308,7 @@ bool sd_spi_init(int mosi, int miso, int sck, int ss)
     channel_config_set_transfer_data_size(&sd_spi_context.spi_dma_rd_cfg, DMA_SIZE_8);
     sd_spi_context.spi_dma_rd_crc_cfg = dma_channel_get_default_config(sd_spi_context.spi_dma_rd_crc);
     channel_config_set_read_increment(&sd_spi_context.spi_dma_rd_crc_cfg, false);
+    channel_config_set_write_increment(&sd_spi_context.spi_dma_rd_crc_cfg, true);
     channel_config_set_dreq(&sd_spi_context.spi_dma_rd_crc_cfg, pio_get_dreq(SD_PIO, sd_spi_context.spi_sm, false));
     channel_config_set_transfer_data_size(&sd_spi_context.spi_dma_rd_crc_cfg, DMA_SIZE_8);
     sd_spi_context.spi_dma_wr_cfg = dma_channel_get_default_config(sd_spi_context.spi_dma_wr);
