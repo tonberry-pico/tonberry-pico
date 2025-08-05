@@ -5,7 +5,6 @@ import aiorepl
 import asyncio
 import machine
 import micropython
-import os
 import time
 from machine import Pin
 from math import pi, sin, pow
@@ -17,8 +16,7 @@ from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
-from rp2_sd import SDCard
-from utils import Buttons, TimerManager
+from utils import Buttons, SDContext, TimerManager
 
 micropython.alloc_emergency_exception_buf(100)
 
@@ -54,30 +52,6 @@ machine.mem32[0x4001c004 + 8*4] = 0x67
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 
-class SDContext:
-    def __init__(self, mosi, miso, sck, ss, baudrate):
-        self.mosi = mosi
-        self.miso = miso
-        self.sck = sck
-        self.ss = ss
-        self.baudrate = baudrate
-
-    def __enter__(self):
-        self.sdcard = SDCard(self.mosi, self.miso, self.sck, self.ss, self.baudrate)
-        try:
-            os.mount(self.sdcard, '/sd')
-        except Exception:
-            self.sdcard.deinit()
-            raise
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            os.umount('/sd')
-        finally:
-            self.sdcard.deinit()
-
-
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
@@ -105,4 +79,6 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    if machine.Pin(17, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
+        time.sleep(5)
+        run()
