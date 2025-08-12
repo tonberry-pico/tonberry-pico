@@ -5,8 +5,7 @@ require("bundle-networking")
 # Bluetooth
 require("aioble")
 
-module("rp2_neopixel.py", "../../modules")
-require("sdcard")
+# AsyncIO REPL
 require("aiorepl")
 
 # Third party modules
@@ -15,3 +14,4 @@ module("microdot.py", "../../lib/microdot/src/microdot/")
 
 # TonberryPico modules
 module("audiocore.py", "../../modules/audiocore")
+module("rp2_neopixel.py", "../../modules")
