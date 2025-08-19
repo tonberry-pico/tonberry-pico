@@ -66,9 +66,9 @@ static mp_obj_t sdcard_readblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj_
     const int start_block = mp_obj_get_int(block_obj);
     mp_buffer_info_t bufinfo;
     if (!mp_get_buffer(buf_obj, &bufinfo, MP_BUFFER_WRITE))
-        mp_raise_ValueError("Not a write buffer");
+        mp_raise_ValueError(MP_ERROR_TEXT("Not a write buffer"));
     if (bufinfo.len % SD_SECTOR_SIZE != 0)
-        mp_raise_ValueError("Buffer length is invalid");
+        mp_raise_ValueError(MP_ERROR_TEXT("Buffer length is invalid"));
     const int nblocks = bufinfo.len / SD_SECTOR_SIZE;
     for (int block = 0; block < nblocks; block++) {
         // TODO: Implement CMD18 read multiple blocks
@@ -85,9 +85,9 @@ static mp_obj_t sdcard_writeblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj
     const int start_block = mp_obj_get_int(block_obj);
     mp_buffer_info_t bufinfo;
     if (!mp_get_buffer(buf_obj, &bufinfo, MP_BUFFER_READ))
-        mp_raise_ValueError("Not a read buffer");
+        mp_raise_ValueError(MP_ERROR_TEXT("Not a read buffer"));
     if (bufinfo.len % SD_SECTOR_SIZE != 0)
-        mp_raise_ValueError("Buffer length is invalid");
+        mp_raise_ValueError(MP_ERROR_TEXT("Buffer length is invalid"));
     const int nblocks = bufinfo.len / SD_SECTOR_SIZE;
     for (int block = 0; block < nblocks; block++) {
         // TODO: Implement CMD25 write multiple blocks

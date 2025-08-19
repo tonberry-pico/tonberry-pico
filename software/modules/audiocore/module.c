@@ -90,9 +90,9 @@ static mp_obj_t audiocore_put(mp_obj_t self_in, mp_obj_t buffer)
     (void)self;
     mp_buffer_info_t bufinfo;
     if (!mp_get_buffer(buffer, &bufinfo, MP_BUFFER_READ))
-        mp_raise_ValueError("not a read buffer");
+        mp_raise_ValueError(MP_ERROR_TEXT("not a read buffer"));
     if (bufinfo.typecode != 'b' && bufinfo.typecode != 'B')
-        mp_raise_ValueError("unsupported buffer type");
+        mp_raise_ValueError(MP_ERROR_TEXT("unsupported buffer type"));
     unsigned to_copy = bufinfo.len;
 
     const uint32_t flags = spin_lock_blocking(shared_context.lock);
@@ -144,7 +144,7 @@ static mp_obj_t audiocore_set_volume(mp_obj_t self_in, mp_obj_t volume_obj)
     struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
     const int volume = mp_obj_get_int(volume_obj);
     if (volume < 0 || volume > 255)
-        mp_raise_ValueError("volume out of range");
+        mp_raise_ValueError(MP_ERROR_TEXT("volume out of range"));
     multicore_fifo_push_blocking(AUDIOCORE_CMD_SET_VOLUME);
     multicore_fifo_push_blocking(AUDIOCORE_MAX_VOLUME * volume / 255);
     wake_core1();
