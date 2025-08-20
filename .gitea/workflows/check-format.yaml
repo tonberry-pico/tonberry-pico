@@ -25,8 +25,11 @@ jobs:
           path: git
       - name: Check python
         run: |
-          cd git/software/src &&
-          find . -iname '*.py' -exec ../../../flake-venv/bin/flake8 {} +
+          cd git/software && (
+            find src -iname '*.py' -exec ../../flake-venv/bin/flake8 {} +
+            find tests -iname '*.py' -exec ../../flake-venv/bin/flake8 {} +
+            find modules -iname '*.py' -exec ../../flake-venv/bin/flake8 {} +
+            )
   Check-Bash-Shellcheck:
     runs-on: ubuntu-22.04-full
     steps:
