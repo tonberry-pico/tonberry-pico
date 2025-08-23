@@ -1,12 +1,17 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
+
 import _audiocore
 from asyncio import ThreadSafeFlag
+from utils import get_pin_index
 
 
 class Audiocore:
-    def __init__(self, pin, sideset):
+    def __init__(self, din, dclk, lrclk):
+        assert get_pin_index(lrclk) == get_pin_index(dclk)+1  # TODO: Support different pin arrangements
         self.notify = ThreadSafeFlag()
-        self.pin = pin
-        self.sideset = sideset
+        self.pin = din
+        self.sideset = dclk
         self._audiocore = _audiocore.Audiocore(self.pin, self.sideset, self._interrupt)
 
     def deinit(self):
@@ -40,12 +45,13 @@ class Audiocore:
 
 
 class AudioContext:
-    def __init__(self, pin, sideset):
-        self.pin = pin
-        self.sideset = sideset
+    def __init__(self, din, dclk, lrclk):
+        self.din = din
+        self.dclk = dclk
+        self.lrclk = lrclk
 
     def __enter__(self):
-        self._audiocore = Audiocore(self.pin, self.sideset)
+        self._audiocore = Audiocore(self.din, self.dclk, self.lrclk)
         return self._audiocore
 
     def __exit__(self, exc_type, exc_value, traceback):

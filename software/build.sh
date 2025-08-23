@@ -27,12 +27,19 @@ fi
 BUILDDIR=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
 FS_STAGE_DIR=$(mktemp -d)
 trap 'rm -rf $FS_STAGE_DIR' EXIT
-find src/ -iname '*.py' | cpio -pdm "$FS_STAGE_DIR"
-tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/src $BUILDDIR/filesystem.bin
-truncate -s 2M $BUILDDIR/firmware-filesystem.bin
-dd if=$BUILDDIR/firmware.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k
-dd if=$BUILDDIR/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
-$PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin $BUILDDIR/firmware-filesystem.uf2
+for hwconfig in src/hwconfig_*.py; do
+    hwconfig_base=$(basename "$hwconfig")
+    hwname=${hwconfig_base##hwconfig_}
+    hwname=${hwname%%.py}
+    find src/ -iname '*.py' \! -iname 'hwconfig_*.py' | cpio -pdm "$FS_STAGE_DIR"
+    cp "$hwconfig" "$FS_STAGE_DIR"/src/hwconfig.py
+    tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/src $BUILDDIR/filesystem.bin
+    truncate -s 2M $BUILDDIR/firmware-filesystem.bin
+    dd if=$BUILDDIR/firmware.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k
+    dd if=$BUILDDIR/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
+    $PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin $BUILDDIR/firmware-filesystem-"$hwname".uf2
+    rm -r "${FS_STAGE_DIR:?}"/*
+done
 
 echo "Output in $BUILDDIR/firmware.uf2"
-echo "Image with filesystem in $BUILDDIR/firmware-filesystem.uf2"
+echo "Images with filesystem in" ${BUILDDIR}firmware-filesystem-*.uf2

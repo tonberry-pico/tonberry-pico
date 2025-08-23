@@ -1,6 +1,6 @@
 ---
 name: Build RPi Pico firmware image
-on:
+"on":
   push:
 
 jobs:
@@ -22,4 +22,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: firmware-RPi-Pico-W-with-fs
-          path: software/lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware-filesystem.uf2
+          path: software/lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware-filesystem-*.uf2

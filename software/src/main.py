@@ -6,7 +6,6 @@ import asyncio
 import machine
 import micropython
 import time
-from machine import Pin
 from math import pi, sin, pow
 
 # Own modules
@@ -18,14 +17,23 @@ from nfc import Nfc
 from rp2_neopixel import NeoPixel
 from utils import Buttons, SDContext, TimerManager
 
+try:
+    import hwconfig
+except ImportError:
+    print("Fatal: No hwconfig.py found")
+    raise
+
 micropython.alloc_emergency_exception_buf(100)
+
+# Machine setup
+hwconfig.board_init()
 
 
 async def rainbow(np, period=10):
     def gamma(value, X=2.2):
         return min(max(int(brightness * pow(value / 255.0, X) * 255.0 + 0.5), 0), 255)
 
-    brightness = 0.5
+    brightness = 0.05
     count = 0.0
     leds = len(np)
     while True:
@@ -34,7 +42,7 @@ async def rainbow(np, period=10):
             np[i] = (gamma((sin(ofs / leds * 2 * pi) + 1) * 127),
                      gamma((sin(ofs / leds * 2 * pi + 2/3*pi) + 1) * 127),
                      gamma((sin(ofs / leds * 2 * pi + 4/3*pi) + 1) * 127))
-        count += 0.2
+        count += 0.02 * leds
         before = time.ticks_ms()
         await np.async_write()
         now = time.ticks_ms()
@@ -42,12 +50,6 @@ async def rainbow(np, period=10):
             await asyncio.sleep_ms(20 - (now - before))
 
 
-# Machine setup
-
-# Set 8 mA drive strength and fast slew rate
-machine.mem32[0x4001c004 + 6*4] = 0x67
-machine.mem32[0x4001c004 + 7*4] = 0x67
-machine.mem32[0x4001c004 + 8*4] = 0x67
 # high prio for proc 1
 machine.mem32[0x40030000 + 0x00] = 0x10
 
@@ -55,21 +57,24 @@ machine.mem32[0x40030000 + 0x00] = 0x10
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
-    pin = Pin.board.GP16
-    np = NeoPixel(pin, 10, sm=1)
+    np = NeoPixel(hwconfig.LED_DIN, hwconfig.LED_COUNT, sm=1)
     asyncio.create_task(rainbow(np))
 
     # Setup MP3 player
-    with SDContext(mosi=Pin(3), miso=Pin(4), sck=Pin(2), ss=Pin(5), baudrate=15000000), \
-         AudioContext(Pin(8), Pin(6)) as audioctx:
+    with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
+                   baudrate=15000000), \
+         AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
 
         # Setup NFC
-        reader = MFRC522(spi_id=1, sck=10, miso=12, mosi=11, cs=13, rst=9, tocard_retries=20)
+        reader = MFRC522(spi_id=hwconfig.RC522_SPIID, sck=hwconfig.RC522_SCK, miso=hwconfig.RC522_MISO,
+                         mosi=hwconfig.RC522_MOSI, cs=hwconfig.RC522_SS, rst=hwconfig.RC522_RST, tocard_retries=20)
 
         # Setup app
         deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
                                 nfcreader=lambda the_app: Nfc(reader, the_app),
-                                buttons=lambda the_app: Buttons(the_app))
+                                buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
+                                                                pin_voldown=hwconfig.BUTTON_VOLDOWN,
+                                                                pin_next=hwconfig.BUTTON_NEXT))
         the_app = app.PlayerApp(deps)
 
         # Start
@@ -80,5 +85,5 @@ def run():
 
 if __name__ == '__main__':
     if machine.Pin(17, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
-        time.sleep(5)
+        time.sleep(1)
         run()
