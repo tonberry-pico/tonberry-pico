@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2024-2025 Matthias Blankertz <matthias@blankertz.org>
 
-import aiorepl
+import aiorepl  # type: ignore
 import asyncio
 import machine
 import micropython

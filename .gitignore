@@ -3,6 +3,9 @@ hardware/tonberry-pico/tonberry-pico-backups/
 *.kicad_sch-bak
 *.kicad_sch.lck
 software/build
+software/typings
 compile_commands.json
 .dir-locals.el
 .cache
+\#*#
+__pycache__
