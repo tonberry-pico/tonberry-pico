@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
+
+from utils import BTreeDB
+
+
+class FakeDB:
+    def __init__(self, contents):
+        self.contents = contents
+        self.saved_contents = dict(contents)
+
+    def flush(self):
+        self.saved_contents = dict(self.contents)
+
+    def values(self, start_key, end_key=None, flags=None):
+        res = []
+        for key in sorted(self.contents):
+            if start_key > key:
+                continue
+            if end_key is not None and end_key < key:
+                break
+            yield self.contents[key]
+            res.append(self.contents[key])
+
+    def keys(self, start_key, end_key=None, flags=None):
+        for key in sorted(self.contents):
+            if start_key > key:
+                continue
+            if end_key is not None and end_key < key:
+                break
+            yield key
+
+    def get(self, key, default=None):
+        return self.contents.get(key, default)
+
+    def __getitem__(self, key):
+        return self.contents[key]
+
+    def __setitem__(self, key, val):
+        self.contents[key] = val
+
+    def __delitem__(self, key):
+        del self.contents[key]
+
+
+def test_playlist_load():
+    contents = {b'foo/part': b'no',
+                b'foo/playlist/0': b'track1',
+                b'foo/playlist/1': b'track2',
+                b'foo/playlisttt': b'no'
+                }
+    uut = BTreeDB(FakeDB(contents))
+    pl = uut.getPlaylistForTag(b'foo')
+    assert list(pl.getPaths()) == [b'track1', b'track2']
+    assert pl.getCurrentPath() == b'track1'
+
+
+def test_playlist_nextpath():
+    contents = FakeDB({b'foo/part': b'no',
+                       b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlisttt': b'no'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getNextPath() == b'track2'
+    assert contents.saved_contents[b'foo/playlistpos'] == b'1'
+
+
+def test_playlist_nextpath_last():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpos': b'1'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getNextPath() is None
+    assert contents.saved_contents[b'foo/playlistpos'] == b'0'
+
+
+def test_playlist_create():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpos': b'1'
+                       })
+    newplaylist = [b'never gonna give you up.mp3', b'durch den monsun.mp3']
+    uut = BTreeDB(contents)
+    new_pl = uut.createPlaylistForTag(b'foo', newplaylist)
+    assert list(new_pl.getPaths()) == newplaylist
+    assert new_pl.getCurrentPath() == newplaylist[0]
+
+
+def test_playlist_load_notexist():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpos': b'1'
+                       })
+    uut = BTreeDB(contents)
+    assert uut.getPlaylistForTag(b'notfound') is None
