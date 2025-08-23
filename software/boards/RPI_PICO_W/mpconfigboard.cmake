@@ -20,5 +20,3 @@ set(GEN_PINS_CSV_ARG --board-csv "${GEN_PINS_BOARD_CSV}")
 
 add_link_options("-Wl,--print-memory-usage")
 set(PICO_USE_FASTEST_SUPPORTED_CLOCK 1)
-
-set(MICROPY_C_HEAP_SIZE 8192)
