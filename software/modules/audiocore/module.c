@@ -50,10 +50,14 @@ static uint32_t get_fifo_read_value_blocking(struct audiocore_obj *obj)
         const long flags = save_and_disable_interrupts();
         const uint32_t value = obj->fifo_read_value;
         obj->fifo_read_value = 0;
-        restore_interrupts(flags);
-        if (value & AUDIOCORE_FIFO_DATA_FLAG)
+        if (value & AUDIOCORE_FIFO_DATA_FLAG) {
+            restore_interrupts(flags);
             return value & ~AUDIOCORE_FIFO_DATA_FLAG;
+        }
         __wfi();
+        restore_interrupts(flags);
+        __nop(); // Ensure at least two instructions between enable interrupts and subsequent disable
+        __nop();
     }
 }
 
