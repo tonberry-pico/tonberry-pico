@@ -86,6 +86,10 @@ def run():
 
 
 def builddb():
+    """
+    For testing, build a playlist db based on the previous tag directory format.
+    Can be removed once uploading files / playlist via the web api is possible.
+    """
     import os
 
     os.unlink('/sd/tonberry.db')

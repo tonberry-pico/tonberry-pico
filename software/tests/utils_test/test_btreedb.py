@@ -12,19 +12,19 @@ class FakeDB:
     def flush(self):
         self.saved_contents = dict(self.contents)
 
-    def values(self, start_key, end_key=None, flags=None):
+    def values(self, start_key=None, end_key=None, flags=None):
         res = []
         for key in sorted(self.contents):
-            if start_key > key:
+            if start_key is not None and start_key > key:
                 continue
             if end_key is not None and end_key < key:
                 break
             yield self.contents[key]
             res.append(self.contents[key])
 
-    def keys(self, start_key, end_key=None, flags=None):
+    def keys(self, start_key=None, end_key=None, flags=None):
         for key in sorted(self.contents):
-            if start_key > key:
+            if start_key is not None and start_key > key:
                 continue
             if end_key is not None and end_key < key:
                 break
@@ -88,6 +88,7 @@ def test_playlist_create():
     new_pl = uut.createPlaylistForTag(b'foo', newplaylist)
     assert list(new_pl.getPaths()) == newplaylist
     assert new_pl.getCurrentPath() == newplaylist[0]
+    assert uut.validate(True)
 
 
 def test_playlist_load_notexist():

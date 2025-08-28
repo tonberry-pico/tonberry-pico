@@ -65,7 +65,7 @@ class BTreeDB(IPlaylistDB):
 
     @staticmethod
     def _keyPlaylistEntry(tag, pos):
-        return b''.join([tag, b'/playlist/', "{:03}".format(pos).encode()])
+        return b''.join([tag, b'/playlist/', '{:05}'.format(pos).encode()])
 
     @staticmethod
     def _keyPlaylistStart(tag):
@@ -151,6 +151,64 @@ class BTreeDB(IPlaylistDB):
         self._savePlaylist(tag, entries)
         return self.getPlaylistForTag(tag)
 
+    def validate(self, dump=False):
+        """
+        Validate the structure of the playlist database.
+        """
+        result = True
+        last_tag = None
+        last_pos = None
+        index_width = None
+        for k in self.db.keys():
+            fields = k.split(b'/')
+            if len(fields) <= 1:
+                print(f'Malformed key {k!r}')
+                result = False
+            if last_tag != fields[0]:
+                last_tag = fields[0]
+                last_pos = None
+                if dump:
+                    print(f'Tag {fields[0]}')
+            if fields[1] == b'playlist':
+                if len(fields) != 3:
+                    print(f'Malformed playlist entry: {k!r}')
+                    result = False
+                    continue
+                try:
+                    idx = int(fields[2])
+                except ValueError:
+                    print(f'Malformed playlist entry: {k!r}')
+                    result = False
+                    continue
+                if index_width is not None and len(fields[2]) != index_width:
+                    print(f'Inconsistent index width for {last_tag} at {idx}')
+                    result = False
+                if (last_pos is not None and last_pos + 1 != idx) or \
+                   (last_pos is None and idx != 0):
+                    print(f'Bad playlist entry sequence for {last_tag} at {idx}')
+                    result = False
+                last_pos = idx
+                index_width = len(fields[2])
+                if dump:
+                    print(f'\tTrack {idx}: {self.db[k]!r}')
+            elif fields[1] == b'playlistpos':
+                val = self.db[k]
+                try:
+                    idx = int(val)
+                except ValueError:
+                    print(f'Malformed playlist position: {val!r}')
+                    result = False
+                    continue
+                if 0 > idx or idx > last_pos:
+                    print(f'Playlist position out of range for {last_tag}: {idx}')
+                    result = False
+                if dump:
+                    print(f'\tPosition {idx}')
+            else:
+                print(f'Unknown key {k!r}')
+                result = False
+        return result
+
 
 class BTreeFileManager:
     """
@@ -166,7 +224,9 @@ class BTreeFileManager:
             self.db_file = open(self.db_path, 'w+b')
         try:
             self.db = btree.open(self.db_file, pagesize=512, cachesize=1024)
-            return BTreeDB(self.db, lambda: self.db_file.flush())
+            btdb = BTreeDB(self.db, lambda: self.db_file.flush())
+            btdb.validate(True)  # while testing, validate and dump DB on startup
+            return btdb
         except Exception:
             self.db_file.close()
             raise
