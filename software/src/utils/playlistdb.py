@@ -92,7 +92,8 @@ class BTreeDB(IPlaylistDB):
         return self.db[pos]
 
     def _setPlaylistPos(self, tag, pos, flush=True):
-        self.db[self._keyPlaylistPos(tag)] = pos.removeprefix(self._keyPlaylistStart(tag))
+        assert pos.startswith(self._keyPlaylistStart(tag))
+        self.db[self._keyPlaylistPos(tag)] = pos[len(self._keyPlaylistStart(tag)):]
         if flush:
             self._flush()
 
