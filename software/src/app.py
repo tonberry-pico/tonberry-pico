@@ -69,7 +69,7 @@ class PlayerApp:
 
     def _set_playlist(self, tag: bytes):
         self.playlist = self.playlist_db.getPlaylistForTag(tag)
-        self._play(self.playlist.getCurrentPath())
+        self._play(self.playlist.getCurrentPath() if self.playlist is not None else None)
 
     def _play_next(self):
         if self.playlist is None:

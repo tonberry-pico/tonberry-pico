@@ -137,3 +137,21 @@ def test_playlist_seq(micropythonify, faketimermanager, monkeypatch):
         fake_mp3.track = None
         dut.onPlaybackDone()
         assert fake_mp3.track is None
+
+
+def test_playlist_unknown_tag(micropythonify, faketimermanager, monkeypatch):
+    class FakeNoPlaylistDb:
+        def getPlaylistForTag(self, tag):
+            return None
+
+    fake_db = FakeNoPlaylistDb()
+    fake_mp3 = FakeMp3Player()
+    deps = app.Dependencies(mp3player=lambda _: fake_mp3,
+                            nfcreader=lambda _: FakeNfcReader(),
+                            buttons=lambda _: FakeButtons(),
+                            playlistdb=lambda _: fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        dut.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is None
