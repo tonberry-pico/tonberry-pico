@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class Buttons:
-    def __init__(self, cb: ButtonCallback, pin_volup=17, pin_voldown=19, pin_next=18):
+    def __init__(self, cb: "ButtonCallback", pin_volup=17, pin_voldown=19, pin_next=18):
         self.VOLUP = micropython.const(1)
         self.VOLDOWN = micropython.const(2)
         self.NEXT = micropython.const(3)
