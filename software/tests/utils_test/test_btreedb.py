@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
+import pytest
 from utils import BTreeDB
 
 
@@ -17,7 +18,7 @@ class FakeDB:
         for key in sorted(self.contents):
             if start_key is not None and start_key > key:
                 continue
-            if end_key is not None and end_key < key:
+            if end_key is not None and end_key <= key:
                 break
             yield self.contents[key]
             res.append(self.contents[key])
@@ -26,7 +27,7 @@ class FakeDB:
         for key in sorted(self.contents):
             if start_key is not None and start_key > key:
                 continue
-            if end_key is not None and end_key < key:
+            if end_key is not None and end_key <= key:
                 break
             yield key
 
@@ -124,3 +125,59 @@ def test_playlist_remains_lexicographically_ordered_with_non_numeric_keys():
     assert pl.getCurrentPath() == b'trackk'
     assert pl.getNextPath() == b'trackl'
     assert pl.getNextPath() is None
+
+
+def test_playlist_starts_at_beginning_in_persist_no_mode():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpersist': b'no',
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'track1'
+    assert pl.getNextPath() == b'track2'
+    del pl
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'track1'
+
+
+@pytest.mark.parametrize("mode", [b'no', b'track'])
+def test_playlist_ignores_offset_in_other_modes(mode):
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpersist': mode,
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    pl.setPlaybackOffset(42)
+    del pl
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getPlaybackOffset() == 0
+
+
+def test_playlist_stores_offset_in_offset_mode():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpersist': b'offset',
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    pl.setPlaybackOffset(42)
+    del pl
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getPlaybackOffset() == 42
+
+
+def test_playlist_resets_offset_on_next_track():
+    contents = FakeDB({b'foo/playlist/0': b'track1',
+                       b'foo/playlist/1': b'track2',
+                       b'foo/playlistpersist': b'offset',
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    pl.setPlaybackOffset(42)
+    assert pl.getNextPath() == b'track2'
+    del pl
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'track2'
+    assert pl.getPlaybackOffset() == 0
