@@ -48,7 +48,10 @@ class PlayerApp:
         if self.current_tag is not None:
             print('Tag gone, stopping playback')
             self.current_tag = None
-            self.player.stop()
+            if self.playlist is not None:
+                pos = self.player.stop()
+                if pos is not None:
+                    self.playlist.setPlaybackOffset(pos)
 
     def onButtonPressed(self, what):
         assert self.buttons is not None
@@ -69,7 +72,8 @@ class PlayerApp:
 
     def _set_playlist(self, tag: bytes):
         self.playlist = self.playlist_db.getPlaylistForTag(tag)
-        self._play(self.playlist.getCurrentPath() if self.playlist is not None else None)
+        self._play(self.playlist.getCurrentPath() if self.playlist is not None else None,
+                   self.playlist.getPlaybackOffset() if self.playlist is not None else 0)
 
     def _play_next(self):
         if self.playlist is None:
@@ -79,7 +83,7 @@ class PlayerApp:
         if filename is None:
             self.playlist = None
 
-    def _play(self, filename: bytes | None):
+    def _play(self, filename: bytes | None, offset=0):
         if self.mp3file is not None:
             self.player.stop()
             self.mp3file.close()
@@ -87,4 +91,4 @@ class PlayerApp:
         if filename is not None:
             print(f'Playing {filename!r}')
             self.mp3file = open(filename, 'rb')
-            self.player.play(self.mp3file)
+            self.player.play(self.mp3file, offset)

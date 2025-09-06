@@ -35,7 +35,7 @@ class FakeMp3Player:
     def set_volume(self, vol: int):
         self.volume = vol
 
-    def play(self, track: FakeFile):
+    def play(self, track: FakeFile, offset: int):
         self.track = track
 
 
@@ -66,6 +66,9 @@ class FakePlaylistDb:
             if self.pos >= len(self.parent.tracklist):
                 return None
             return self.parent.tracklist[self.pos]
+
+        def getPlaybackOffset(self):
+            return 0
 
     def __init__(self, tracklist=[b'test/path.mp3']):
         self.tracklist = tracklist
