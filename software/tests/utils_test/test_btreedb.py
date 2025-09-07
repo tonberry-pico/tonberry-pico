@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
+import btree
 import pytest
 from utils import BTreeDB
 
@@ -24,12 +25,18 @@ class FakeDB:
             res.append(self.contents[key])
 
     def keys(self, start_key=None, end_key=None, flags=None):
+        keys = []
+        if flags is not None and flags & btree.DESC != 0:
+            start_key, end_key = end_key, start_key
         for key in sorted(self.contents):
             if start_key is not None and start_key > key:
                 continue
             if end_key is not None and end_key <= key:
                 break
-            yield key
+            keys.append(key)
+        if flags is not None and flags & btree.DESC != 0:
+            keys.reverse()
+        return iter(keys)
 
     def get(self, key, default=None):
         return self.contents.get(key, default)
@@ -43,11 +50,14 @@ class FakeDB:
     def __delitem__(self, key):
         del self.contents[key]
 
+    def __contains__(self, key):
+        return key in self.contents
+
 
 def test_playlist_load():
     contents = {b'foo/part': b'no',
-                b'foo/playlist/0': b'track1',
-                b'foo/playlist/1': b'track2',
+                b'foo/playlist/00000': b'track1',
+                b'foo/playlist/00001': b'track2',
                 b'foo/playlisttt': b'no'
                 }
     uut = BTreeDB(FakeDB(contents))
@@ -58,8 +68,8 @@ def test_playlist_load():
 
 def test_playlist_nextpath():
     contents = FakeDB({b'foo/part': b'no',
-                       b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+                       b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlisttt': b'no'
                        })
     uut = BTreeDB(contents)
@@ -69,8 +79,8 @@ def test_playlist_nextpath():
 
 
 def test_playlist_nextpath_last():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpos': b'1'
                        })
     uut = BTreeDB(contents)
@@ -80,8 +90,8 @@ def test_playlist_nextpath_last():
 
 
 def test_playlist_create():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpos': b'1'
                        })
     newplaylist = [b'never gonna give you up.mp3', b'durch den monsun.mp3']
@@ -93,43 +103,17 @@ def test_playlist_create():
 
 
 def test_playlist_load_notexist():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpos': b'1'
                        })
     uut = BTreeDB(contents)
     assert uut.getPlaylistForTag(b'notfound') is None
 
 
-def test_playlist_remains_lexicographically_ordered_by_key():
-    contents = FakeDB({b'foo/playlist/3': b'track3',
-                       b'foo/playlist/2': b'track2',
-                       b'foo/playlist/1': b'track1',
-                       b'foo/playlistpos': b'1'
-                       })
-    uut = BTreeDB(contents)
-    pl = uut.getPlaylistForTag(b'foo')
-    assert pl.getCurrentPath() == b'track1'
-    assert pl.getNextPath() == b'track2'
-    assert pl.getNextPath() == b'track3'
-
-
-def test_playlist_remains_lexicographically_ordered_with_non_numeric_keys():
-    contents = FakeDB({b'foo/playlist/k': b'trackk',
-                       b'foo/playlist/l': b'trackl',
-                       b'foo/playlist/i': b'tracki',
-                       b'foo/playlistpos': b'k'
-                       })
-    uut = BTreeDB(contents)
-    pl = uut.getPlaylistForTag(b'foo')
-    assert pl.getCurrentPath() == b'trackk'
-    assert pl.getNextPath() == b'trackl'
-    assert pl.getNextPath() is None
-
-
 def test_playlist_starts_at_beginning_in_persist_no_mode():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpersist': b'no',
                        })
     uut = BTreeDB(contents)
@@ -143,8 +127,8 @@ def test_playlist_starts_at_beginning_in_persist_no_mode():
 
 @pytest.mark.parametrize("mode", [b'no', b'track'])
 def test_playlist_ignores_offset_in_other_modes(mode):
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpersist': mode,
                        })
     uut = BTreeDB(contents)
@@ -156,8 +140,8 @@ def test_playlist_ignores_offset_in_other_modes(mode):
 
 
 def test_playlist_stores_offset_in_offset_mode():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpersist': b'offset',
                        })
     uut = BTreeDB(contents)
@@ -169,8 +153,8 @@ def test_playlist_stores_offset_in_offset_mode():
 
 
 def test_playlist_resets_offset_on_next_track():
-    contents = FakeDB({b'foo/playlist/0': b'track1',
-                       b'foo/playlist/1': b'track2',
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
                        b'foo/playlistpersist': b'offset',
                        })
     uut = BTreeDB(contents)

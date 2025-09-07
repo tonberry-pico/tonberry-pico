@@ -31,12 +31,13 @@ class BTreeDB(IPlaylistDB):
     PERSIST_OFFSET = b'offset'
 
     class Playlist(IPlaylist):
-        def __init__(self, parent, tag, pos, persist, shuffle):
+        def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle):
             self.parent = parent
             self.tag = tag
             self.pos = pos
             self.persist = persist
             self.shuffle = shuffle
+            self.length = self.parent._getPlaylistLength(self.tag)
 
         def getPaths(self):
             """
@@ -54,15 +55,17 @@ class BTreeDB(IPlaylistDB):
             """
             Select next track and return path.
             """
-            try:
-                self.pos = self.parent._getNextTrack(self.tag, self.pos)
-            except StopIteration:
-                self.pos = self.parent._getFirstTrack(self.tag)
-                return None
-            finally:
+            if self.pos + 1 >= self.length:
+                self.pos = 0
                 if self.persist != BTreeDB.PERSIST_NO:
                     self.parent._setPlaylistPos(self.tag, self.pos)
                     self.setPlaybackOffset(0)
+                return None
+
+            self.pos += 1
+            if self.persist != BTreeDB.PERSIST_NO:
+                self.parent._setPlaylistPos(self.tag, self.pos)
+                self.setPlaybackOffset(0)
             return self.getCurrentPath()
 
         def setPlaybackOffset(self, offset):
@@ -122,26 +125,41 @@ class BTreeDB(IPlaylistDB):
         if self.flush_func is not None:
             self.flush_func()
 
-    def _getPlaylistValueIterator(self, tag):
+    def _getPlaylistValueIterator(self, tag: bytes):
         start, end = self._keyPlaylistStartEnd(tag)
         return self.db.values(start, end)
 
-    def _getPlaylistEntry(self, _, pos):
-        return self.db[pos]
+    def _getPlaylistEntry(self, tag: bytes, pos: int) -> bytes:
+        return self.db[self._keyPlaylistEntry(tag, pos)]
 
-    def _setPlaylistPos(self, tag, pos, flush=True):
-        assert pos.startswith(self._keyPlaylistStart(tag))
-        self.db[self._keyPlaylistPos(tag)] = pos[len(self._keyPlaylistStart(tag)):]
+    def _setPlaylistPos(self, tag: bytes, pos: int, flush=True):
+        self.db[self._keyPlaylistPos(tag)] = str(pos).encode()
         if flush:
             self._flush()
 
-    def _setPlaylistPosOffset(self, tag, offset, flush=True):
+    def _setPlaylistPosOffset(self, tag: bytes, offset: int, flush=True):
         self.db[self._keyPlaylistPosOffset(tag)] = str(offset).encode()
         if flush:
             self._flush()
 
-    def _getPlaylistPosOffset(self, tag):
+    def _getPlaylistPosOffset(self, tag: bytes) -> int:
         return int(self.db.get(self._keyPlaylistPosOffset(tag), b'0'))
+
+    def _getPlaylistLength(self, tag: bytes) -> int:
+        start, end = self._keyPlaylistStartEnd(tag)
+        for k in self.db.keys(end, start, btree.DESC):
+            # There is a bug in btreedb that causes an additional key after 'end' to be returned when iterating in
+            # descending order
+            # Check for this and skip it if needed
+            elements = k.split(b'/')
+            if len(elements) >= 2 and elements[1] == b'playlist':
+                last = k
+                break
+        print(last)
+        elements = last.split(b'/')
+        if len(elements) != 3:
+            raise RuntimeError("Malformed playlist key")
+        return int(elements[2])+1
 
     def _savePlaylist(self, tag, entries, persist, shuffle, flush=True):
         self._deletePlaylist(tag, False)
@@ -159,22 +177,14 @@ class BTreeDB(IPlaylistDB):
                 del self.db[k]
             except KeyError:
                 pass
-        try:
-            del self.db[self._keyPlaylistPos(tag)]
-        except KeyError:
-            pass
+        for k in (self._keyPlaylistPos(tag), self._keyPlaylistPosOffset(tag),
+                  self._keyPlaylistPersist(tag), self._keyPlaylistShuffle(tag)):
+            try:
+                del self.db[k]
+            except KeyError:
+                pass
         if flush:
             self._flush()
-
-    def _getFirstTrack(self, tag: bytes):
-        start_key, end_key = self._keyPlaylistStartEnd(tag)
-        return next(self.db.keys(start_key, end_key))
-
-    def _getNextTrack(self, tag, pos):
-        _, end_key = self._keyPlaylistStartEnd(tag)
-        it = self.db.keys(pos, end_key)
-        next(it)
-        return next(it)
 
     def getPlaylistForTag(self, tag: bytes):
         """
@@ -182,18 +192,17 @@ class BTreeDB(IPlaylistDB):
         tag.
         """
         persist = self.db.get(self._keyPlaylistPersist(tag), self.PERSIST_TRACK)
-        if persist != self.PERSIST_NO:
-            pos = self.db.get(self._keyPlaylistPos(tag))
-        else:
-            pos = None
-        if pos is None:
+        pos = 0
+        if persist != self.PERSIST_NO and self._keyPlaylistPos(tag) in self.db:
             try:
-                pos = self._getFirstTrack(tag)
-            except StopIteration:
-                # playist does not exist
-                return None
-        else:
-            pos = self._keyPlaylistStart(tag) + pos
+                pos = int(self.db[self._keyPlaylistPos(tag)])
+            except ValueError:
+                pass
+        if self._keyPlaylistEntry(tag, 0) not in self.db:
+            # Empty playlist
+            return None
+        if self._keyPlaylistEntry(tag, pos) not in self.db:
+            pos = 0
         shuffle = self.db.get(self._keyPlaylistShuffle(tag), self.SHUFFLE_NO)
         return self.Playlist(self, tag, pos, persist, shuffle)
 
@@ -221,7 +230,6 @@ class BTreeDB(IPlaylistDB):
 
         last_tag = None
         last_pos = None
-        index_width = None
         for k in self.db.keys():
             fields = k.split(b'/')
             if len(fields) <= 1:
@@ -240,13 +248,12 @@ class BTreeDB(IPlaylistDB):
                 except ValueError:
                     fail(f'Malformed playlist entry: {k!r}')
                     continue
-                if index_width is not None and len(fields[2]) != index_width:
-                    fail(f'Inconsistent index width for {last_tag} at {idx}')
+                if len(fields[2]) != 5:
+                    fail(f'Bad index width for {last_tag} at {idx}')
                 if (last_pos is not None and last_pos + 1 != idx) or \
                    (last_pos is None and idx != 0):
                     fail(f'Bad playlist entry sequence for {last_tag} at {idx}')
                 last_pos = idx
-                index_width = len(fields[2])
                 if dump:
                     print(f'\tTrack {idx}: {self.db[k]!r}')
             elif fields[1] == b'playlistpos':
@@ -276,8 +283,11 @@ class BTreeDB(IPlaylistDB):
                 # Format TBD
                 pass
             elif fields[1] == b'playlistposoffset':
-                # Format TBD
-                pass
+                val = self.db[k]
+                try:
+                    _ = int(val)
+                except ValueError:
+                    fail(f' Bad playlistposoffset value for {last_tag}: {val!r}')
             else:
                 fail(f'Unknown key {k!r}')
         return result

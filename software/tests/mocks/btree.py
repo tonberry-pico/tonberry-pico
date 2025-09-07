@@ -19,3 +19,7 @@ class BTree:
 
 def open(dbfile) -> BTree:
     pass
+
+
+DESC = 1
+INCL = 2

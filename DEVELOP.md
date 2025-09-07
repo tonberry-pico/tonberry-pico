@@ -18,10 +18,8 @@ pip install -U micropython-rp2-pico_w-stubs --target typings
 The playlist data is stored in the btree database in a hierarchical schema. The hierarchy levels are
 separated by the '/' character.  Currently, the schema is as follows: The top level for a playlist
 is the 'tag' id encoded as a hexadecimal string. Beneath this, the 'playlist' key contains the
-elements in the playlist. The keys used for the playlist entries should be decimal integers,
-prefixed with sufficient zeros such that they are in the correct order when sorted
-lexicographically. All keys must have the same width. When writing a playlist using the playlistdb
-module, the keys are 00000, 00001, etc. by default.
+elements in the playlist. The keys used for the playlist entries must be decimal integers,
+left-padded with zeros so their length is 5 (e.g. format `{:05}`).
 
 #### Playlist modes
 
