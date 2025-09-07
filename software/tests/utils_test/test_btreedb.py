@@ -3,7 +3,17 @@
 
 import btree
 import pytest
+import time
 from utils import BTreeDB
+
+
+@pytest.fixture(autouse=True)
+def micropythonify():
+    def time_ticks_cpu():
+        return time.time_ns()
+    time.ticks_cpu = time_ticks_cpu
+    yield
+    del time.ticks_cpu
 
 
 class FakeDB:
@@ -165,3 +175,23 @@ def test_playlist_resets_offset_on_next_track():
     pl = uut.getPlaylistForTag(b'foo')
     assert pl.getCurrentPath() == b'track2'
     assert pl.getPlaybackOffset() == 0
+
+
+def test_playlist_shuffle():
+    contents_dict = {b'foo/playlistpersist': b'track',
+                     b'foo/playlistshuffle': b'yes',
+                     }
+    for i in range(256):
+        contents_dict['foo/playlist/{:05}'.format(i).encode()] = 'track{}'.format(i).encode()
+    contents = FakeDB(contents_dict)
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    shuffled = False
+    last_idx = int(pl.getCurrentPath().removeprefix(b'track'))
+    while (t := pl.getNextPath()) is not None:
+        idx = int(t.removeprefix(b'track'))
+        if idx != last_idx + 1:
+            shuffled = True
+            break
+    # A false negative ratr of 1 in 256! should be good enough for this test
+    assert shuffled
