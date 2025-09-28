@@ -8,11 +8,10 @@ from utils import get_pin_index
 
 class Audiocore:
     def __init__(self, din, dclk, lrclk):
-        assert get_pin_index(lrclk) == get_pin_index(dclk)+1  # TODO: Support different pin arrangements
+        # PIO requires sideset pins to be adjacent
+        assert get_pin_index(lrclk) == get_pin_index(dclk)+1 or get_pin_index(lrclk) == get_pin_index(dclk)-1
         self.notify = ThreadSafeFlag()
-        self.pin = din
-        self.sideset = dclk
-        self._audiocore = _audiocore.Audiocore(self.pin, self.sideset, self._interrupt)
+        self._audiocore = _audiocore.Audiocore(din, dclk, lrclk, self._interrupt)
 
     def deinit(self):
         self._audiocore.deinit()

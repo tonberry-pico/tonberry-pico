@@ -170,10 +170,11 @@ static MP_DEFINE_CONST_FUN_OBJ_2(audiocore_set_volume_obj, audiocore_set_volume)
  */
 static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 {
-    enum { ARG_pin, ARG_sideset, ARG_handler };
+    enum { ARG_pin, ARG_dclk, ARG_lrclk, ARG_handler };
     static const mp_arg_t allowed_args[] = {
         {MP_QSTR_pin, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
-        {MP_QSTR_sideset, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+        {MP_QSTR_dclk, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
+        {MP_QSTR_lrclk, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
         {MP_QSTR_handler, MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
     };
     if (initialized)
@@ -188,7 +189,8 @@ static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_ob
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     const mp_hal_pin_obj_t pin = mp_hal_get_pin_obj(args[ARG_pin].u_obj);
-    const mp_hal_pin_obj_t sideset_pin = mp_hal_get_pin_obj(args[ARG_sideset].u_obj);
+    const mp_hal_pin_obj_t dclk_pin = mp_hal_get_pin_obj(args[ARG_dclk].u_obj);
+    const mp_hal_pin_obj_t lrclk_pin = mp_hal_get_pin_obj(args[ARG_lrclk].u_obj);
     if (args[ARG_handler].u_obj != MP_OBJ_NULL) {
         obj->irq_obj = mp_irq_new(&audiocore_irq_methods, MP_OBJ_FROM_PTR(obj));
         obj->irq_obj->handler = args[ARG_handler].u_obj;
@@ -203,7 +205,14 @@ static void audiocore_init(struct audiocore_obj *obj, size_t n_args, const mp_ob
     memset(shared_context.mp3_buffer, 0, MP3_BUFFER_PREAREA + MP3_BUFFER_SIZE);
     multicore_reset_core1();
     shared_context.out_pin = pin;
-    shared_context.sideset_base = sideset_pin;
+    // PIO requires sideset pins to be adjacent, but we support both dclk first and lrclk first
+    if (lrclk_pin == dclk_pin + 1) {
+        shared_context.sideset_base = dclk_pin;
+        shared_context.sideset_dclk_first = true;
+    } else {
+        shared_context.sideset_base = lrclk_pin;
+        shared_context.sideset_dclk_first = false;
+    }
     initialized = true;
     multicore_launch_core1(&core1_main);
     uint32_t result = get_fifo_read_value_blocking(obj);

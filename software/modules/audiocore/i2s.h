@@ -8,7 +8,7 @@
 
 #define I2S_DMA_BUF_SIZE (1152)
 
-bool i2s_init(int out_pin, int sideset_base);
+bool i2s_init(int out_pin, int sideset_base, bool dclk_first);
 void i2s_deinit(void);
 
 void i2s_play(int samplerate);

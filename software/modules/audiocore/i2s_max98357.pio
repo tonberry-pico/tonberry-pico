@@ -10,7 +10,7 @@
 	.lang_opt python autopull = True
 	
 // data - DOUT
-// sideset - 2-BCLK, 1-LRCLK
+// sideset - 2-LRCLK, 1-BCLK
 
 	set	x,15			side 0
 	nop				side 1
@@ -31,6 +31,38 @@ right_loop:
 	jmp	x-- right_loop		side 3
 	out	pins, 1			side 0
 	set	x, 14			side 1
+	.wrap
+
+.program i2s_max98357_lrclk
+	.side_set 2
+
+	.lang_opt python sideset_init = pico.PIO.OUT_LOW
+	.lang_opt python out_init = pico.PIO.OUT_LOW
+	.lang_opt python out_shiftdir = pcio.PIO.SHIFT_LEFT
+	.lang_opt python autopull = True
+	
+// data - DOUT
+// sideset - 2-BCLK, 1-LRCLK
+
+	set	x,15			side 0
+	nop				side 2
+startup_loop:
+	nop				side 1
+	jmp	x-- startup_loop	side 3
+	nop				side 0
+	set	x, 14			side 2
+
+left_loop:
+	.wrap_target
+	out	pins, 1			side 0
+	jmp	x-- left_loop		side 2
+	out	pins, 1			side 1
+	set	x, 14			side 3
+right_loop:	
+	out	pins, 1			side 1
+	jmp	x-- right_loop		side 3
+	out	pins, 1			side 0
+	set	x, 14			side 2
 	.wrap
 
 % c-sdk {

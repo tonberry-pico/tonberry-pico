@@ -31,6 +31,7 @@ struct audiocore_shared_context {
 
     // Set by module.c before core1 is launched and then never changed, can be read without lock
     int out_pin, sideset_base, samplerate;
+    bool sideset_dclk_first;
 
     // Must hold lock. The indices 0..MP3_BUFFER_PREAREA-1 may only be read and written on core1 (no
     // lock needed) The buffer is aligned to, and MP3_BUFFER_PREAREA is a multiple of, the machine
