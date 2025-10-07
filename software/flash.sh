@@ -16,14 +16,15 @@ check_command lsusb
 check_command picotool
 
 DEVICEPATH=/dev/disk/by-label/RPI-RP2
-IMAGEPATH=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/firmware.uf2
+IMAGEPATH=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
+REVISION=Rev1
 
 flash_via_mountpoint()
 {
     while [ ! -e "$DEVICEPATH" ] ; do sleep 1; echo 'Waiting for RP2...'; done
     
     udisksctl mount -b "$DEVICEPATH"
-    cp "$IMAGEPATH" "$(findmnt "$DEVICEPATH" -n -o TARGET)"
+    cp "$IMAGEFILE" "$(findmnt "$DEVICEPATH" -n -o TARGET)"
 }
 
 PID="2e8a"
@@ -40,7 +41,7 @@ flash_via_picotool()
     local device="${bus_device[1]//[!0-9]/}"
     echo "Found RP2 with serial $serial on Bus $bus Device $device"
     
-    picotool load --bus "$bus" --address "$device" "$IMAGEPATH" 
+    picotool load --bus "$bus" --address "$device" "$IMAGEFILE"
 }
 
 FLASH_VIA_MOUNTPOINT=0
@@ -52,11 +53,12 @@ usage()
     echo
     echo "  -m, --via-mountpoint    Mount first found RP2 and flash image by"
     echo "                          copying to mountpoint."
+    echo "  -r, --revision <rev>    Hardware revision to flash. Default is Rev1"
     echo "  -h, --help              Print this text and exit."
     exit 2
 }
 
-PARSED_ARGUMENTS=$(getopt -a -n "$0" -o mh --long via-mountpoint,help -- "$@")
+PARSED_ARGUMENTS=$(getopt -a -n "$0" -o mhr: --long via-mountpoint,revision:,help -- "$@")
 # shellcheck disable=SC2181
 # Indirect getopt return value checking is okay here
 if [ "$?" != "0" ]; then
@@ -68,6 +70,7 @@ while :
 do
     case "$1" in
         -m | --via-mountpoint)  FLASH_VIA_MOUNTPOINT=1      ; shift   ;;
+        -r | --revision)        REVISION=$2                 ; shift 2 ;;
         -h | --help)            usage                                 ;;
         --) shift; break ;;
         *) echo "Unexpected option: $1"
@@ -79,6 +82,8 @@ if [ $# -gt 0 ]; then
     echo "Unexpected positional arguments: $1"
     usage
 fi
+
+IMAGEFILE="$IMAGEPATH"/firmware-filesystem-$REVISION.uf2
 
 if [ "$FLASH_VIA_MOUNTPOINT" -eq 0 ]; then
     flash_via_picotool
