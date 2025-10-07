@@ -8,6 +8,7 @@
 
 struct sd_context {
     size_t blocks;
+    size_t blocksize;
     bool initialized;
     bool old_card;
     bool sdhc_sdxc;

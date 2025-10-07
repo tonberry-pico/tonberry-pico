@@ -74,6 +74,7 @@ static bool sd_send_op_cond(void)
 #ifdef SD_DEBUG
                 printf("sd_init: card does not understand ACMD41, try CMD1...\n");
 #endif
+                use_acmd = false;
                 continue;
             } else if (buf != 0x01) {
                 printf("sd_init: send_op_cond failed\n");
@@ -174,6 +175,7 @@ static bool sd_read_csd(struct sd_context *sd_context)
         }
         }
         sd_context->blocks = blocks;
+        sd_context->blocksize = blocksize;
 #ifdef SD_DEBUG
         printf("CSD version %u.0, blocksize %u, blocks %u, capacity %llu MiB\n", version, blocksize, blocks,
                ((uint64_t)blocksize * blocks) / (1024 * 1024));
@@ -225,6 +227,26 @@ bool sd_init(struct sd_context *sd_context, int mosi, int miso, int sck, int ss,
         return false;
     }
 
+    if (sd_context->blocksize != SD_SECTOR_SIZE) {
+        if (sd_context->blocksize != 1024 && sd_context->blocksize != 2048) {
+            printf("sd_init: Unsupported block size %u\n", sd_context->blocksize);
+            return false;
+        }
+        // Attempt SET_BLOCKLEN command
+        uint8_t resp[1];
+        if (!sd_cmd(16, SD_SECTOR_SIZE, 1, resp)) {
+            printf("sd_init: SET_BLOCKLEN failed\n");
+            return false;
+        }
+        // Successfully set blocksize to SD_SECTOR_SIZE, adjust context
+        sd_context->blocks *= sd_context->blocksize / SD_SECTOR_SIZE;
+#ifdef SD_DEBUG
+        printf("Adjusted blocksize from %u to 512, card now has %u blocks\n", sd_context->blocksize,
+               sd_context->blocks);
+#endif
+        sd_context->blocksize = SD_SECTOR_SIZE;
+    }
+
 #ifdef SD_DEBUG
     sd_dump_cid();
 #endif
@@ -246,14 +268,24 @@ bool sd_readblock(struct sd_context *sd_context, size_t sector_num, uint8_t buff
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
 
-    return sd_cmd_read(17, sector_num, SD_SECTOR_SIZE, buffer);
+    uint32_t addr = sector_num;
+    if (!sd_context->sdhc_sdxc) {
+        // SDSC cards used byte addressing
+        addr *= SD_SECTOR_SIZE;
+    }
+    return sd_cmd_read(17, addr, SD_SECTOR_SIZE, buffer);
 }
 
 bool sd_readblock_start(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[static SD_SECTOR_SIZE])
 {
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
-    return sd_cmd_read_start(17, sector_num, SD_SECTOR_SIZE, buffer);
+    uint32_t addr = sector_num;
+    if (!sd_context->sdhc_sdxc) {
+        // SDSC cards used byte addressing
+        addr *= SD_SECTOR_SIZE;
+    }
+    return sd_cmd_read_start(17, addr, SD_SECTOR_SIZE, buffer);
 }
 
 bool sd_readblock_complete(struct sd_context *sd_context)
@@ -271,5 +303,10 @@ bool sd_writeblock(struct sd_context *sd_context, size_t sector_num, uint8_t buf
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
 
-    return sd_cmd_write(24, sector_num, SD_SECTOR_SIZE, buffer);
+    uint32_t addr = sector_num;
+    if (!sd_context->sdhc_sdxc) {
+        // SDSC cards used byte addressing
+        addr *= SD_SECTOR_SIZE;
+    }
+    return sd_cmd_write(24, addr, SD_SECTOR_SIZE, buffer);
 }
