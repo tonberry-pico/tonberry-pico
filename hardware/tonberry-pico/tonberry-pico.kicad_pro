@@ -68,7 +68,23 @@
           ""
         ],
         [
+          "items_not_allowed|122420000|136340000|8ffc6a0d-806e-4b99-922f-2baead2bd98b|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "items_not_allowed|148270000|136340000|804b9d74-91fa-4f75-bc54-8f55b801562f|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "items_not_allowed|148720706|135916802|f2c1e20e-a272-42d8-a551-3e9074b96921|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
           "nonmirrored_text_on_back_layer|210811000|131073000|e87ca627-5327-4f7e-ac1a-c1eadd662c0a|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "silk_edge_clearance|115549999|139536698|483993e4-aad9-46a1-bcd0-7f427e76aa64|cd433b4c-40ac-48cc-b03e-5acf3357d88b",
           ""
         ],
         [
@@ -268,7 +284,12 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [],
+    "erc_exclusions": [
+      [
+        "pin_to_pin|1549400|977900|f11a46f2-13fb-4d63-9b53-b032e49a375d|4b6603d6-e95b-4131-942b-96ddc8a9a606|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7",
+        "Raspberry Pi Pico W Datasheet p. 9:  If the ADC is not used or ADC performance is not critical, this pin can be connected to digital ground."
+      ]
+    ],
     "meta": {
       "version": 0
     },
@@ -456,9 +477,9 @@
       "extra_units": "error",
       "footprint_filter": "ignore",
       "footprint_link_issues": "warning",
-      "four_way_junction": "ignore",
+      "four_way_junction": "warning",
       "global_label_dangling": "warning",
-      "hier_label_mismatch": "error",
+      "hier_label_mismatch": "warning",
       "label_dangling": "error",
       "label_multiple_wires": "warning",
       "lib_symbol_issues": "warning",
@@ -473,14 +494,14 @@
       "no_connect_dangling": "warning",
       "pin_not_connected": "error",
       "pin_not_driven": "error",
-      "pin_to_pin": "warning",
+      "pin_to_pin": "error",
       "power_pin_not_driven": "error",
       "same_local_global_label": "warning",
       "similar_label_and_power": "warning",
       "similar_labels": "warning",
       "similar_power": "warning",
       "simulation_model_issue": "ignore",
-      "single_global_label": "ignore",
+      "single_global_label": "warning",
       "unannotated": "error",
       "unconnected_wire_endpoint": "warning",
       "undefined_netclass": "error",
