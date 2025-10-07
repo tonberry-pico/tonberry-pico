@@ -15,7 +15,7 @@ static unsigned multicore_fifo_push_last;
 
 static unsigned (*multicore_fifo_pop_blocking_cb)(void);
 
-bool i2s_init(int out_pin, int sideset_base)
+bool i2s_init(int out_pin, int sideset_base, bool dclk_first)
 {
     TEST_ASSERT_FALSE(i2s_initialized);
     if (i2s_init_return)

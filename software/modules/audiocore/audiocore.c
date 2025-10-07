@@ -40,7 +40,7 @@ void __time_critical_func(core1_main)(void)
 {
     uint32_t ret = 0;
     bool running = true, playing = false;
-    if (!i2s_init(shared_context.out_pin, shared_context.sideset_base)) {
+    if (!i2s_init(shared_context.out_pin, shared_context.sideset_base, shared_context.sideset_dclk_first)) {
         ret = MP_EIO;
         goto out;
     }

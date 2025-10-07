@@ -23,7 +23,7 @@ static bool sd_acmd(const uint8_t cmd, const uint32_t arg, unsigned resplen, uin
 static bool sd_early_init(void)
 {
     uint8_t buf;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 500; ++i) {
         if (sd_cmd(0, 0, 1, &buf)) {
 #ifdef SD_DEBUG
             printf("CMD0 resp %02hhx\n", buf);
@@ -63,7 +63,7 @@ static bool sd_send_op_cond(void)
 {
     uint8_t buf;
     bool use_acmd = true;
-    for (int timeout = 0; timeout < 500; ++timeout) {
+    for (int timeout = 0; timeout < 50000; ++timeout) {
         bool result = false;
         if (use_acmd)
             result = sd_acmd(41, 0x40000000, 1, &buf);

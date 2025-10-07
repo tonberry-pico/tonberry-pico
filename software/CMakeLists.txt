@@ -54,9 +54,9 @@ add_subdirectory(modules/audiocore)
 
 add_custom_target(check-format
     find . -iname '*.[ch]' -exec clang-format -Werror --dry-run {} +
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/modules
 )
 add_custom_target(clang-format
     find . -iname '*.[ch]' -exec clang-format -i {} +
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/modules
 )

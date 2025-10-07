@@ -113,17 +113,18 @@ void i2s_stop(void)
     pio_sm_clear_fifos(audiocore_pio, i2s_context.pio_sm);
 }
 
-bool i2s_init(int out_pin, int sideset_base)
+bool i2s_init(int out_pin, int sideset_base, bool dclk_first)
 {
     memset(i2s_context.dma_buf, 0, sizeof(i2s_context.dma_buf[0][0]) * AUDIO_BUFS * I2S_DMA_BUF_SIZE);
-    if (!pio_can_add_program(audiocore_pio, (const pio_program_t *)&i2s_max98357_program))
+    const pio_program_t *program = dclk_first ? &i2s_max98357_program : &i2s_max98357_lrclk_program;
+    if (!pio_can_add_program(audiocore_pio, program))
         return false;
     i2s_context.pio_sm = pio_claim_unused_sm(audiocore_pio, false);
     i2s_context.out_pin = out_pin;
     i2s_context.sideset_base = sideset_base;
     if (i2s_context.pio_sm == -1)
         return false;
-    i2s_context.pio_program_offset = pio_add_program(audiocore_pio, (const pio_program_t *)&i2s_max98357_program);
+    i2s_context.pio_program_offset = pio_add_program(audiocore_pio, program);
 
     i2s_context.dma_ch = dma_claim_unused_channel(false);
     if (i2s_context.dma_ch == -1)
