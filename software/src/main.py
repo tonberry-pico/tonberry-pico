@@ -62,7 +62,7 @@ def run():
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
-                   baudrate=15000000), \
+                   baudrate=hwconfig.SD_CLOCKRATE), \
          AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
 
         # Setup NFC
