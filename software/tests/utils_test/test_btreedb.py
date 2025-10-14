@@ -98,3 +98,29 @@ def test_playlist_load_notexist():
                        })
     uut = BTreeDB(contents)
     assert uut.getPlaylistForTag(b'notfound') is None
+
+
+def test_playlist_remains_lexicographically_ordered_by_key():
+    contents = FakeDB({b'foo/playlist/3': b'track3',
+                       b'foo/playlist/2': b'track2',
+                       b'foo/playlist/1': b'track1',
+                       b'foo/playlistpos': b'1'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'track1'
+    assert pl.getNextPath() == b'track2'
+    assert pl.getNextPath() == b'track3'
+
+
+def test_playlist_remains_lexicographically_ordered_with_non_numeric_keys():
+    contents = FakeDB({b'foo/playlist/k': b'trackk',
+                       b'foo/playlist/l': b'trackl',
+                       b'foo/playlist/i': b'tracki',
+                       b'foo/playlistpos': b'k'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'trackk'
+    assert pl.getNextPath() == b'trackl'
+    assert pl.getNextPath() is None
