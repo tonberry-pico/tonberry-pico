@@ -41,10 +41,8 @@ VBAT_ADC = Pin.board.GP26
 
 
 def board_init():
-    # Keep power turned on
+    # POWER_EN turned on in MICROPY_BOARD_STARTUP
     # TODO: Implement soft power off
-    POWER_EN.init(mode=Pin.OUT)
-    POWER_EN.value(1)
 
     # Set 8 mA drive strength and fast slew rate for SD SPI
     machine.mem32[0x4001c004 + 6*4] = 0x67

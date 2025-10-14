@@ -25,3 +25,12 @@ int mp_hal_is_pin_reserved(int n);
 #define MICROPY_HW_PIN_RESERVED(i) mp_hal_is_pin_reserved(i)
 
 #define MICROPY_PY_THREAD (0)
+
+#define TONBERRY_POWER_EN 22
+
+#define MICROPY_BOARD_STARTUP()                \
+    {                                          \
+        gpio_init(TONBERRY_POWER_EN);          \
+        gpio_set_dir(TONBERRY_POWER_EN, true); \
+        gpio_put(TONBERRY_POWER_EN, true);     \
+    }
