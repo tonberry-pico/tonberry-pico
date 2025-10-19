@@ -208,6 +208,12 @@ bool sd_cmd_read_complete(void)
     sd_spi_wait_complete();
     gpio_put(sd_spi_context.ss, true);
     sd_spi_read_blocking(0xff, &buf, 1);
+    if (sd_spi_context.sd_dma_context.read_token_buf != 0xfe) {
+#ifdef SD_DEBUG
+        printf("read failed: invalid read token %02hhx\n", sd_spi_context.sd_dma_context.read_token_buf);
+#endif
+        return false;
+    }
 #ifdef SD_READ_CRC_CHECK
     const uint16_t expect_crc = sd_crc16(sd_spi_context.sd_dma_context.len, sd_spi_context.sd_dma_context.read_buf);
     const uint16_t act_crc = sd_spi_context.sd_dma_context.crc_buf[0] << 8 | sd_spi_context.sd_dma_context.crc_buf[1];
@@ -218,7 +224,7 @@ bool sd_cmd_read_complete(void)
         return false;
     }
 #endif
-    return (sd_spi_context.sd_dma_context.read_token_buf == 0xfe);
+    return true;
 }
 
 bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen])
