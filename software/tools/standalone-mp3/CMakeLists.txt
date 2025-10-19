@@ -10,6 +10,7 @@ include(../../lib/micropython/lib/pico-sdk/pico_sdk_init.cmake)
 project(standalone_mp3)
 
 option(ENABLE_WRITE_TEST "Enable write test" OFF)
+option(ENABLE_READ_TEST "Enable read test" ON)
 option(ENABLE_PLAY_TEST "Enable mp3 playback test" OFF)
 option(ENABLE_SD_READ_CRC "Enable crc check when reading from sd card" OFF)
 option(ENABLE_SD_DEBUG "Enable debug output for sd card driver" OFF)
@@ -35,6 +36,10 @@ add_executable(standalone_mp3
 
 if(ENABLE_WRITE_TEST)
     target_compile_definitions(standalone_mp3 PRIVATE WRITE_TEST)
+endif()
+
+if(ENABLE_READ_TEST)
+    target_compile_definitions(standalone_mp3 PRIVATE READ_TEST)
 endif()
 
 if(ENABLE_PLAY_TEST)
