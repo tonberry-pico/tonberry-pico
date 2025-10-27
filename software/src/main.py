@@ -15,7 +15,7 @@ from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
-from utils import Buttons, SDContext, TimerManager
+from utils import BTreeFileManager, Buttons, SDContext, TimerManager
 
 try:
     import hwconfig
@@ -63,6 +63,7 @@ def run():
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
                    baudrate=15000000), \
+         BTreeFileManager('/sd/tonberry.db') as playlistdb, \
          AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
 
         # Setup NFC
@@ -74,7 +75,8 @@ def run():
                                 nfcreader=lambda the_app: Nfc(reader, the_app),
                                 buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
                                                                 pin_voldown=hwconfig.BUTTON_VOLDOWN,
-                                                                pin_next=hwconfig.BUTTON_NEXT))
+                                                                pin_next=hwconfig.BUTTON_NEXT),
+                                playlistdb=lambda _: playlistdb)
         the_app = app.PlayerApp(deps)
 
         # Start
@@ -83,7 +85,24 @@ def run():
         asyncio.get_event_loop().run_forever()
 
 
+def builddb():
+    """
+    For testing, build a playlist db based on the previous tag directory format.
+    Can be removed once uploading files / playlist via the web api is possible.
+    """
+    import os
+
+    os.unlink('/sd/tonberry.db')
+    with BTreeFileManager('/sd/tonberry.db') as db:
+        for name, type_, _, _ in os.ilistdir(b'/sd'):
+            if type_ != 0x4000:
+                continue
+            fl = [b'/sd/' + name + b'/' + x for x in os.listdir(b'/sd/' + name) if x.endswith(b'.mp3')]
+            db.createPlaylistForTag(name, fl)
+    os.sync()
+
+
 if __name__ == '__main__':
-    if machine.Pin(17, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
-        time.sleep(1)
+    time.sleep(1)
+    if machine.Pin(hwconfig.BUTTON_VOLUP, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
         run()

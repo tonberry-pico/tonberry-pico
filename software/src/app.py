@@ -2,12 +2,11 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 from collections import namedtuple
-import os
 import time
 from utils import TimerManager
 
 
-Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons'))
+Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb'))
 
 # Should be ~ 6dB steps
 VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
@@ -20,6 +19,7 @@ class PlayerApp:
         self.timer_manager = TimerManager()
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self)
+        self.playlist_db = deps.playlistdb(self)
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
         self.volume_pos = 3
@@ -39,17 +39,8 @@ class PlayerApp:
         if new_tag is not None:
             self.current_tag_time = time.ticks_ms()
             self.current_tag = new_tag
-            uid_str = ''.join('{:02x}'.format(x) for x in new_tag)
-            try:
-                testfiles = [f'/sd/{uid_str}/'.encode() + name for name in os.listdir(f'/sd/{uid_str}'.encode())
-                             if name.endswith(b'mp3')]
-            except OSError as ex:
-                print(f'Could not get playlist for tag {uid_str}: {ex}')
-                self.current_tag = None
-                self.player.stop()
-                return
-            testfiles.sort()
-            self._set_playlist(testfiles)
+            uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
+            self._set_playlist(uid_str)
         else:
             self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
 
@@ -60,6 +51,7 @@ class PlayerApp:
             self.player.stop()
 
     def onButtonPressed(self, what):
+        assert self.buttons is not None
         if what == self.buttons.VOLUP:
             self.volume_pos = min(self.volume_pos + 1, len(VOLUME_CURVE) - 1)
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])
@@ -70,24 +62,29 @@ class PlayerApp:
             self._play_next()
 
     def onPlaybackDone(self):
+        assert self.mp3file is not None
         self.mp3file.close()
         self.mp3file = None
         self._play_next()
 
-    def _set_playlist(self, files: list[bytes]):
-        self.playlist_pos = 0
-        self.playlist = files
-        self._play(self.playlist[self.playlist_pos])
+    def _set_playlist(self, tag: bytes):
+        self.playlist = self.playlist_db.getPlaylistForTag(tag)
+        self._play(self.playlist.getCurrentPath() if self.playlist is not None else None)
 
     def _play_next(self):
-        if self.playlist_pos + 1 < len(self.playlist):
-            self.playlist_pos += 1
-            self._play(self.playlist[self.playlist_pos])
+        if self.playlist is None:
+            return
+        filename = self.playlist.getNextPath()
+        self._play(filename)
+        if filename is None:
+            self.playlist = None
 
-    def _play(self, filename: bytes):
+    def _play(self, filename: bytes | None):
         if self.mp3file is not None:
             self.player.stop()
             self.mp3file.close()
             self.mp3file = None
-        self.mp3file = open(filename, 'rb')
-        self.player.play(self.mp3file)
+        if filename is not None:
+            print(f'Playing {filename!r}')
+            self.mp3file = open(filename, 'rb')
+            self.player.play(self.mp3file)
