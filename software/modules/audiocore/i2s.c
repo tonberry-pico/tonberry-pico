@@ -91,19 +91,21 @@ void i2s_stop(void)
 {
     if (!i2s_context.playback_active)
         return;
-    bool have_data = false;
-    do {
+    while (true) {
         const long flags = save_and_disable_interrupts();
         const int next_buf = (i2s_context.cur_playing + 1) % AUDIO_BUFS;
-        have_data = i2s_context.has_data[next_buf];
+        const bool have_data = i2s_context.has_data[next_buf];
+        if (!have_data) {
+            i2s_context.playback_active = false;
+            shared_context.underruns = 0;
+            restore_interrupts(flags);
+            break;
+        }
+        __wfi();
         restore_interrupts(flags);
-        if (have_data)
-            __wfi();
-    } while (have_data);
-    const long flags = save_and_disable_interrupts();
-    i2s_context.playback_active = false;
-    shared_context.underruns = 0;
-    restore_interrupts(flags);
+        __nop(); // Ensure at least two instructions between enable interrupts and subsequent disable
+        __nop();
+    }
     // Workaround rp2040 E13
     dma_channel_set_irq1_enabled(i2s_context.dma_ch, false);
     dma_channel_abort(i2s_context.dma_ch);
