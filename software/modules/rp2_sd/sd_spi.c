@@ -12,13 +12,15 @@
 #include <pico/time.h>
 #include <string.h>
 
+typedef enum { DMA_READ_TOKEN, DMA_READ, DMA_IDLE } sd_dma_state;
+
 struct sd_dma_context {
     uint8_t *read_buf;
     size_t len;
     uint8_t crc_buf[2];
     uint8_t read_token_buf;
     uint8_t wrdata;
-    _Atomic enum { DMA_READ_TOKEN, DMA_READ, DMA_IDLE } state;
+    _Atomic sd_dma_state state;
 };
 
 struct sd_spi_context {
@@ -111,8 +113,18 @@ static void __time_critical_func(sd_spi_dma_isr)(void)
 
 void sd_spi_wait_complete(void)
 {
-    while (sd_spi_context.sd_dma_context.state != DMA_IDLE)
+    while (true) {
+        const long flags = save_and_disable_interrupts();
+        const sd_dma_state state = sd_spi_context.sd_dma_context.state;
+        if (state == DMA_IDLE) {
+            restore_interrupts(flags);
+            return;
+        }
         __wfi();
+        restore_interrupts(flags);
+        __nop(); // Ensure at least two instructions between enable interrupts and subsequent disable
+        __nop();
+    }
 }
 
 bool sd_cmd_read_is_complete(void) { return sd_spi_context.sd_dma_context.state == DMA_IDLE; }
