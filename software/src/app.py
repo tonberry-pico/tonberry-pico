@@ -13,12 +13,36 @@ VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
 
 
 class PlayerApp:
+    class TagStateMachine:
+        def __init__(self, parent, timer_manager):
+            self.parent = parent
+            self.timer_manager = timer_manager
+            self.current_tag = None
+            self.current_tag_time = time.ticks_ms()
+
+        def onTagChange(self, new_tag):
+            if new_tag is not None:
+                self.timer_manager.cancel(self.onTagRemoveDelay)
+            if new_tag == self.current_tag:
+                return
+            # Change playlist on new tag
+            if new_tag is not None:
+                self.current_tag_time = time.ticks_ms()
+                self.current_tag = new_tag
+                self.parent.onNewTag(new_tag)
+            else:
+                self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
+
+        def onTagRemoveDelay(self):
+            if self.current_tag is not None:
+                self.current_tag = None
+                self.parent.onTagRemoved()
+
     def __init__(self, deps: Dependencies):
-        self.current_tag = None
-        self.current_tag_time = time.ticks_ms()
         self.timer_manager = TimerManager()
+        self.tag_state_machine = self.TagStateMachine(self, self.timer_manager)
         self.player = deps.mp3player(self)
-        self.nfc = deps.nfcreader(self)
+        self.nfc = deps.nfcreader(self.tag_state_machine)
         self.playlist_db = deps.playlistdb(self)
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
@@ -30,28 +54,22 @@ class PlayerApp:
             self.mp3file.close()
             self.mp3file = None
 
-    def onTagChange(self, new_tag):
-        if new_tag is not None:
-            self.timer_manager.cancel(self.onTagRemoveDelay)
-        if new_tag == self.current_tag:
-            return
-        # Change playlist on new tag
-        if new_tag is not None:
-            self.current_tag_time = time.ticks_ms()
-            self.current_tag = new_tag
-            uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
-            self._set_playlist(uid_str)
-        else:
-            self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
+    def onNewTag(self, new_tag):
+        """
+        Callback (typically called by TagStateMachine) to signal that a new tag has been presented.
+        """
+        uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
+        self._set_playlist(uid_str)
 
-    def onTagRemoveDelay(self):
-        if self.current_tag is not None:
-            print('Tag gone, stopping playback')
-            self.current_tag = None
-            if self.playlist is not None:
-                pos = self.player.stop()
-                if pos is not None:
-                    self.playlist.setPlaybackOffset(pos)
+    def onTagRemoved(self):
+        """
+        Callback (typically called by TagStateMachine) to signal that a tag has been removed.
+        """
+        print('Tag gone, stopping playback')
+        if self.playlist is not None:
+            pos = self.player.stop()
+            if pos is not None:
+                self.playlist.setPlaybackOffset(pos)
 
     def onButtonPressed(self, what):
         assert self.buttons is not None

@@ -45,7 +45,10 @@ class FakeTimerManager:
 
 
 class FakeNfcReader:
-    def __init__(self): pass
+    tag_callback = None
+
+    def __init__(self, tag_callback=None):
+        FakeNfcReader.tag_callback = tag_callback
 
 
 class FakeButtons:
@@ -100,13 +103,13 @@ def test_load_playlist_on_tag(micropythonify, faketimermanager, monkeypatch):
     fake_db = FakePlaylistDb()
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
     dut = app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is not None
         assert fake_mp3.track.filename == b'test/path.mp3'
         assert "r" in fake_mp3.track.mode
@@ -117,13 +120,13 @@ def test_playlist_seq(micropythonify, faketimermanager, monkeypatch):
     fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3', b'track3.mp3'])
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
     dut = app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is not None
         assert fake_mp3.track.filename == b'track1.mp3'
 
@@ -150,11 +153,11 @@ def test_playlist_unknown_tag(micropythonify, faketimermanager, monkeypatch):
     fake_db = FakeNoPlaylistDb()
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
     dut = app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is None
