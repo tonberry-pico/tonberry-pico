@@ -31,6 +31,9 @@ class BTreeDB(IPlaylistDB):
     PERSIST_NO = b'no'
     PERSIST_TRACK = b'track'
     PERSIST_OFFSET = b'offset'
+    DEFAULT_SETTINGS = {
+        b'tagmode': b'tagremains'
+    }
 
     class Playlist(IPlaylist):
         def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle):
@@ -269,6 +272,11 @@ class BTreeDB(IPlaylistDB):
         self._savePlaylist(tag, entries, persist, shuffle)
         return self.getPlaylistForTag(tag)
 
+    def getSetting(self, key: bytes | str) -> str:
+        if key is str:
+            key = key.encode()
+        return self.db.get(b'settings/' + key, self.DEFAULT_SETTINGS[key]).decode()
+
     def validate(self, dump=False):
         """
         Validate the structure of the playlist database.
@@ -286,6 +294,11 @@ class BTreeDB(IPlaylistDB):
             fields = k.split(b'/')
             if len(fields) <= 1:
                 fail(f'Malformed key {k!r}')
+                continue
+            if fields[0] == b'settings':
+                val = self.db[k].decode()
+                print(f'Setting {fields[1].decode()} = {val}')
+                continue
             if last_tag != fields[0]:
                 last_tag = fields[0]
                 last_pos = None
