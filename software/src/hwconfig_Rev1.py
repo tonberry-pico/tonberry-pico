@@ -9,6 +9,7 @@ SD_DI = Pin.board.GP3
 SD_DO = Pin.board.GP4
 SD_SCK = Pin.board.GP2
 SD_CS = Pin.board.GP5
+SD_CLOCKRATE = 25000000
 
 # MAX98357
 I2S_LRCLK = Pin.board.GP6
@@ -44,10 +45,11 @@ def board_init():
     # POWER_EN turned on in MICROPY_BOARD_STARTUP
     # TODO: Implement soft power off
 
-    # Set 8 mA drive strength and fast slew rate for SD SPI
-    machine.mem32[0x4001c004 + 6*4] = 0x67
-    machine.mem32[0x4001c004 + 7*4] = 0x67
-    machine.mem32[0x4001c004 + 8*4] = 0x67
+    # SD_DO / MISO input doesn't need any special configuration
+    # Set 8 mA drive strength for SCK and MOSI
+    machine.mem32[0x4001c004 + 2*4] = 0x60  # SCK
+    machine.mem32[0x4001c004 + 3*4] = 0x60  # MOSI
+    # SD_CS doesn't need any special configuration
 
     # Permanently enable amplifier
     # TODO: Implement amplifier power management

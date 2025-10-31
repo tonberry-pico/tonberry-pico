@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
-import machine
 from machine import Pin
 
 # SD Card SPI
@@ -9,6 +8,7 @@ SD_DI = Pin.board.GP3
 SD_DO = Pin.board.GP4
 SD_SCK = Pin.board.GP2
 SD_CS = Pin.board.GP5
+SD_CLOCKRATE = 15000000
 
 # MAX98357
 I2S_LRCLK = Pin.board.GP7
@@ -41,10 +41,7 @@ VBAT_ADC = Pin.board.GP26
 
 
 def board_init():
-    # Set 8 mA drive strength and fast slew rate for SD SPI
-    machine.mem32[0x4001c004 + 6*4] = 0x67
-    machine.mem32[0x4001c004 + 7*4] = 0x67
-    machine.mem32[0x4001c004 + 8*4] = 0x67
+    pass
 
 
 def get_battery_voltage():

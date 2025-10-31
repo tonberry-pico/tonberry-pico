@@ -157,12 +157,26 @@ static void write_test(struct sd_context *sd_context)
             data_buffer[i] ^= 0xff;
         }
 
-        if(!sd_writeblock(sd_context, 0, data_buffer)) {
+        if (!sd_writeblock(sd_context, 0, data_buffer)) {
             printf("sd_writeblock failed\n");
             return;
         }
         sleep_ms(1000);
     } while (data_buffer[SD_SECTOR_SIZE - 1] != 0xAA);
+}
+
+static void read_test(struct sd_context *sd_context)
+{
+    uint8_t data_buffer[512];
+    const uint64_t before = time_us_64();
+    for (int block = 0; block < 245760; ++block) {
+        if (!sd_readblock(sd_context, block, data_buffer)) {
+            printf("sd_readblock(%d) failed\n", block);
+            return;
+        }
+    }
+    const uint64_t elapsed = time_us_64() - before;
+    printf("%llu ms elapsed, %f kB/s\n", elapsed / 1000LLU, 128 * 1024.f / (elapsed / 1000000.f));
 }
 
 int main()
@@ -172,9 +186,22 @@ int main()
 
     struct sd_context sd_context;
 
-    if (!sd_init(&sd_context, 3, 4, 2, 5, 15000000)) {
+#define DRIVE_STRENGTH GPIO_DRIVE_STRENGTH_8MA
+#define SLEW_RATE GPIO_SLEW_RATE_SLOW
+
+    gpio_set_drive_strength(2, DRIVE_STRENGTH);
+    gpio_set_slew_rate(2, SLEW_RATE);
+    gpio_set_drive_strength(3, DRIVE_STRENGTH);
+    gpio_set_slew_rate(3, SLEW_RATE);
+
+    if (!sd_init(&sd_context, 3, 4, 2, 5, 25000000)) {
+        printf("sd_init failed\n");
         return 1;
     }
+
+#ifdef READ_TEST
+    read_test(&sd_context);
+#endif
 
 #ifdef WRITE_TEST
     write_test(&sd_context);

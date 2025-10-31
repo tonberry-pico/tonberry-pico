@@ -52,10 +52,12 @@ static inline void sd_spi_pio_program_init(PIO pio, uint sm, uint offset, uint m
     sm_config_set_out_shift(&c, false, true, 8);
     sm_config_set_in_shift(&c, false, true, 8);
 
+    // high speed SPI needs to bypass the input synchronizers on the MISO pin
+    hw_set_bits(&pio->input_sync_bypass, 1u << miso);
+
     const unsigned pio_freq = bitrate*4;
     const float div = clock_get_hz(clk_sys) / (float)pio_freq;
-    // for some reason, small clkdiv values (even integer ones) cause issues
-    sm_config_set_clkdiv(&c, div < 2.5f ? 2.5f : div);
+    sm_config_set_clkdiv(&c, div);
     pio_sm_init(pio, sm, offset, &c);
 }
 %}
