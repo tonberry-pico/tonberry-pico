@@ -11,6 +11,7 @@ import os
 import time
 from math import pi, sin, pow
 import ubinascii
+from microdot import Microdot
 
 # Own modules
 import app
@@ -55,6 +56,29 @@ def setup_wifi():
 
 DB_PATH = '/sd/tonberry.db'
 
+webserver = Microdot()
+
+@webserver.route('/')
+async def index(request):
+    print("wohoo, a guest :)")
+    print(f"  app: {request.app}")
+    print(f"  client: {request.client_addr}")
+    print(f"  method: {request.method}")
+    print(f"  url: {request.url}")
+    print(f"  headers: {request.headers}")
+    print(f"  cookies: {request.cookies}")
+    return "TonberryPico says 'Hello World!'"
+
+
+@webserver.route('/v1/api/playback/control', methods=['POST'])
+async def playback_control(request):
+    if not request.json:
+        return {'success': False}
+
+    # Example:
+    # curl -H "Content-Type: application/json" --data '{"action": "play", "target_type": "audio_file", "target_id": "1234"}' http://192.168.4.1/v1/api/playback/control
+    print(f'Calling {request.json["action"]} on {request.json["target_type"]} with id \
+            {request.json["target_id"]}')
 
 def run():
     asyncio.new_event_loop()
@@ -63,7 +87,9 @@ def run():
 
     # Wifi with default config
     setup_wifi()
-
+    #webserver.run(port=80)
+    server = asyncio.create_task(webserver.start_server(port=80))
+    
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
                    baudrate=hwconfig.SD_CLOCKRATE):
