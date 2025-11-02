@@ -40,6 +40,9 @@ def setup_wifi():
     wlan.config(ssid=f"TonberryPicoAP_{machine.unique_id().hex()}", security=wlan.SEC_OPEN)
     wlan.active(True)
 
+    # disable power management
+    wlan.config(pm=network.WLAN.PM_NONE)
+
 
 DB_PATH = '/sd/tonberry.db'
 
