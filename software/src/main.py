@@ -3,9 +3,11 @@
 
 import aiorepl  # type: ignore
 import asyncio
+from errno import ENOENT
 import machine
 import micropython
 import network
+import os
 import time
 from math import pi, sin, pow
 
@@ -62,6 +64,9 @@ def setup_wifi():
     wlan.active(True)
 
 
+DB_PATH = '/sd/tonberry.db'
+
+
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
@@ -73,27 +78,36 @@ def run():
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
-                   baudrate=hwconfig.SD_CLOCKRATE), \
-         BTreeFileManager('/sd/tonberry.db') as playlistdb, \
-         AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
+                   baudrate=hwconfig.SD_CLOCKRATE):
+        # Temporary hack: build database from folders if no database exists
+        # Can be removed once playlists can be created via API
+        try:
+            _ = os.stat(DB_PATH)
+        except OSError as ex:
+            if ex.errno == ENOENT:
+                print("No playlist DB found, trying to build DB from tag dirs")
+                builddb()
 
-        # Setup NFC
-        reader = MFRC522(spi_id=hwconfig.RC522_SPIID, sck=hwconfig.RC522_SCK, miso=hwconfig.RC522_MISO,
-                         mosi=hwconfig.RC522_MOSI, cs=hwconfig.RC522_SS, rst=hwconfig.RC522_RST, tocard_retries=20)
+        with BTreeFileManager(DB_PATH) as playlistdb, \
+             AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
 
-        # Setup app
-        deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
-                                nfcreader=lambda the_app: Nfc(reader, the_app),
-                                buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
-                                                                pin_voldown=hwconfig.BUTTON_VOLDOWN,
-                                                                pin_next=hwconfig.BUTTON_NEXT),
-                                playlistdb=lambda _: playlistdb)
-        the_app = app.PlayerApp(deps)
+            # Setup NFC
+            reader = MFRC522(spi_id=hwconfig.RC522_SPIID, sck=hwconfig.RC522_SCK, miso=hwconfig.RC522_MISO,
+                             mosi=hwconfig.RC522_MOSI, cs=hwconfig.RC522_SS, rst=hwconfig.RC522_RST, tocard_retries=20)
 
-        # Start
-        asyncio.create_task(aiorepl.task({'timer_manager': TimerManager(),
-                                          'app': the_app}))
-        asyncio.get_event_loop().run_forever()
+            # Setup app
+            deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
+                                    nfcreader=lambda the_app: Nfc(reader, the_app),
+                                    buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
+                                                                    pin_voldown=hwconfig.BUTTON_VOLDOWN,
+                                                                    pin_next=hwconfig.BUTTON_NEXT),
+                                    playlistdb=lambda _: playlistdb)
+            the_app = app.PlayerApp(deps)
+
+            # Start
+            asyncio.create_task(aiorepl.task({'timer_manager': TimerManager(),
+                                              'app': the_app}))
+            asyncio.get_event_loop().run_forever()
 
 
 def builddb():
@@ -101,10 +115,11 @@ def builddb():
     For testing, build a playlist db based on the previous tag directory format.
     Can be removed once uploading files / playlist via the web api is possible.
     """
-    import os
-
-    os.unlink('/sd/tonberry.db')
-    with BTreeFileManager('/sd/tonberry.db') as db:
+    try:
+        os.unlink(DB_PATH)
+    except OSError:
+        pass
+    with BTreeFileManager(DB_PATH) as db:
         for name, type_, _, _ in os.ilistdir(b'/sd'):
             if type_ != 0x4000:
                 continue
