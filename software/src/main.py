@@ -5,6 +5,7 @@ import aiorepl  # type: ignore
 import asyncio
 import machine
 import micropython
+import network
 import time
 from math import pi, sin, pow
 
@@ -54,11 +55,21 @@ async def rainbow(np, period=10):
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 
+def setup_wifi():
+    network.hostname("TonberryPico")
+    wlan = network.WLAN(network.WLAN.IF_AP)
+    wlan.config(ssid=f"TonberryPicoAP_{machine.unique_id().hex()}", security=wlan.SEC_OPEN)
+    wlan.active(True)
+
+
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
     np = NeoPixel(hwconfig.LED_DIN, hwconfig.LED_COUNT, sm=1)
     asyncio.create_task(rainbow(np))
+
+    # Wifi with default config
+    setup_wifi()
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
