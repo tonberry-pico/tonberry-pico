@@ -9,6 +9,8 @@ import micropython
 import network
 import os
 import time
+from math import pi, sin, pow
+import ubinascii
 
 # Own modules
 import app
@@ -42,6 +44,13 @@ def setup_wifi():
 
     # disable power management
     wlan.config(pm=network.WLAN.PM_NONE)
+
+    mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+    print(f"     mac: {mac}")
+    print(f" channel: {wlan.config('channel')}")
+    print(f"   essid: {wlan.config('essid')}")
+    print(f" txpower: {wlan.config('txpower')}")
+    print(f"ifconfig: {wlan.ifconfig()}")
 
 
 DB_PATH = '/sd/tonberry.db'
