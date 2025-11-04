@@ -25,13 +25,14 @@ async def index(request):
     return "TonberryPico says 'Hello World!'"
 
 
-@webapp.route('/v1/api/playback/control', methods=['POST'])
-async def playback_control(request):
-    if not request.json:
-        return {'success': False}
+@webapp.route('/api/v1/filesystem', methods=['POST'])
+async def filesystem_post(request):
+    # curl -X POST -d "burp" http://192.168.4.1/api/v1/filesystem
+    print(request)
+    return {'success': False}
 
-    # Example:
-    # curl -H "Content-Type: application/json" --data '{"action": "play", "target_type": "audio_file", "target_id": "1234"}' http://192.168.4.1/v1/api/playback/control
-    print(f'Calling {request.json["action"]} on {request.json["target_type"]} with id \
-            {request.json["target_id"]}')
 
+@webapp.route('/api/v1/playlist', methods=['POST'])
+async def playlist_post(request):
+    print(request)
+    return {'success': False}
