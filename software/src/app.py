@@ -13,13 +13,40 @@ VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
 
 
 class PlayerApp:
+    class TagStateMachine:
+        def __init__(self, parent, timer_manager):
+            self.parent = parent
+            self.timer_manager = timer_manager
+            self.current_tag = None
+            self.current_tag_time = time.ticks_ms()
+
+        def onTagChange(self, new_tag):
+            if new_tag is not None:
+                self.timer_manager.cancel(self.onTagRemoveDelay)
+            if new_tag == self.current_tag:
+                return
+            # Change playlist on new tag
+            if new_tag is not None:
+                self.current_tag_time = time.ticks_ms()
+                self.current_tag = new_tag
+                self.parent.onNewTag(new_tag)
+            else:
+                self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
+
+        def onTagRemoveDelay(self):
+            if self.current_tag is not None:
+                self.current_tag = None
+                self.parent.onTagRemoved()
+
     def __init__(self, deps: Dependencies):
-        self.current_tag = None
-        self.current_tag_time = time.ticks_ms()
         self.timer_manager = TimerManager()
+        self.tag_state_machine = self.TagStateMachine(self, self.timer_manager)
         self.player = deps.mp3player(self)
-        self.nfc = deps.nfcreader(self)
+        self.nfc = deps.nfcreader(self.tag_state_machine)
         self.playlist_db = deps.playlistdb(self)
+        self.tag_mode = self.playlist_db.getSetting('tagmode')
+        self.playing_tag = None
+        self.playlist = None
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
         self.volume_pos = 3
@@ -30,28 +57,26 @@ class PlayerApp:
             self.mp3file.close()
             self.mp3file = None
 
-    def onTagChange(self, new_tag):
-        if new_tag is not None:
-            self.timer_manager.cancel(self.onTagRemoveDelay)
-        if new_tag == self.current_tag:
-            return
-        # Change playlist on new tag
-        if new_tag is not None:
-            self.current_tag_time = time.ticks_ms()
-            self.current_tag = new_tag
-            uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
+    def onNewTag(self, new_tag):
+        """
+        Callback (typically called by TagStateMachine) to signal that a new tag has been presented.
+        """
+        uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
+        if self.tag_mode == 'tagremains' or (self.tag_mode == 'tagstartstop' and new_tag != self.playing_tag):
             self._set_playlist(uid_str)
-        else:
-            self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
+            self.playing_tag = new_tag
+        elif self.tag_mode == 'tagstartstop':
+            print('Tag presented again, stopping playback')
+            self._unset_playlist()
+            self.playing_tag = None
 
-    def onTagRemoveDelay(self):
-        if self.current_tag is not None:
+    def onTagRemoved(self):
+        """
+        Callback (typically called by TagStateMachine) to signal that a tag has been removed.
+        """
+        if self.tag_mode == 'tagremains':
             print('Tag gone, stopping playback')
-            self.current_tag = None
-            if self.playlist is not None:
-                pos = self.player.stop()
-                if pos is not None:
-                    self.playlist.setPlaybackOffset(pos)
+            self._unset_playlist()
 
     def onButtonPressed(self, what):
         assert self.buttons is not None
@@ -71,9 +96,17 @@ class PlayerApp:
         self._play_next()
 
     def _set_playlist(self, tag: bytes):
+        self._unset_playlist()
         self.playlist = self.playlist_db.getPlaylistForTag(tag)
         self._play(self.playlist.getCurrentPath() if self.playlist is not None else None,
                    self.playlist.getPlaybackOffset() if self.playlist is not None else 0)
+
+    def _unset_playlist(self):
+        if self.playlist is not None:
+            pos = self.player.stop()
+            if pos is not None:
+                self.playlist.setPlaybackOffset(pos)
+            self.playlist = None
 
     def _play_next(self):
         if self.playlist is None:
@@ -82,6 +115,7 @@ class PlayerApp:
         self._play(filename)
         if filename is None:
             self.playlist = None
+            self.playing_tag = None
 
     def _play(self, filename: bytes | None, offset=0):
         if self.mp3file is not None:

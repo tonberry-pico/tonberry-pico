@@ -38,14 +38,23 @@ class FakeMp3Player:
     def play(self, track: FakeFile, offset: int):
         self.track = track
 
+    def stop(self):
+        self.track = None
+
 
 class FakeTimerManager:
     def __init__(self): pass
     def cancel(self, timer): pass
 
+    def schedule(self, when, what):
+        what()
+
 
 class FakeNfcReader:
-    def __init__(self): pass
+    tag_callback = None
+
+    def __init__(self, tag_callback=None):
+        FakeNfcReader.tag_callback = tag_callback
 
 
 class FakeButtons:
@@ -76,6 +85,11 @@ class FakePlaylistDb:
     def getPlaylistForTag(self, tag: bytes):
         return self.FakePlaylist(self)
 
+    def getSetting(self, key: bytes | str):
+        if key == 'tagmode':
+            return 'tagremains'
+        return None
+
 
 def fake_open(filename, mode):
     return FakeFile(filename, mode)
@@ -100,13 +114,13 @@ def test_load_playlist_on_tag(micropythonify, faketimermanager, monkeypatch):
     fake_db = FakePlaylistDb()
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
-    dut = app.PlayerApp(deps)
+    app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is not None
         assert fake_mp3.track.filename == b'test/path.mp3'
         assert "r" in fake_mp3.track.mode
@@ -117,13 +131,13 @@ def test_playlist_seq(micropythonify, faketimermanager, monkeypatch):
     fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3', b'track3.mp3'])
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
     dut = app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is not None
         assert fake_mp3.track.filename == b'track1.mp3'
 
@@ -147,14 +161,88 @@ def test_playlist_unknown_tag(micropythonify, faketimermanager, monkeypatch):
         def getPlaylistForTag(self, tag):
             return None
 
+        def getSetting(self, key: bytes | str):
+            return None
+
     fake_db = FakeNoPlaylistDb()
     fake_mp3 = FakeMp3Player()
     deps = app.Dependencies(mp3player=lambda _: fake_mp3,
-                            nfcreader=lambda _: FakeNfcReader(),
+                            nfcreader=lambda x: FakeNfcReader(x),
                             buttons=lambda _: FakeButtons(),
                             playlistdb=lambda _: fake_db)
-    dut = app.PlayerApp(deps)
+    app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
-        dut.onTagChange([23, 42, 1, 2, 3])
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
         assert fake_mp3.track is None
+
+
+def test_tagmode_startstop(micropythonify, faketimermanager, monkeypatch):
+    class MyFakePlaylistDb(FakePlaylistDb):
+        def __init__(self, tracklist=[b'test/path.mp3']):
+            super().__init__(tracklist)
+
+        def getSetting(self, key: bytes | str):
+            if key == 'tagmode':
+                return 'tagstartstop'
+            return None
+
+    fake_db = MyFakePlaylistDb()
+    fake_mp3 = FakeMp3Player()
+    deps = app.Dependencies(mp3player=lambda _: fake_mp3,
+                            nfcreader=lambda x: FakeNfcReader(x),
+                            buttons=lambda _: FakeButtons(),
+                            playlistdb=lambda _: fake_db)
+    app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        # Present tag to start playback
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'test/path.mp3'
+        # Removing tag should not stop playback
+        FakeNfcReader.tag_callback.onTagChange(None)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'test/path.mp3'
+        # Presenting tag should stop playback
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is None
+        # Nothing should change here
+        FakeNfcReader.tag_callback.onTagChange(None)
+        assert fake_mp3.track is None
+        # Presenting tag again should start playback again
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'test/path.mp3'
+
+
+def test_tagmode_remains(micropythonify, faketimermanager, monkeypatch):
+    class MyFakePlaylistDb(FakePlaylistDb):
+        def __init__(self, tracklist=[b'test/path.mp3']):
+            super().__init__(tracklist)
+
+        def getSetting(self, key: bytes | str):
+            if key == 'tagmode':
+                return 'tagremains'
+            return None
+
+    fake_db = MyFakePlaylistDb()
+    fake_mp3 = FakeMp3Player()
+    deps = app.Dependencies(mp3player=lambda _: fake_mp3,
+                            nfcreader=lambda x: FakeNfcReader(x),
+                            buttons=lambda _: FakeButtons(),
+                            playlistdb=lambda _: fake_db)
+    app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        # Present tag to start playback
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'test/path.mp3'
+        # Remove tag to stop playback
+        FakeNfcReader.tag_callback.onTagChange(None)
+        assert fake_mp3.track is None
+        # Presenting tag again should start playback again
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'test/path.mp3'
