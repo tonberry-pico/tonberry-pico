@@ -21,14 +21,19 @@ class MP3Player:
         self.mp3task = None
         self.volume = 128
         self.cb = cb
+        self.pos = 0
 
-    def play(self, stream):
+    def play(self, stream, offset=0):
         """
         Play from byte stream.
+        If offset > 0, discard the first offset bytes
         """
         if self.mp3task is not None:
             self.mp3task.cancel()
             self.mp3task = None
+        if offset > 0:
+            stream.seek(offset, 1)
+        self.pos = offset
         self.mp3task = asyncio.create_task(self._play_task(stream))
 
     def stop(self):
@@ -38,6 +43,8 @@ class MP3Player:
         if self.mp3task is not None:
             self.mp3task.cancel()
             self.mp3task = None
+            return self.pos
+        return None
 
     def set_volume(self, volume: int):
         """
@@ -60,6 +67,7 @@ class MP3Player:
                     # End of file
                     break
                 _, _, underruns = await self.audiocore.async_put(data[:bytes_read])
+                self.pos += bytes_read
                 if underruns > known_underruns:
                     print(f"{underruns:x}")
                     known_underruns = underruns
