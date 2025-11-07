@@ -6262,7 +6262,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical"
 			(at 207.01 49.53 0)
 			(effects
 				(font
@@ -6961,7 +6961,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline_Wide"
 			(at 58.42 172.085 0)
 			(effects
 				(font
@@ -7082,8 +7082,8 @@
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(on_board no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "6107dfa8-3a58-4296-84b3-7c3671cb0432")
 		(property "Reference" "SW3"
@@ -7150,8 +7150,8 @@
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(on_board no)
+		(dnp yes)
 		(uuid "623caba9-5088-4f71-b179-4289ab57e20f")
 		(property "Reference" "SW4"
 			(at 270.51 96.52 0)
@@ -7237,7 +7237,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+		(property "Footprint" "PCM_JLCPCB:SW_TS-1088-AR02016"
 			(at 266.7 20.32 0)
 			(effects
 				(font
@@ -7733,8 +7733,8 @@
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(on_board no)
+		(dnp yes)
 		(uuid "79f78486-f390-4ddb-b9f4-4a3a2c11d855")
 		(property "Reference" "SW1"
 			(at 270.51 110.49 0)
@@ -7800,8 +7800,8 @@
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(on_board no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "7cf33776-e3ad-49e6-8da4-da9b4c4012c2")
 		(property "Reference" "SW2"
@@ -8156,7 +8156,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Modules:AZ_Delivery_RC522"
+		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x08_P2.54mm_Vertical"
 			(at 74.93 90.17 0)
 			(effects
 				(font
@@ -8311,7 +8311,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline"
+		(property "Footprint" "Package_TO_SOT_THT:TO-92_Inline_Wide"
 			(at 46.99 159.385 0)
 			(effects
 				(font
@@ -9580,8 +9580,8 @@
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(on_board no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "fb95655b-d8ba-47f5-91f3-286848a1e70f")
 		(property "Reference" "SW6"
@@ -9814,7 +9814,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical"
+		(property "Footprint" "Connector_JST:JST_XH_B6B-XH-A_1x06_P2.50mm_Vertical"
 			(at 271.78 80.01 0)
 			(effects
 				(font
