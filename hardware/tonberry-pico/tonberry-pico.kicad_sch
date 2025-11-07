@@ -176,7 +176,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector_Generic:Conn_01x05"
+		(symbol "Connector_Generic:Conn_01x06"
 			(pin_names
 				(offset 1.016)
 				(hide yes)
@@ -192,8 +192,8 @@
 					)
 				)
 			)
-			(property "Value" "Conn_01x05"
-				(at 0 -7.62 0)
+			(property "Value" "Conn_01x06"
+				(at 0 -10.16 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -218,7 +218,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(property "Description" "Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"
 				(at 0 0 0)
 				(effects
 					(font
@@ -245,10 +245,10 @@
 					(hide yes)
 				)
 			)
-			(symbol "Conn_01x05_1_1"
+			(symbol "Conn_01x06_1_1"
 				(rectangle
 					(start -1.27 6.35)
-					(end 1.27 -6.35)
+					(end 1.27 -8.89)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -304,6 +304,17 @@
 				(rectangle
 					(start -1.27 -4.953)
 					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -7.493)
+					(end 0 -7.747)
 					(stroke
 						(width 0.1524)
 						(type default)
@@ -395,6 +406,24 @@
 						)
 					)
 					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -7.62 0)
+					(length 3.81)
+					(name "Pin_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3809,7 +3838,7 @@
 	)
 	(rectangle
 		(start 242.57 60.96)
-		(end 283.21 154.94)
+		(end 283.21 163.83)
 		(stroke
 			(width 0)
 			(type default)
@@ -3928,6 +3957,12 @@
 		(uuid "7b8323c0-6656-4c4e-b086-636ff2b9c6b7")
 	)
 	(junction
+		(at 276.86 148.59)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9a1919a6-5883-47bb-82e5-3e3ecca52cb1")
+	)
+	(junction
 		(at 55.88 45.72)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4004,10 +4039,6 @@
 	(no_connect
 		(at 132.08 41.91)
 		(uuid "327eca18-19ed-4df2-b4a4-b6473b4637be")
-	)
-	(no_connect
-		(at 177.8 59.69)
-		(uuid "476000a3-9e7f-4cbf-9a8d-0e319caba0cd")
 	)
 	(no_connect
 		(at 177.8 69.85)
@@ -4291,6 +4322,16 @@
 	)
 	(wire
 		(pts
+			(xy 276.86 148.59) (xy 276.86 151.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "382ff189-be47-4469-ba80-056083381655")
+	)
+	(wire
+		(pts
 			(xy 254 138.43) (xy 265.43 138.43)
 		)
 		(stroke
@@ -4391,6 +4432,16 @@
 	)
 	(wire
 		(pts
+			(xy 275.59 148.59) (xy 276.86 148.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4c57d923-2d70-4cfe-aa54-f3da164b16e8")
+	)
+	(wire
+		(pts
 			(xy 276.86 128.27) (xy 276.86 138.43)
 		)
 		(stroke
@@ -4411,6 +4462,16 @@
 	)
 	(wire
 		(pts
+			(xy 254 87.63) (xy 266.7 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "50622824-c775-4a38-abd2-79f7254111d1")
+	)
+	(wire
+		(pts
 			(xy 85.09 170.18) (xy 72.39 170.18)
 		)
 		(stroke
@@ -4421,7 +4482,7 @@
 	)
 	(wire
 		(pts
-			(xy 276.86 138.43) (xy 276.86 139.7)
+			(xy 276.86 138.43) (xy 276.86 148.59)
 		)
 		(stroke
 			(width 0)
@@ -4811,6 +4872,16 @@
 	)
 	(wire
 		(pts
+			(xy 177.8 59.69) (xy 182.88 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9d9ed882-a31b-445f-833c-142b7ba4e54b")
+	)
+	(wire
+		(pts
 			(xy 49.53 162.56) (xy 49.53 190.5)
 		)
 		(stroke
@@ -5168,6 +5239,16 @@
 			(type default)
 		)
 		(uuid "ccf59af6-59fd-48d7-a33f-49c9aeb1ece9")
+	)
+	(wire
+		(pts
+			(xy 254 148.59) (xy 265.43 148.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cdc6967b-fa8e-4d0e-8256-ef9790895e47")
 	)
 	(wire
 		(pts
@@ -5713,6 +5794,28 @@
 			)
 		)
 	)
+	(global_label "BUTTON4"
+		(shape output)
+		(at 254 87.63 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "21ff2bc3-e911-4f23-a993-f08a650905a9")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 242.6086 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "BUTTON1"
 		(shape output)
 		(at 254 80.01 180)
@@ -5731,6 +5834,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "BUTTON4"
+		(shape input)
+		(at 182.88 59.69 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2736ef81-384c-4324-a05c-697c55fa029e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 194.2714 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -5770,6 +5895,28 @@
 		(uuid "3b814616-5bc4-44ed-90b6-070209f399c3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 242.6086 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "BUTTON4"
+		(shape output)
+		(at 254 148.59 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "47d67395-d5c6-4e13-8fd7-2f3ddfb71aa2")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 242.6086 148.59 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6115,7 +6262,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical"
 			(at 207.01 49.53 0)
 			(effects
 				(font
@@ -7787,7 +7934,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 276.86 139.7 0)
+		(at 276.86 151.13 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7796,7 +7943,7 @@
 		(fields_autoplaced yes)
 		(uuid "7f17a4cc-3063-4ad7-9820-0d414285324e")
 		(property "Reference" "#PWR013"
-			(at 276.86 146.05 0)
+			(at 276.86 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7805,7 +7952,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 276.86 144.78 0)
+			(at 276.86 156.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7813,7 +7960,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 276.86 139.7 0)
+			(at 276.86 151.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7822,7 +7969,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 276.86 139.7 0)
+			(at 276.86 151.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7831,7 +7978,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 276.86 139.7 0)
+			(at 276.86 151.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9428,6 +9575,74 @@
 		)
 	)
 	(symbol
+		(lib_id "Switch:SW_Push")
+		(at 270.51 148.59 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "fb95655b-d8ba-47f5-91f3-286848a1e70f")
+		(property "Reference" "SW6"
+			(at 270.51 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SW_Push"
+			(at 270.51 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Button_Switch_THT:Push_E-Switch_KS01Q01"
+			(at 270.51 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 270.51 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Push button switch, generic, two pins"
+			(at 270.51 148.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6694cff6-47a5-4135-b781-b53e5eb0d46c")
+		)
+		(pin "2"
+			(uuid "aa2c7820-7193-44e1-aac3-be02505e4c11")
+		)
+		(instances
+			(project "tonberry-pico"
+				(path "/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7"
+					(reference "SW6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
 		(at 115.57 31.75 90)
 		(unit 1)
@@ -9572,7 +9787,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x05")
+		(lib_id "Connector_Generic:Conn_01x06")
 		(at 271.78 80.01 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -9582,7 +9797,7 @@
 		(fields_autoplaced yes)
 		(uuid "fccc1f29-a663-4617-8514-4cf1edd994cd")
 		(property "Reference" "J7"
-			(at 274.32 78.7399 0)
+			(at 274.32 80.0099 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9591,7 +9806,7 @@
 			)
 		)
 		(property "Value" "Buttons"
-			(at 274.32 81.2799 0)
+			(at 274.32 82.5499 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9599,7 +9814,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_PinSocket_2.54mm:PinSocket_1x05_P2.54mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical"
 			(at 271.78 80.01 0)
 			(effects
 				(font
@@ -9617,7 +9832,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"
+		(property "Description" "Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 271.78 80.01 0)
 			(effects
 				(font
@@ -9640,6 +9855,9 @@
 		)
 		(pin "1"
 			(uuid "46257db4-53cd-407e-8cb7-103df4c3a13d")
+		)
+		(pin "6"
+			(uuid "cabc7efd-b7fb-49c1-8a3e-beca01096a1a")
 		)
 		(instances
 			(project "tonberry-pico"

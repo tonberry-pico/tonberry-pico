@@ -80,7 +80,7 @@
           ""
         ],
         [
-          "nonmirrored_text_on_back_layer|210811000|131073000|e87ca627-5327-4f7e-ac1a-c1eadd662c0a|00000000-0000-0000-0000-000000000000",
+          "nonmirrored_text_on_back_layer|211709000|131955000|e87ca627-5327-4f7e-ac1a-c1eadd662c0a|00000000-0000-0000-0000-000000000000",
           ""
         ],
         [
@@ -224,7 +224,8 @@
         0.0,
         0.2032,
         0.4064,
-        0.508
+        0.508,
+        0.75
       ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
