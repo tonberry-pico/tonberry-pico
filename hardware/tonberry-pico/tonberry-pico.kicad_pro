@@ -257,12 +257,7 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [
-      [
-        "pin_to_pin|1549400|977900|f11a46f2-13fb-4d63-9b53-b032e49a375d|4b6603d6-e95b-4131-942b-96ddc8a9a606|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7|/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7",
-        "Raspberry Pi Pico W Datasheet p. 9:  If the ADC is not used or ADC performance is not critical, this pin can be connected to digital ground."
-      ]
-    ],
+    "erc_exclusions": [],
     "meta": {
       "version": 0
     },
