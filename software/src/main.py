@@ -9,7 +9,6 @@ import micropython
 import network
 import os
 import time
-from math import pi, sin, pow
 
 # Own modules
 import app
@@ -18,7 +17,7 @@ from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
-from utils import BTreeFileManager, Buttons, SDContext, TimerManager
+from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager
 
 try:
     import hwconfig
@@ -30,28 +29,6 @@ micropython.alloc_emergency_exception_buf(100)
 
 # Machine setup
 hwconfig.board_init()
-
-
-async def rainbow(np, period=10):
-    def gamma(value, X=2.2):
-        return min(max(int(brightness * pow(value / 255.0, X) * 255.0 + 0.5), 0), 255)
-
-    brightness = 0.05
-    count = 0.0
-    leds = len(np)
-    while True:
-        for i in range(leds):
-            ofs = (count + i) % leds
-            np[i] = (gamma((sin(ofs / leds * 2 * pi) + 1) * 127),
-                     gamma((sin(ofs / leds * 2 * pi + 2/3*pi) + 1) * 127),
-                     gamma((sin(ofs / leds * 2 * pi + 4/3*pi) + 1) * 127))
-        count += 0.02 * leds
-        before = time.ticks_ms()
-        await np.async_write()
-        now = time.ticks_ms()
-        if before + 20 > now:
-            await asyncio.sleep_ms(20 - (now - before))
-
 
 # high prio for proc 1
 machine.mem32[0x40030000 + 0x00] = 0x10
@@ -71,7 +48,6 @@ def run():
     asyncio.new_event_loop()
     # Setup LEDs
     np = NeoPixel(hwconfig.LED_DIN, hwconfig.LED_COUNT, sm=1)
-    asyncio.create_task(rainbow(np))
 
     # Wifi with default config
     setup_wifi()
@@ -101,7 +77,8 @@ def run():
                                     buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
                                                                     pin_voldown=hwconfig.BUTTON_VOLDOWN,
                                                                     pin_next=hwconfig.BUTTON_NEXT),
-                                    playlistdb=lambda _: playlistdb)
+                                    playlistdb=lambda _: playlistdb,
+                                    leds=lambda _: LedManager(np))
             the_app = app.PlayerApp(deps)
 
             # Start
