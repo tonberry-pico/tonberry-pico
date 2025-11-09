@@ -6,7 +6,7 @@ import time
 from utils import TimerManager
 
 
-Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'leds'))
+Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds'))
 
 # Should be ~ 6dB steps
 VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
@@ -44,6 +44,7 @@ class PlayerApp:
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self.tag_state_machine)
         self.playlist_db = deps.playlistdb(self)
+        self.hwconfig = deps.hwconfig(self)
         self.leds = deps.leds(self)
         self.tag_mode = self.playlist_db.getSetting('tagmode')
         self.playing_tag = None
@@ -97,6 +98,13 @@ class PlayerApp:
         self.mp3file = None
         self._play_next()
 
+    def onIdleTimeout(self):
+        if self.hwconfig.get_on_battery():
+            self.hwconfig.power_off()
+        else:
+            # Check again in a minute
+            self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
+
     def _set_playlist(self, tag: bytes):
         if self.playlist is not None:
             pos = self.player.stop()
@@ -136,7 +144,9 @@ class PlayerApp:
             self._onActive()
 
     def _onIdle(self):
+        self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
         self.leds.set_state(self.leds.IDLE)
 
     def _onActive(self):
+        self.timer_manager.cancel(self.onIdleTimeout)
         self.leds.set_state(self.leds.PLAYING)

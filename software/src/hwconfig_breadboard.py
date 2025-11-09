@@ -47,3 +47,12 @@ def board_init():
 def get_battery_voltage():
     # Not supported on breadboard
     return None
+
+
+def power_off():
+    # Not supported on breadboard
+    pass
+
+
+def get_on_battery():
+    return False

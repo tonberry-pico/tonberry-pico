@@ -39,6 +39,7 @@ BUTTON_POWER = Pin.board.GP21
 # Power
 POWER_EN = Pin.board.GP22
 VBAT_ADC = Pin.board.GP26
+VBUS_DET = Pin.board.WL_GPIO2
 
 
 def board_init():
@@ -61,3 +62,13 @@ def get_battery_voltage():
     adc = machine.ADC(VBAT_ADC)     # create ADC object on ADC pin
     battv = adc.read_u16()/65535.0*3.3*2
     return battv
+
+
+def power_off():
+    POWER_EN.init(mode=Pin.OUT)
+    POWER_EN.value(0)
+
+
+def get_on_battery():
+    vbus = VBUS_DET.value()
+    return not vbus

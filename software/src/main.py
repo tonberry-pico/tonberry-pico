@@ -78,6 +78,7 @@ def run():
                                                                     pin_voldown=hwconfig.BUTTON_VOLDOWN,
                                                                     pin_next=hwconfig.BUTTON_NEXT),
                                     playlistdb=lambda _: playlistdb,
+                                    hwconfig=lambda _: hwconfig,
                                     leds=lambda _: LedManager(np))
             the_app = app.PlayerApp(deps)
 

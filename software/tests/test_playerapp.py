@@ -101,6 +101,18 @@ class FakePlaylistDb:
         return None
 
 
+class FakeHwconfig:
+    def __init__(self):
+        self.powered = True
+        self.on_battery = False
+
+    def power_off(self):
+        self.powered = False
+
+    def get_on_battery(self):
+        return self.on_battery
+
+
 class FakeLeds:
     IDLE = 0
     PLAYING = 1
@@ -124,11 +136,12 @@ def faketimermanager(monkeypatch):
 
 
 def _makedeps(mp3player=FakeMp3Player, nfcreader=FakeNfcReader, buttons=FakeButtons,
-              playlistdb=FakePlaylistDb, leds=FakeLeds):
+              playlistdb=FakePlaylistDb, hwconfig=FakeHwconfig, leds=FakeLeds):
     return app.Dependencies(mp3player=lambda _: mp3player() if callable(mp3player) else mp3player,
                             nfcreader=lambda x: nfcreader(x) if callable(nfcreader) else nfcreader,
                             buttons=lambda _: buttons() if callable(buttons) else buttons,
                             playlistdb=lambda _: playlistdb() if callable(playlistdb) else playlistdb,
+                            hwconfig=lambda _: hwconfig() if callable(hwconfig) else hwconfig,
                             leds=lambda _: leds() if callable(leds) else leds)
 
 
@@ -278,3 +291,32 @@ def test_led_state(micropythonify, faketimermanager, monkeypatch):
         FakeNfcReader.tag_callback.onTagChange(None)
         faketimermanager.testing_run_queued()
         assert fake_leds.state == FakeLeds.IDLE
+
+
+def test_idle_shutdown_after_start(micropythonify, faketimermanager, monkeypatch):
+    fake_hwconfig = FakeHwconfig()
+    fake_hwconfig.on_battery = True
+    deps = _makedeps(hwconfig=fake_hwconfig)
+    app.PlayerApp(deps)
+    assert fake_hwconfig.powered
+    faketimermanager.testing_run_queued()
+    assert not fake_hwconfig.powered
+
+
+def test_idle_shutdown_after_playback(micropythonify, faketimermanager, monkeypatch):
+    fake_hwconfig = FakeHwconfig()
+    fake_hwconfig.on_battery = True
+    deps = _makedeps(hwconfig=fake_hwconfig)
+    app.PlayerApp(deps)
+    assert fake_hwconfig.powered
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        faketimermanager.testing_run_queued()
+        assert fake_hwconfig.powered
+        # Stop playback
+        FakeNfcReader.tag_callback.onTagChange(None)
+        faketimermanager.testing_run_queued()
+        # Elapse idle timer
+        faketimermanager.testing_run_queued()
+        assert not fake_hwconfig.powered
