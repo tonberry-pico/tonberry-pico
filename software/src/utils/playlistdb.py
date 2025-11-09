@@ -209,7 +209,6 @@ class BTreeDB(IPlaylistDB):
             if len(elements) >= 2 and elements[1] == b'playlist':
                 last = k
                 break
-        print(last)
         elements = last.split(b'/')
         if len(elements) != 3:
             raise RuntimeError("Malformed playlist key")
@@ -273,7 +272,7 @@ class BTreeDB(IPlaylistDB):
         return self.getPlaylistForTag(tag)
 
     def getSetting(self, key: bytes | str) -> str:
-        if key is str:
+        if type(key) is str:
             key = key.encode()
         return self.db.get(b'settings/' + key, self.DEFAULT_SETTINGS[key]).decode()
 
