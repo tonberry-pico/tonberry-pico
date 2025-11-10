@@ -7,6 +7,13 @@
 		(legacy_teardrops no)
 	)
 	(paper "A4")
+	(title_block
+		(title "Tonberry Pico")
+		(date "2025-11-08")
+		(rev "1.2")
+		(comment 1 "Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>")
+		(comment 2 "SPDX-License-Identifier: MIT")
+	)
 	(layers
 		(0 "F.Cu" signal)
 		(2 "B.Cu" mixed)
@@ -3741,6 +3748,7 @@
 		)
 	)
 	(footprint "MountingHole:MountingHole_3.2mm_M3_DIN965"
+		(locked yes)
 		(layer "F.Cu")
 		(uuid "54d1f803-c9b0-49a9-8b49-c6687a8f5cf9")
 		(at 212.725 41.275)
@@ -4973,6 +4981,7 @@
 		)
 	)
 	(footprint "MountingHole:MountingHole_3.2mm_M3_DIN965"
+		(locked yes)
 		(layer "F.Cu")
 		(uuid "7f0f86ef-4e2d-4fe7-b84d-c11141395907")
 		(at 212.725 88.265)
@@ -5389,6 +5398,7 @@
 		)
 	)
 	(footprint "MountingHole:MountingHole_3.2mm_M3_DIN965"
+		(locked yes)
 		(layer "F.Cu")
 		(uuid "9810a3ba-e3fe-4afe-955a-bea6c56712c1")
 		(at 121.3 41.1)
@@ -8050,7 +8060,7 @@
 			(at 0 -5.079999 90)
 			(layer "F.SilkS")
 			(hide yes)
-			(uuid "4b16e898-9d5b-456e-8165-a099fb109301")
+			(uuid "ccecb3f2-7bc3-4de2-9812-72c28985e8cf")
 			(effects
 				(font
 					(size 1 1)
@@ -8062,7 +8072,7 @@
 			(at 0 5.079999 90)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "526008c5-f82d-43f2-adbf-9cd0db198355")
+			(uuid "d79f04ef-4e69-47c2-859b-f131b21c6bcd")
 			(effects
 				(font
 					(size 1 1)
@@ -8075,7 +8085,7 @@
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "f8727fd2-04fc-4f4a-9a29-34afa5cb575c")
+			(uuid "6aafb339-aad3-4590-925c-31ce3137da54")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8088,7 +8098,7 @@
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "555548ae-4f9a-4484-9e17-bc7591d12cd9")
+			(uuid "c18dac1e-19cb-4105-be2a-0fed28cf8756")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9123,6 +9133,7 @@
 		)
 	)
 	(footprint "MountingHole:MountingHole_3.2mm_M3_DIN965"
+		(locked yes)
 		(layer "F.Cu")
 		(uuid "f442feae-aa24-450d-8ad1-6c7a67566188")
 		(at 121.3 88.35)
@@ -9386,8 +9397,8 @@
 			(justify left bottom)
 		)
 	)
-	(gr_text "Tonberry Pico\nRev. 1.2"
-		(at 122.8 59.1 90)
+	(gr_text "Tonberry Pico\nRev. ${REVISION}\n${ISSUE_DATE}"
+		(at 215.55 68.35 90)
 		(layer "F.SilkS")
 		(uuid "afeb2a2c-780f-4097-b793-56e3ac516354")
 		(effects

@@ -4,6 +4,13 @@
 	(generator_version "9.0")
 	(uuid "7226ca0f-138a-46b4-89f3-dc32dfb1f9f7")
 	(paper "A4")
+	(title_block
+		(title "Tonberry Pico")
+		(date "2025-11-08")
+		(rev "1.2")
+		(comment 1 "Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>")
+		(comment 2 "SPDX-License-Identifier: MIT")
+	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_01x01"
 			(pin_names
@@ -4000,16 +4007,6 @@
 			)
 		)
 		(uuid "466265fb-ac3b-4fe8-8af4-502fa85087f9")
-	)
-	(text "Pin changes for revision 1 (compared to breadboard):\n- RC522_RST to GPIO14 instead of GPIO9\n- RC522_IRQ to GPIO15 instead of GPIO14\n- I2S_SD to GPIO9 instead of NC\n- I2S_LRCLK to GPIO6 instead of GPIO7\n- I2S_DCLK to GPIO7 instead of GPIO6"
-		(exclude_from_sim no)
-		(at 256.032 174.244 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "6843afc4-f352-41ed-b1f0-21b2625ea765")
 	)
 	(text "Sparkfun board has pullup\nfor mono mode by default"
 		(exclude_from_sim no)
