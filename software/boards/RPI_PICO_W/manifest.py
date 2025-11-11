@@ -15,3 +15,10 @@ module("microdot.py", "../../lib/microdot/src/microdot/")
 # TonberryPico modules
 module("audiocore.py", "../../modules/audiocore")
 module("rp2_neopixel.py", "../../modules")
+
+module("main.py", "../../src")
+module("app.py", "../../src")
+module("mp3player.py", "../../src")
+module("webserver.py", "../../src")
+package("utils", base_path="../../src")
+package("nfc", base_path="../../src")

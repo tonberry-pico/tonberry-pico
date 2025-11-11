@@ -6,9 +6,6 @@ set -eu
 
 ( cd lib/micropython
   make -C mpy-cross -j "$(nproc)"
-  make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W clean
-  make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W \
-       USER_C_MODULES="$TOPDIR"/modules/micropython.cmake -j "$(nproc)"
 
   # build tonberry specific unix port of micropython
   make -C ports/unix VARIANT_DIR="$TOPDIR"/boards/tonberry_unix clean
@@ -19,31 +16,40 @@ set -eu
   make -j "$(nproc)"
 )
 
-PICOTOOL=picotool
-if ! command -v $PICOTOOL >/dev/null 2>&1; then
-    echo "system picotool not found, checking SDK build dir"
-    PICOTOOL=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/_deps/picotool-build/picotool
-    if ! command -v $PICOTOOL >/dev/null 2>&1; then
-       echo "No picotool found, exiting"
-       exit 1
-    fi
-fi
 BUILDDIR=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
+OUTDIR=$(pwd)/build
+mkdir -p "$OUTDIR"
 FS_STAGE_DIR=$(mktemp -d)
+mkdir  "$FS_STAGE_DIR"/fs
 trap 'rm -rf $FS_STAGE_DIR' EXIT
-for hwconfig in src/hwconfig_*.py; do
+tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/fs "$FS_STAGE_DIR"/filesystem.bin
+
+for hwconfig in boards/RPI_PICO_W/manifest-*.py; do
     hwconfig_base=$(basename "$hwconfig")
-    hwname=${hwconfig_base##hwconfig_}
+    hwname=${hwconfig_base##manifest-}
     hwname=${hwname%%.py}
-    find src/ -iname '*.py' \! -iname 'hwconfig_*.py' | cpio -pdm "$FS_STAGE_DIR"
-    cp "$hwconfig" "$FS_STAGE_DIR"/src/hwconfig.py
-    tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/src $BUILDDIR/filesystem.bin
+    hwconfig_abs=$(realpath "$hwconfig")
+    ( cd lib/micropython
+      make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W clean
+      make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W \
+           USER_C_MODULES="$TOPDIR"/modules/micropython.cmake \
+           FROZEN_MANIFEST="$hwconfig_abs" -j "$(nproc)"
+    )
+    PICOTOOL=picotool
+    if ! command -v $PICOTOOL >/dev/null 2>&1; then
+        echo "system picotool not found, checking SDK build dir"
+        PICOTOOL=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/_deps/picotool-build/picotool
+        if ! command -v $PICOTOOL >/dev/null 2>&1; then
+            echo "No picotool found, exiting"
+            exit 1
+        fi
+    fi
     truncate -s 2M $BUILDDIR/firmware-filesystem.bin
     dd if=$BUILDDIR/firmware.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k
-    dd if=$BUILDDIR/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
-    $PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin $BUILDDIR/firmware-filesystem-"$hwname".uf2
-    rm -r "${FS_STAGE_DIR:?}"/*
+    dd if="$FS_STAGE_DIR"/filesystem.bin of=$BUILDDIR/firmware-filesystem.bin bs=1k seek=1200
+    cp $BUILDDIR/firmware.uf2 "$OUTDIR"/firmware-"$hwname".uf2
+    $PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin "$OUTDIR"/firmware-filesystem-"$hwname".uf2
 done
 
-echo "Output in $BUILDDIR/firmware.uf2"
-echo "Images with filesystem in" ${BUILDDIR}firmware-filesystem-*.uf2
+echo "Output in" "${OUTDIR}"/firmware-*.uf2
+echo "Images with filesystem in" "${OUTDIR}"/firmware-filesystem-*.uf2
