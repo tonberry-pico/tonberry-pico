@@ -9,6 +9,10 @@ set -eu
   make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W clean
   make -C ports/rp2 BOARD=TONBERRY_RPI_PICO_W BOARD_DIR="$TOPDIR"/boards/RPI_PICO_W \
        USER_C_MODULES="$TOPDIR"/modules/micropython.cmake -j "$(nproc)"
+
+  # build tonberry specific unix port of micropython
+  make -C ports/unix VARIANT_DIR="$TOPDIR"/boards/tonberry_unix clean
+  make -C ports/unix VARIANT_DIR="$TOPDIR"/boards/tonberry_unix -j "$(nproc)"
 )
 
 ( cd tools/mklittlefs
