@@ -6,7 +6,7 @@ import time
 from utils import TimerManager
 
 
-Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb'))
+Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds'))
 
 # Should be ~ 6dB steps
 VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
@@ -44,6 +44,8 @@ class PlayerApp:
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self.tag_state_machine)
         self.playlist_db = deps.playlistdb(self)
+        self.hwconfig = deps.hwconfig(self)
+        self.leds = deps.leds(self)
         self.tag_mode = self.playlist_db.getSetting('tagmode')
         self.playing_tag = None
         self.playlist = None
@@ -51,6 +53,7 @@ class PlayerApp:
         self.mp3file = None
         self.volume_pos = 3
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])
+        self._onIdle()
 
     def __del__(self):
         if self.mp3file is not None:
@@ -95,8 +98,18 @@ class PlayerApp:
         self.mp3file = None
         self._play_next()
 
+    def onIdleTimeout(self):
+        if self.hwconfig.get_on_battery():
+            self.hwconfig.power_off()
+        else:
+            # Check again in a minute
+            self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
+
     def _set_playlist(self, tag: bytes):
-        self._unset_playlist()
+        if self.playlist is not None:
+            pos = self.player.stop()
+            if pos is not None:
+                self.playlist.setPlaybackOffset(pos)
         self.playlist = self.playlist_db.getPlaylistForTag(tag)
         self._play(self.playlist.getCurrentPath() if self.playlist is not None else None,
                    self.playlist.getPlaybackOffset() if self.playlist is not None else 0)
@@ -104,6 +117,7 @@ class PlayerApp:
     def _unset_playlist(self):
         if self.playlist is not None:
             pos = self.player.stop()
+            self._onIdle()
             if pos is not None:
                 self.playlist.setPlaybackOffset(pos)
             self.playlist = None
@@ -122,7 +136,17 @@ class PlayerApp:
             self.player.stop()
             self.mp3file.close()
             self.mp3file = None
+            self._onIdle()
         if filename is not None:
             print(f'Playing {filename!r}')
             self.mp3file = open(filename, 'rb')
             self.player.play(self.mp3file, offset)
+            self._onActive()
+
+    def _onIdle(self):
+        self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
+        self.leds.set_state(self.leds.IDLE)
+
+    def _onActive(self):
+        self.timer_manager.cancel(self.onIdleTimeout)
+        self.leds.set_state(self.leds.PLAYING)
