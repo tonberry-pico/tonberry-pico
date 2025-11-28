@@ -6,7 +6,8 @@ import time
 from utils import TimerManager
 
 
-Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds'))
+Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds',
+                                           'config'))
 
 # Should be ~ 6dB steps
 VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
@@ -14,11 +15,12 @@ VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
 
 class PlayerApp:
     class TagStateMachine:
-        def __init__(self, parent, timer_manager):
+        def __init__(self, parent, timer_manager, timeout=5000):
             self.parent = parent
             self.timer_manager = timer_manager
             self.current_tag = None
             self.current_tag_time = time.ticks_ms()
+            self.timeout = timeout
 
         def onTagChange(self, new_tag):
             if new_tag is not None:
@@ -31,7 +33,7 @@ class PlayerApp:
                 self.current_tag = new_tag
                 self.parent.onNewTag(new_tag)
             else:
-                self.timer_manager.schedule(time.ticks_ms() + 5000, self.onTagRemoveDelay)
+                self.timer_manager.schedule(time.ticks_ms() + self.timeout, self.onTagRemoveDelay)
 
         def onTagRemoveDelay(self):
             if self.current_tag is not None:
@@ -40,7 +42,10 @@ class PlayerApp:
 
     def __init__(self, deps: Dependencies):
         self.timer_manager = TimerManager()
-        self.tag_state_machine = self.TagStateMachine(self, self.timer_manager)
+        self.config = deps.config(self)
+        self.tag_timeout_ms = self.config.get_tag_timeout() * 1000
+        self.idle_timeout_ms = self.config.get_idle_timeout() * 1000
+        self.tag_state_machine = self.TagStateMachine(self, self.timer_manager, self.tag_timeout_ms)
         self.player = deps.mp3player(self)
         self.nfc = deps.nfcreader(self.tag_state_machine)
         self.playlist_db = deps.playlistdb(self)
@@ -103,7 +108,7 @@ class PlayerApp:
             self.hwconfig.power_off()
         else:
             # Check again in a minute
-            self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
+            self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
 
     def _set_playlist(self, tag: bytes):
         if self.playlist is not None:
@@ -144,7 +149,7 @@ class PlayerApp:
             self._onActive()
 
     def _onIdle(self):
-        self.timer_manager.schedule(time.ticks_ms() + 60*1000, self.onIdleTimeout)
+        self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
         self.leds.set_state(self.leds.IDLE)
 
     def _onActive(self):

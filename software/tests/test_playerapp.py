@@ -124,6 +124,19 @@ class FakeLeds:
         self.state = state
 
 
+class FakeConfig:
+    def __init__(self): pass
+
+    def get_led_count(self):
+        return 1
+
+    def get_idle_timeout(self):
+        return 60
+
+    def get_tag_timeout(self):
+        return 5
+
+
 def fake_open(filename, mode):
     return FakeFile(filename, mode)
 
@@ -136,13 +149,14 @@ def faketimermanager(monkeypatch):
 
 
 def _makedeps(mp3player=FakeMp3Player, nfcreader=FakeNfcReader, buttons=FakeButtons,
-              playlistdb=FakePlaylistDb, hwconfig=FakeHwconfig, leds=FakeLeds):
+              playlistdb=FakePlaylistDb, hwconfig=FakeHwconfig, leds=FakeLeds, config=FakeConfig):
     return app.Dependencies(mp3player=lambda _: mp3player() if callable(mp3player) else mp3player,
                             nfcreader=lambda x: nfcreader(x) if callable(nfcreader) else nfcreader,
                             buttons=lambda _: buttons() if callable(buttons) else buttons,
                             playlistdb=lambda _: playlistdb() if callable(playlistdb) else playlistdb,
                             hwconfig=lambda _: hwconfig() if callable(hwconfig) else hwconfig,
-                            leds=lambda _: leds() if callable(leds) else leds)
+                            leds=lambda _: leds() if callable(leds) else leds,
+                            config=lambda _: config() if callable(config) else config)
 
 
 def test_construct_app(micropythonify, faketimermanager):

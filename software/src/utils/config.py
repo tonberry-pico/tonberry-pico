@@ -9,6 +9,8 @@ import os
 class Configuration:
     DEFAULT_CONFIG = {
         'LED_COUNT': 1,
+        'IDLE_TIMEOUT_SECS': 60,
+        'TAG_TIMEOUT_SECS': 5,
     }
 
     def __init__(self, config_path='/config.json'):
@@ -44,5 +46,14 @@ class Configuration:
         os.rename(self.config_path + '.new', self.config_path)
         os.sync()
 
+    def _get(self, key):
+        return self.config.get(key, self.DEFAULT_CONFIG[key])
+
     def get_led_count(self):
-        return self.config.get('LED_COUNT', self.DEFAULT_CONFIG['LED_COUNT'])
+        return self._get('LED_COUNT')
+
+    def get_idle_timeout(self):
+        return self._get('IDLE_TIMEOUT_SECS')
+
+    def get_tag_timeout(self):
+        return self._get('TAG_TIMEOUT_SECS')

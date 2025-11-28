@@ -94,7 +94,8 @@ def run():
                                                                     pin_next=hwconfig.BUTTON_NEXT),
                                     playlistdb=lambda _: playlistdb,
                                     hwconfig=lambda _: hwconfig,
-                                    leds=lambda _: LedManager(np))
+                                    leds=lambda _: LedManager(np),
+                                    config=lambda _: config)
             the_app = app.PlayerApp(deps)
 
             # Start
