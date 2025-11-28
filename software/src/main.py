@@ -18,7 +18,7 @@ from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
-from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager
+from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager, Configuration
 from webserver import start_webserver
 
 try:
@@ -55,11 +55,13 @@ def setup_wifi():
 
 DB_PATH = '/sd/tonberry.db'
 
+config = Configuration()
+
 
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
-    np = NeoPixel(hwconfig.LED_DIN, hwconfig.LED_COUNT, sm=1)
+    np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
 
     # Wifi with default config
     setup_wifi()

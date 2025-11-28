@@ -8,6 +8,7 @@ import os
 
 class Configuration:
     DEFAULT_CONFIG = {
+        'LED_COUNT': 1,
     }
 
     def __init__(self, config_path='/config.json'):
@@ -42,3 +43,6 @@ class Configuration:
         self._move_config_to_backup()
         os.rename(self.config_path + '.new', self.config_path)
         os.sync()
+
+    def get_led_count(self):
+        return self.config.get('LED_COUNT', self.DEFAULT_CONFIG['LED_COUNT'])
