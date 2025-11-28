@@ -9,6 +9,7 @@ import micropython
 import network
 import os
 import time
+import ubinascii
 
 # Own modules
 import app
@@ -18,6 +19,7 @@ from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
 from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager
+from webserver import start_webserver
 
 try:
     import hwconfig
@@ -40,6 +42,16 @@ def setup_wifi():
     wlan.config(ssid=f"TonberryPicoAP_{machine.unique_id().hex()}", security=wlan.SEC_OPEN)
     wlan.active(True)
 
+    # disable power management
+    wlan.config(pm=network.WLAN.PM_NONE)
+
+    mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+    print(f"     mac: {mac}")
+    print(f" channel: {wlan.config('channel')}")
+    print(f"   essid: {wlan.config('essid')}")
+    print(f" txpower: {wlan.config('txpower')}")
+    print(f"ifconfig: {wlan.ifconfig()}")
+
 
 DB_PATH = '/sd/tonberry.db'
 
@@ -51,6 +63,7 @@ def run():
 
     # Wifi with default config
     setup_wifi()
+    start_webserver()
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,

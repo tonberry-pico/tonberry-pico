@@ -41,7 +41,7 @@ flash_via_picotool()
     local device="${bus_device[1]//[!0-9]/}"
     echo "Found RP2 with serial $serial on Bus $bus Device $device"
     
-    picotool load --bus "$bus" --address "$device" "$IMAGEFILE"
+    picotool load --update --bus "$bus" --address "$device" "$IMAGEFILE"
 }
 
 FLASH_VIA_MOUNTPOINT=0
