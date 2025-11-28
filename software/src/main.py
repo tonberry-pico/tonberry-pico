@@ -9,9 +9,7 @@ import micropython
 import network
 import os
 import time
-from math import pi, sin, pow
 import ubinascii
-from microdot import Microdot
 
 # Own modules
 import app

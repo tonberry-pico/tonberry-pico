@@ -10,8 +10,11 @@ from microdot import Microdot
 webapp = Microdot()
 server = None
 
+
 def start_webserver():
+    global server
     server = asyncio.create_task(webapp.start_server(port=80))
+
 
 @webapp.route('/')
 async def index(request):
