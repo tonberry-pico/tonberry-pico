@@ -22,6 +22,7 @@ class TimerManager(object):
 
     def schedule(self, when, what):
         cur_nearest = self.timers[0][0] if len(self.timers) > 0 else None
+        self._remove_timer(what)  # Ensure timer is not already scheduled
         heapq.heappush(self.timers, (when, what))
         if cur_nearest is None or cur_nearest > self.timers[0][0]:
             # New timer is closer than previous closest timer
@@ -31,18 +32,22 @@ class TimerManager(object):
             self.worker_event.set()
 
     def cancel(self, what):
+        remove_idx = self._remove_timer(what)
+        if remove_idx == 0:
+            # Cancel timer was closest timer
+            if self.timer_debug:
+                print("cancel: wake")
+            self.worker_event.set()
+        return True
+
+    def _remove_timer(self, what):
         try:
             (when, _), i = next(filter(lambda item: item[0][1] == what, zip(self.timers, range(len(self.timers)))))
         except StopIteration:
             return False
         del self.timers[i]
         heapq.heapify(self.timers)
-        if i == 0:
-            # Cancel timer was closest timer
-            if self.timer_debug:
-                print("cancel: wake")
-            self.worker_event.set()
-        return True
+        return i
 
     async def _timer_worker(self):
         while True:
