@@ -57,6 +57,7 @@ class PlayerApp:
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
         self.volume_pos = 3
+        self.paused = False
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         self._onIdle()
 
@@ -96,6 +97,10 @@ class PlayerApp:
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         elif what == self.buttons.NEXT:
             self._play_next()
+        elif what == self.buttons.PREV:
+            self._play_prev()
+        elif what == self.buttons.PLAY_PAUSE:
+            self._pause_toggle()
 
     def onPlaybackDone(self):
         assert self.mp3file is not None
@@ -136,6 +141,15 @@ class PlayerApp:
             self.playlist = None
             self.playing_tag = None
 
+    def _play_prev(self):
+        if self.playlist is None:
+            return
+        filename = self.playlist.getPrevPath()
+        self._play(filename)
+        if filename is None:
+            self.playlist = None
+            self.playing_tag = None
+
     def _play(self, filename: bytes | None, offset=0):
         if self.mp3file is not None:
             self.player.stop()
@@ -146,7 +160,18 @@ class PlayerApp:
             print(f'Playing {filename!r}')
             self.mp3file = open(filename, 'rb')
             self.player.play(self.mp3file, offset)
+            self.paused = False
             self._onActive()
+
+    def _pause_toggle(self):
+        if self.playlist is None:
+            return
+        if self.paused:
+            self._play(self.playlist.getCurrentPath(), self.pause_offset)
+        else:
+            self.pause_offset = self.player.stop()
+            self.paused = True
+            self._onIdle()
 
     def _onIdle(self):
         self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)

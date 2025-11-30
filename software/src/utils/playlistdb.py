@@ -107,6 +107,17 @@ class BTreeDB(IPlaylistDB):
                 self.setPlaybackOffset(0)
             return self.getCurrentPath()
 
+        def getPrevPath(self):
+            """
+            Select prev track and return path.
+            """
+            if self.pos > 0:
+                self.pos -= 1
+            if self.persist != BTreeDB.PERSIST_NO:
+                self.parent._setPlaylistPos(self.tag, self.pos)
+                self.setPlaybackOffset(0)
+            return self.getCurrentPath()
+
         def setPlaybackOffset(self, offset):
             """
             Store the current position in the track for PERSIST_OFFSET mode
