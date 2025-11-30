@@ -17,20 +17,44 @@ if TYPE_CHECKING:
 
 
 class Buttons:
-    def __init__(self, cb: "ButtonCallback", pin_volup=17, pin_voldown=19, pin_next=18):
-        self.VOLUP = micropython.const(1)
-        self.VOLDOWN = micropython.const(2)
-        self.NEXT = micropython.const(3)
+    VOLUP = micropython.const(1)
+    VOLDOWN = micropython.const(2)
+    NEXT = micropython.const(3)
+    PREV = micropython.const(4)
+    PLAY_PAUSE = micropython.const(5)
+    KEYMAP = {VOLUP: 'VOLUP',
+              VOLDOWN: 'VOLDOWN',
+              NEXT: 'NEXT',
+              PREV: 'PREV',
+              PLAY_PAUSE: 'PLAY_PAUSE'}
+
+    def __init__(self, cb: "ButtonCallback", config, hwconfig):
+        self.button_map = config.get_button_map()
+        self.hw_buttons = hwconfig.BUTTONS
         self.cb = cb
-        self.buttons = {machine.Pin(pin_volup, machine.Pin.IN, machine.Pin.PULL_UP): self.VOLUP,
-                        machine.Pin(pin_voldown, machine.Pin.IN, machine.Pin.PULL_UP): self.VOLDOWN,
-                        machine.Pin(pin_next, machine.Pin.IN, machine.Pin.PULL_UP): self.NEXT}
+        self.buttons = dict()
+        for key_id, key_name in self.KEYMAP.items():
+            pin = self._get_pin(key_name)
+            if pin is None:
+                continue
+            self.buttons[pin] = key_id
         self.int_flag = asyncio.ThreadSafeFlag()
         self.pressed: list[int] = []
         self.last: dict[int, int] = {}
         for button in self.buttons.keys():
             button.irq(handler=self._interrupt, trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING)
         asyncio.create_task(self.task())
+
+    def _get_pin(self, key):
+        key_id = self.button_map.get(key, None)
+        if key_id is None:
+            return None
+        if key_id < 0 or key_id >= len(self.hw_buttons):
+            return None
+        pin = self.hw_buttons[key_id]
+        if pin is not None:
+            pin.init(machine.Pin.IN, machine.Pin.PULL_UP)
+        return pin
 
     def _interrupt(self, button):
         keycode = self.buttons[button]

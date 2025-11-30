@@ -89,9 +89,7 @@ def run():
             # Setup app
             deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
                                     nfcreader=lambda the_app: Nfc(reader, the_app),
-                                    buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
-                                                                    pin_voldown=hwconfig.BUTTON_VOLDOWN,
-                                                                    pin_next=hwconfig.BUTTON_NEXT),
+                                    buttons=lambda the_app: Buttons(the_app, config, hwconfig),
                                     playlistdb=lambda _: playlistdb,
                                     hwconfig=lambda _: hwconfig,
                                     leds=lambda _: LedManager(np),
@@ -124,5 +122,5 @@ def builddb():
 
 if __name__ == '__main__':
     time.sleep(1)
-    if machine.Pin(hwconfig.BUTTON_VOLUP, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
+    if machine.Pin(hwconfig.BUTTONS[0], machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
         run()

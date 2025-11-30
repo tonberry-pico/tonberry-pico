@@ -4,6 +4,10 @@
 from errno import ENOENT
 import json
 import os
+try:
+    from typing import TYPE_CHECKING, Mapping
+except ImportError:
+    TYPE_CHECKING = False
 
 
 class Configuration:
@@ -11,6 +15,13 @@ class Configuration:
         'LED_COUNT': 1,
         'IDLE_TIMEOUT_SECS': 60,
         'TAG_TIMEOUT_SECS': 5,
+        'BUTTON_MAP': {
+            'PLAY_PAUSE': 4,
+            'VOLUP': 0,
+            'VOLDOWN': 2,
+            'PREV': None,
+            'NEXT': 1,
+        }
     }
 
     def __init__(self, config_path='/config.json'):
@@ -49,11 +60,14 @@ class Configuration:
     def _get(self, key):
         return self.config.get(key, self.DEFAULT_CONFIG[key])
 
-    def get_led_count(self):
+    def get_led_count(self) -> int:
         return self._get('LED_COUNT')
 
-    def get_idle_timeout(self):
+    def get_idle_timeout(self) -> int:
         return self._get('IDLE_TIMEOUT_SECS')
 
-    def get_tag_timeout(self):
+    def get_tag_timeout(self) -> int:
         return self._get('TAG_TIMEOUT_SECS')
+
+    def get_button_map(self) -> Mapping[str, int | None]:
+        return self._get('BUTTON_MAP')
