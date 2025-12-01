@@ -2,6 +2,8 @@
 
 set -eu
 
+TOPDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 check_command()
 {
     name=$1
@@ -16,7 +18,7 @@ check_command lsusb
 check_command picotool
 
 DEVICEPATH=/dev/disk/by-label/RPI-RP2
-IMAGEPATH=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
+IMAGEPATH=${TOPDIR}/build
 REVISION=Rev1
 
 flash_via_mountpoint()
@@ -83,7 +85,7 @@ if [ $# -gt 0 ]; then
     usage
 fi
 
-IMAGEFILE="$IMAGEPATH"/firmware-filesystem-$REVISION.uf2
+IMAGEFILE="$IMAGEPATH"/firmware-$REVISION.uf2
 
 if [ "$FLASH_VIA_MOUNTPOINT" -eq 0 ]; then
     flash_via_picotool
