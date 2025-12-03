@@ -27,13 +27,12 @@ RC522_SS = Pin.board.GP13
 
 # WS2812
 LED_DIN = Pin.board.GP16
-LED_COUNT = 1
 
 # Buttons
-BUTTON_VOLUP = Pin.board.GP17
-BUTTON_VOLDOWN = Pin.board.GP19
-BUTTON_NEXT = Pin.board.GP18
-BUTTON_POWER = None
+BUTTONS = [Pin.board.GP17,
+           Pin.board.GP18,
+           Pin.board.GP19,
+           ]
 
 # Power
 POWER_EN = None

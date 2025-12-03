@@ -18,7 +18,7 @@ from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
 from rp2_neopixel import NeoPixel
-from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager
+from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager, Configuration
 from webserver import start_webserver
 
 try:
@@ -55,15 +55,17 @@ def setup_wifi():
 
 DB_PATH = '/sd/tonberry.db'
 
+config = Configuration()
+
 
 def run():
     asyncio.new_event_loop()
     # Setup LEDs
-    np = NeoPixel(hwconfig.LED_DIN, hwconfig.LED_COUNT, sm=1)
+    np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
 
     # Wifi with default config
     setup_wifi()
-    start_webserver()
+    start_webserver(config)
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
@@ -87,12 +89,11 @@ def run():
             # Setup app
             deps = app.Dependencies(mp3player=lambda the_app: MP3Player(audioctx, the_app),
                                     nfcreader=lambda the_app: Nfc(reader, the_app),
-                                    buttons=lambda the_app: Buttons(the_app, pin_volup=hwconfig.BUTTON_VOLUP,
-                                                                    pin_voldown=hwconfig.BUTTON_VOLDOWN,
-                                                                    pin_next=hwconfig.BUTTON_NEXT),
+                                    buttons=lambda the_app: Buttons(the_app, config, hwconfig),
                                     playlistdb=lambda _: playlistdb,
                                     hwconfig=lambda _: hwconfig,
-                                    leds=lambda _: LedManager(np))
+                                    leds=lambda _: LedManager(np),
+                                    config=lambda _: config)
             the_app = app.PlayerApp(deps)
 
             # Start
@@ -121,5 +122,5 @@ def builddb():
 
 if __name__ == '__main__':
     time.sleep(1)
-    if machine.Pin(hwconfig.BUTTON_VOLUP, machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
+    if machine.Pin(hwconfig.BUTTONS[0], machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
         run()
