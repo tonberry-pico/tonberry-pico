@@ -9,11 +9,13 @@ from microdot import Microdot
 
 webapp = Microdot()
 server = None
+config = None
 
 
-def start_webserver():
-    global server
+def start_webserver(config_):
+    global server, config
     server = asyncio.create_task(webapp.start_server(port=80))
+    config = config_
 
 
 @webapp.route('/')
@@ -39,3 +41,17 @@ async def filesystem_post(request):
 async def playlist_post(request):
     print(request)
     return {'success': False}
+
+
+@webapp.route('/api/v1/config', methods=['GET'])
+async def config_get(request):
+    return config.get_config()
+
+
+@webapp.route('/api/v1/config', methods=['PUT'])
+async def config_put(request):
+    try:
+        config.set_config(request.json)
+    except ValueError as ex:
+        return str(ex), 400
+    return '', 204

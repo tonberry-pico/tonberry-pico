@@ -65,7 +65,7 @@ def run():
 
     # Wifi with default config
     setup_wifi()
-    start_webserver()
+    start_webserver(config)
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,

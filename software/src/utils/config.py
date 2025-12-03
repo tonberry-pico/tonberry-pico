@@ -5,7 +5,7 @@ from errno import ENOENT
 import json
 import os
 try:
-    from typing import TYPE_CHECKING, Mapping
+    from typing import TYPE_CHECKING, Mapping, Any
 except ImportError:
     TYPE_CHECKING = False
 
@@ -71,3 +71,21 @@ class Configuration:
 
     def get_button_map(self) -> Mapping[str, int | None]:
         return self._get('BUTTON_MAP')
+
+    # For the web API
+    def get_config(self) -> Mapping[str, Any]:
+        return self.config
+
+    def _validate(self, default, config, path=''):
+        for k in config.keys():
+            if k not in default:
+                raise ValueError(f'Invalid config key {path}/{k}')
+            if isinstance(default[k], dict):
+                if not isinstance(config[k], dict):
+                    raise ValueError(f'Invalid config: Value of {path}/{k} must be mapping')
+                self._validate(default[k], config[k], f'{path}/{k}')
+
+    def set_config(self, config):
+        self._validate(self.DEFAULT_CONFIG, config)
+        self.config = config
+        self._save()
