@@ -17,6 +17,7 @@ set -eu
 )
 
 BUILDDIR=lib/micropython/ports/rp2/build-TONBERRY_RPI_PICO_W/
+BUILDDIR_UNIX=lib/micropython/ports/unix/build-tonberry_unix/
 OUTDIR=$(pwd)/build
 mkdir -p "$OUTDIR"
 FS_STAGE_DIR=$(mktemp -d)
@@ -51,5 +52,9 @@ for hwconfig in boards/RPI_PICO_W/manifest-*.py; do
     $PICOTOOL uf2 convert $BUILDDIR/firmware-filesystem.bin "$OUTDIR"/firmware-filesystem-"$hwname".uf2
 done
 
+cp "$BUILDDIR_UNIX"/micropython "$OUTDIR"/micropython-tonberry_unix
+chmod u+x "$OUTDIR"/micropython-tonberry_unix
+
 echo "Output in" "${OUTDIR}"/firmware-*.uf2
 echo "Images with filesystem in" "${OUTDIR}"/firmware-filesystem-*.uf2
+echo "Unix build in" "${OUTDIR}"/micropython-tonberry_unix
