@@ -58,6 +58,7 @@ class PlayerApp:
         self.mp3file = None
         self.volume_pos = 3
         self.paused = False
+        self.playing = False
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         self._onIdle()
 
@@ -114,6 +115,9 @@ class PlayerApp:
         else:
             # Check again in a minute
             self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
+
+    def is_playing(self) -> bool:
+        return self.playing
 
     def _set_playlist(self, tag: bytes):
         if self.playlist is not None:
@@ -176,7 +180,9 @@ class PlayerApp:
     def _onIdle(self):
         self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
         self.leds.set_state(self.leds.IDLE)
+        self.playing = False
 
     def _onActive(self):
         self.timer_manager.cancel(self.onIdleTimeout)
         self.leds.set_state(self.leds.PLAYING)
+        self.playing = True

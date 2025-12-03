@@ -10,12 +10,14 @@ from microdot import Microdot
 webapp = Microdot()
 server = None
 config = None
+app = None
 
 
-def start_webserver(config_):
-    global server, config
+def start_webserver(config_, app_):
+    global server, config, app
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
+    app = app_
 
 
 @webapp.route('/')
@@ -50,6 +52,8 @@ async def config_get(request):
 
 @webapp.route('/api/v1/config', methods=['PUT'])
 async def config_put(request):
+    if app.is_playing():
+        return 503
     try:
         config.set_config(request.json)
     except ValueError as ex:

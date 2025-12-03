@@ -65,7 +65,6 @@ def run():
 
     # Wifi with default config
     setup_wifi()
-    start_webserver(config)
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
@@ -96,6 +95,7 @@ def run():
                                     config=lambda _: config)
             the_app = app.PlayerApp(deps)
 
+            start_webserver(config, the_app)
             # Start
             asyncio.create_task(aiorepl.task({'timer_manager': TimerManager(),
                                               'app': the_app}))
