@@ -11,8 +11,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Initialize submodules
         run: cd software && ./update-submodules.sh
+      - name: Prepare venv
+        run: python -m venv build-venv && source build-venv/bin/activate && pip install freezefs
       - name: Build
-        run: cd software && ./build.sh
+        run: source build-venv/bin/activate && cd software && ./build.sh
       - name: Upload firmware
         uses: actions/upload-artifact@v3
         with:

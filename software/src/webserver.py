@@ -5,7 +5,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 
 import asyncio
 
-from microdot import Microdot
+from microdot import Microdot, send_file
 
 webapp = Microdot()
 server = None
@@ -59,3 +59,16 @@ async def config_put(request):
     except ValueError as ex:
         return str(ex), 400
     return '', 204
+
+
+@webapp.route('/index.html', methods=['GET'])
+async def index_get(request):
+    return send_file('/frontend/index.html.gz', content_type='text/html', compressed='gzip')
+
+
+@webapp.route('/static/<path:path>')
+async def static(request, path):
+    if '..' in path:
+        # directory traversal is not allowed
+        return 'Not found', 404
+    return send_file('/frontend/static/' + path, max_age=86400)

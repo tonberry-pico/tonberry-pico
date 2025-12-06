@@ -14,6 +14,7 @@ import ubinascii
 # Own modules
 import app
 from audiocore import AudioContext
+import frozen_frontend  # noqa: F401
 from mfrc522 import MFRC522
 from mp3player import MP3Player
 from nfc import Nfc
