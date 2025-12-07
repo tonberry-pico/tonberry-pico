@@ -4,6 +4,7 @@
 import asyncio
 import heapq
 import time
+from utils import safe_callback
 
 TIMER_DEBUG = True
 
@@ -72,5 +73,7 @@ class TimerManager(object):
                     continue
                 except asyncio.TimeoutError:
                     pass
+            if len(self.timers) == 0:
+                continue
             _, callback = heapq.heappop(self.timers)
-            callback()
+            safe_callback(callback, "timer callback")

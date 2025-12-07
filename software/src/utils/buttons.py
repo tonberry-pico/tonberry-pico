@@ -5,6 +5,7 @@ import asyncio
 import machine
 import micropython
 import time
+from utils import safe_callback
 try:
     from typing import TYPE_CHECKING  # type: ignore
 except ImportError:
@@ -74,4 +75,4 @@ class Buttons:
             await self.int_flag.wait()
             while len(self.pressed) > 0:
                 what = self.pressed.pop()
-                self.cb.onButtonPressed(what)
+                safe_callback(lambda: self.cb.onButtonPressed(what), "button callback")

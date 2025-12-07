@@ -6,6 +6,7 @@ Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 import asyncio
 import time
+from utils import safe_callback
 
 from mfrc522 import MFRC522
 try:
@@ -74,7 +75,7 @@ class Nfc:
                 self.last_uid = uid
                 self.last_uid_timestamp = time.ticks_us()
             if self.cb is not None and last_callback_uid != uid:
-                self.cb.onTagChange(uid)
+                safe_callback(lambda: self.cb.onTagChange(uid), "nfc tag change")
                 last_callback_uid = uid
 
             await asyncio.sleep_ms(poll_interval_ms)
