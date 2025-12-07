@@ -73,7 +73,6 @@ class TimerManager(object):
                     continue
                 except asyncio.TimeoutError:
                     pass
-            if len(self.timers) == 0:
-                continue
-            _, callback = heapq.heappop(self.timers)
-            safe_callback(callback, "timer callback")
+            else:
+                _, callback = heapq.heappop(self.timers)
+                safe_callback(callback, "timer callback")
