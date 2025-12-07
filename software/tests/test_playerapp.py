@@ -136,6 +136,9 @@ class FakeConfig:
     def get_tag_timeout(self):
         return 5
 
+    def get_tagmode(self):
+        return 'tagremains'
+
 
 def fake_open(filename, mode):
     return FakeFile(filename, mode)
@@ -226,18 +229,16 @@ def test_playlist_unknown_tag(micropythonify, faketimermanager, monkeypatch):
 
 
 def test_tagmode_startstop(micropythonify, faketimermanager, monkeypatch):
-    class MyFakePlaylistDb(FakePlaylistDb):
-        def __init__(self, tracklist=[b'test/path.mp3']):
-            super().__init__(tracklist)
+    class FakeStartStopConfig(FakeConfig):
+        def __init__(self):
+            super().__init__()
 
-        def getSetting(self, key: bytes | str):
-            if key == 'tagmode':
-                return 'tagstartstop'
-            return None
+        def get_tagmode(self):
+            return 'tagstartstop'
 
-    fake_db = MyFakePlaylistDb()
+    fake_db = FakePlaylistDb([b'test/path.mp3'])
     fake_mp3 = FakeMp3Player()
-    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db, config=FakeStartStopConfig)
     app.PlayerApp(deps)
     with monkeypatch.context() as m:
         m.setattr(builtins, 'open', fake_open)
@@ -264,16 +265,7 @@ def test_tagmode_startstop(micropythonify, faketimermanager, monkeypatch):
 
 
 def test_tagmode_remains(micropythonify, faketimermanager, monkeypatch):
-    class MyFakePlaylistDb(FakePlaylistDb):
-        def __init__(self, tracklist=[b'test/path.mp3']):
-            super().__init__(tracklist)
-
-        def getSetting(self, key: bytes | str):
-            if key == 'tagmode':
-                return 'tagremains'
-            return None
-
-    fake_db = MyFakePlaylistDb()
+    fake_db = FakePlaylistDb([b'test/path.mp3'])
     fake_mp3 = FakeMp3Player()
     deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
     app.PlayerApp(deps)

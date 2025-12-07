@@ -21,7 +21,8 @@ class Configuration:
             'VOLDOWN': 2,
             'PREV': None,
             'NEXT': 1,
-        }
+        },
+        'TAGMODE': 'tagremains'
     }
 
     def __init__(self, config_path='/config.json'):
@@ -72,6 +73,9 @@ class Configuration:
     def get_button_map(self) -> Mapping[str, int | None]:
         return self._get('BUTTON_MAP')
 
+    def get_tagmode(self) -> str:
+        return self._get('TAGMODE')
+
     # For the web API
     def get_config(self) -> Mapping[str, Any]:
         return self.config
@@ -87,5 +91,7 @@ class Configuration:
 
     def set_config(self, config):
         self._validate(self.DEFAULT_CONFIG, config)
+        if 'TAGMODE' in config and config['TAGMODE'] not in ['tagremains', 'tagstartstop']:
+            raise ValueError("Invalid TAGMODE: Must be 'tagremains' or 'tagstartstop'")
         self.config = config
         self._save()
