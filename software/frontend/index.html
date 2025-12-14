@@ -111,13 +111,48 @@ function renderConfigForm(config) {
     document.getElementById('save-btn').disabled = false;
 }
 
+const config_names = {
+    'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
+    'root.BUTTON_MAP': 'Button map',
+    'root.BUTTON_MAP.NEXT': 'Next track',
+    'root.BUTTON_MAP.PREV': 'Previous track',
+    'root.BUTTON_MAP.VOLUP': 'Volume up',
+    'root.BUTTON_MAP.VOLDOWN': 'Volume down',
+    'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
+    'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
+    'root.TAGMODE': 'Tag mode',
+    'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
+};
+const config_input_override = {
+    'root.TAGMODE': {
+        'element': 'select',
+        'values': {
+            'tagremains': 'Play until tag is removed',
+            'tagstartstop': 'Present tag once to start, present again to stop playback'
+        }
+    },
+    'root.IDLE_TIMEOUT_SECS': {
+        'input-type': 'number'
+    },
+    'root.TAG_TIMEOUT_SECS': {
+        'input-type': 'number'
+    },
+    'root.LED_COUNT': {
+        'input-type': 'number'
+    },
+};
+
 function renderObject(obj, path) {
     const wrapper = document.createElement('div');
 
     Object.entries(obj).forEach(([key, value]) => {
         const currentPath = path + '.' + key;
         const label = document.createElement('label');
-        label.textContent = key;
+        if (currentPath in config_names) {
+            label.textContent = config_names[currentPath];
+        } else {
+            label.textContent = key;
+        }
 
         if (value !== null && typeof value === 'object') {
             wrapper.appendChild(label);
@@ -126,12 +161,36 @@ function renderObject(obj, path) {
             nested.appendChild(renderObject(value, currentPath));
             wrapper.appendChild(nested);
         } else {
-            const input = document.createElement('input');
-            input.value = value === null ? "" : value;
-            input.dataset.path = currentPath;
-
             wrapper.appendChild(label);
-            wrapper.appendChild(input);
+            if (currentPath in config_input_override && 'element' in config_input_override[currentPath]) {
+                const override = config_input_override[currentPath];
+                if (override['element'] === 'select') {
+                    const input = document.createElement('select');
+                    input.dataset.path = currentPath;
+
+                    for (const val in override.values) {
+                        const option = document.createElement('option');
+                        option.value = val;
+                        option.textContent = override.values[val];
+                        if (val === value) {
+                            option.selected = true;
+                        }
+
+                        input.appendChild(option);
+                    }
+
+                    wrapper.appendChild(input);
+                }
+            } else {
+                const input = document.createElement('input');
+                if (currentPath in config_input_override && 'input-type' in config_input_override[currentPath]) {
+                    input.type = config_input_override[currentPath]['input-type'];
+                }
+                input.value = value === null ? "" : value;
+                input.dataset.path = currentPath;
+
+                wrapper.appendChild(input);
+            }
         }
     });
 
@@ -139,7 +198,7 @@ function renderObject(obj, path) {
 }
 
 function serializeConfig(rootObj) {
-    const inputs = document.querySelectorAll("input[data-path]");
+    const inputs = document.querySelectorAll("input[data-path], select[data-path]");
 
     inputs.forEach(input => {
         const path = input.dataset.path.split('.').slice(1); // remove "root"
@@ -172,7 +231,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         });
 
         if (!saveRes.ok) {
-            alert("Failed to save config!");
+            alert("Failed to save config: " + await saveRes.text());
             return;
         }
 
