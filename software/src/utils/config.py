@@ -30,6 +30,7 @@ class Configuration:
         try:
             with open(self.config_path, 'r') as conf_file:
                 self.config = json.load(conf_file)
+            self._merge_configs(self.DEFAULT_CONFIG, self.config)
         except OSError as ex:
             if ex.errno == ENOENT:
                 self.config = Configuration.DEFAULT_CONFIG
@@ -51,6 +52,16 @@ class Configuration:
                 raise
         os.sync()
 
+    def _merge_configs(self, default, config):
+        for k in default.keys():
+            if k not in config:
+                if isinstance(default[k], dict):
+                    config[k] = default[k].copy()
+                else:
+                    config[k] = default[k]
+            elif isinstance(default[k], dict):
+                self._merge_configs(default[k], config[k])
+
     def _save(self):
         with open(self.config_path + '.new', 'w') as conf_file:
             json.dump(self.config, conf_file)
@@ -59,7 +70,7 @@ class Configuration:
         os.sync()
 
     def _get(self, key):
-        return self.config.get(key, self.DEFAULT_CONFIG[key])
+        return self.config[key]
 
     def get_led_count(self) -> int:
         return self._get('LED_COUNT')
@@ -93,5 +104,6 @@ class Configuration:
         self._validate(self.DEFAULT_CONFIG, config)
         if 'TAGMODE' in config and config['TAGMODE'] not in ['tagremains', 'tagstartstop']:
             raise ValueError("Invalid TAGMODE: Must be 'tagremains' or 'tagstartstop'")
+        self._merge_configs(self.config, config)
         self.config = config
         self._save()
