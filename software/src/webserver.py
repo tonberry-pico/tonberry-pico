@@ -20,6 +20,13 @@ def start_webserver(config_, app_):
     app = app_
 
 
+@webapp.before_request
+async def before_request_handler(request):
+    if request.method in ['PUT', 'POST'] and app.is_playing():
+        return "Cannot write to device while playback is active", 503
+    app.reset_idle_timeout()
+
+
 @webapp.route('/')
 async def index(request):
     print("wohoo, a guest :)")
@@ -52,8 +59,6 @@ async def config_get(request):
 
 @webapp.route('/api/v1/config', methods=['PUT'])
 async def config_put(request):
-    if app.is_playing():
-        return 503
     try:
         config.set_config(request.json)
     except ValueError as ex:
