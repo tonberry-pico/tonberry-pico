@@ -11,13 +11,15 @@ webapp = Microdot()
 server = None
 config = None
 app = None
+nfc = None
 
 
 def start_webserver(config_, app_):
-    global server, config, app
+    global server, config, app, nfc
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
     app = app_
+    nfc = app.get_nfc()
 
 
 @webapp.before_request
@@ -64,3 +66,9 @@ async def config_put(request):
     except ValueError as ex:
         return str(ex), 400
     return '', 204
+
+
+@webapp.route('/api/v1/last_tag_uid', methods=['GET'])
+async def last_tag_uid_get(request):
+    tag, _ = nfc.get_last_uid()
+    return "No tag present" if tag is None else tag

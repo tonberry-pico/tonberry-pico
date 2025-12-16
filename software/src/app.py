@@ -190,3 +190,6 @@ class PlayerApp:
         self.timer_manager.cancel(self.onIdleTimeout)
         self.leds.set_state(self.leds.PLAYING)
         self.playing = True
+
+    def get_nfc(self):
+        return self.nfc
