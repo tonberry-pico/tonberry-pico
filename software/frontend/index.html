@@ -45,6 +45,92 @@
         padding-left: 10px;
         margin-top: 10px;
     }
+
+    /* Tree view */
+    .tree ul {
+      list-style: none;
+      padding-left: 1rem;
+    }
+    
+    .tree li {
+      margin: 2px 0;
+    }
+    
+    .caret {
+      cursor: pointer;
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      user-select: none;
+    }
+    
+    .caret::before {
+      content: "▶";
+      opacity: 0.6;
+    }
+    
+    li.expanded > .caret::before {
+      content: "▼";
+    }
+    
+    li:not(:has(ul)) > .caret::before {
+      content: "";
+    }
+    
+    .node {
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      user-select: none;
+    }
+    
+    .node:hover {
+      background: #eee;
+    }
+    
+    .node.selected {
+      background: #0078d7;
+      color: white;
+    }
+    
+    .tree ul ul {
+      display: none;
+    }
+    
+    li.expanded > ul {
+      display: block;
+    }
+
+    .scroll-container {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    
+      height: 500px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .flex-horizontal {
+        display:flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .flex-vertical {
+        display:flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .list {
+        list-style: none;
+    }
+
 </style>
 </head>
 <body>
@@ -54,6 +140,7 @@
 <nav>
     <button onclick="showScreen('menu')">🏠 Main Menu</button>
     <button onclick="showScreen('config')">⚙️ Config Editor</button>
+    <button onclick="showScreen('playlist')">🖹 Playlist Editor</button>
 </nav>
 
 <!-- MAIN MENU -->
@@ -63,6 +150,7 @@
 
     <ul>
         <li><button onclick="showScreen('config')">Open Config Editor</button></li>
+        <li><button onclick="showScreen('playlist')">Open Playlist Editor</button></li>
         <!-- More screens can be added later -->
     </ul>
 </div>
@@ -71,178 +159,735 @@
 <div id="screen-config" class="screen">
     <h2>Configuration Editor</h2>
     <div id="config-container">Loading…</div>
-    <button id="save-btn" disabled>Save</button>
+    <button id="config-save-btn" disabled>Save</button>
 </div>
 
+<!-- PLAYLIST EDITOR SCREEN 1: list of playlists -->
+<div id="screen-playlist" class="screen">
+    <h2>Playlist Editor</h2>
+    <div id="playlist-container">
+        <div id="playlist-new">
+            <label>New playlist</label>
+            <div class="flex-horizontal">
+                <input id="playlist-new-tag" type="text" placeholder="Tag ID" pattern="[0-9a-fA-F]+" style="max-width: 70%" />
+                <button id="playlist-new-button-gettag">Get last Tag</button>
+                <button id="playlist-new-button-new">New playlist</button>
+            </div>
+        </div>
+        <hr />
+        <div id="playlist-existing">
+            <label>Playlists</label>
+            <div class="scroll-container" style="margin-bottom: 10px">
+                <ul class="list" id="playlist-exist-list">
+                      <li>Loading...</li>  
+                </ul>
+            </div>
+            <div class="flex-horizontal">
+                <button id="playlist-exist-button-delete" style="background-color: orangered">Delete Playlist</button>
+                <button id="playlist-exist-button-gettag">Select last Tag</button>
+                <button id="playlist-exist-button-edit">Edit Playlist</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PLAYLIST EDITOR SCREEN 2: playlist tracks -->
+<div id="screen-playlist_edit" class="screen">
+    <h2>Playlist Editor</h2>
+    <div id="playlist-edit-container">
+        <div id="playlist-edit" style="gap: 10px">
+            <div>
+                <label>Playlist type</label>
+                <select id="playlist-edit-type">
+                    <option value="album">Album (no shuffle, always start at beginning)</option>
+                    <option value="audiobook">Audiobook (no shuffle, start at previous position)</option>
+                    <option value="random">Random Collection (shuffle)</option>
+                    <option value="audioplay">Audioplay (no shuffle, start at previous track)</option>
+                </select>
+            </div>
+            <div class="flex-horizontal">
+                <div style="flex-grow: 1">
+                    <label>Tracks</label>
+                    <div class="scroll-container">
+                        <ul class="list" id="playlist-edit-list">
+                              <li>Loading...</li>  
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex-vertical">
+                    <button id="playlist-edit-trackmove-up">↑</button>
+                    <button id="playlist-edit-trackmove-down">↓</button>
+                </div>
+            </div>
+            <div class="flex-horizontal">
+                <button id="playlist-edit-removetrack">Remove track(s)</button>
+                <button id="playlist-edit-addtrack">Add track(s)</button>
+                <button id="playlist-edit-save">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PLAYLIST EDITOR SCREEN 3: file browser -->
+<div id="screen-playlist_filebrowser" class="screen">
+    <h2>Playlist Editor</h2>
+    <div id="playlist-filebrowser-container">
+        <div class="scroll-container">
+            <div class="tree" id="playlist-filebrowser-tree">
+                <ul><li>Loading...</li></ul>
+                <!--<ul>
+                    <li>
+                      <span class="caret"></span>
+                      <span class="node">Fruits</span>
+                      <ul>
+                        <li>
+                            <span class="caret"></span>
+                            <span class="node">Apple</span>
+                        </li>
+                        <li>
+                          <span class="caret"></span>
+                          <span class="node">Citrus</span>
+                          <ul>
+                            <li>
+                              <span class="caret"></span>
+                              <span class="node">Orange</span>
+                            </li>
+                            <li>
+                              <span class="caret"></span>
+                              <span class="node">Lemon</span>
+                            </li>
+                          </ul>
+                        </li>
+                        <li>
+                          <span class="caret"></span>
+                          <span class="node">Strawberry</span>
+                        </li>
+                      </ul>
+                    </li>
+                </ul> -->
+            </div>
+        </div>
+        <div class="flex-horizontal">
+            <button id="playlist-filebrowser-cancel">Cancel</button>
+            <button id="playlist-filebrowser-addtrack">Add track(s)</button>
+        </div>
+    </div>
+</div>
+    
 <script>
-/* -----------------------------
-   Screen switching
------------------------------ */
-function showScreen(name) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screen-' + name).classList.add('active');
+    const Screens = {};
+    let activeScreen = null;
+    /* -----------------------------
+       Screen switching
+    ----------------------------- */
+    function showScreen(name, arg=null) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + name).classList.add('active');
 
-    if (name === "config") {
-        loadConfig(); // refresh most up-to-date config
+        activeScreen = name;
+        Screens[name]?.onShow?.(arg);
     }
-}
-
-/* -----------------------------
-   CONFIG EDITOR LOGIC
------------------------------ */
-async function loadConfig() {
-    const container = document.getElementById('config-container');
-    container.innerHTML = "Loading…";
-    document.getElementById('save-btn').disabled = true;
-
-    try {
-        const res = await fetch('/api/v1/config');
-        const config = await res.json();
-        renderConfigForm(config);
-    } catch (err) {
-        container.innerHTML = "Failed to load config: " + err;
-    }
-}
-
-function renderConfigForm(config) {
-    const container = document.getElementById('config-container');
-    container.innerHTML = "";
-    container.appendChild(renderObject(config, "root"));
-    document.getElementById('save-btn').disabled = false;
-}
-
-const config_names = {
-    'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
-    'root.BUTTON_MAP': 'Button map',
-    'root.BUTTON_MAP.NEXT': 'Next track',
-    'root.BUTTON_MAP.PREV': 'Previous track',
-    'root.BUTTON_MAP.VOLUP': 'Volume up',
-    'root.BUTTON_MAP.VOLDOWN': 'Volume down',
-    'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
-    'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
-    'root.TAGMODE': 'Tag mode',
-    'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
-};
-const config_input_override = {
-    'root.TAGMODE': {
-        'element': 'select',
-        'values': {
-            'tagremains': 'Play until tag is removed',
-            'tagstartstop': 'Present tag once to start, present again to stop playback'
-        }
-    },
-    'root.IDLE_TIMEOUT_SECS': {
-        'input-type': 'number'
-    },
-    'root.TAG_TIMEOUT_SECS': {
-        'input-type': 'number'
-    },
-    'root.LED_COUNT': {
-        'input-type': 'number'
-    },
-};
-
-function renderObject(obj, path) {
-    const wrapper = document.createElement('div');
-
-    Object.entries(obj).forEach(([key, value]) => {
-        const currentPath = path + '.' + key;
-        const label = document.createElement('label');
-        if (currentPath in config_names) {
-            label.textContent = config_names[currentPath];
-        } else {
-            label.textContent = key;
-        }
-
-        if (value !== null && typeof value === 'object') {
-            wrapper.appendChild(label);
-            const nested = document.createElement('div');
-            nested.className = "nested";
-            nested.appendChild(renderObject(value, currentPath));
-            wrapper.appendChild(nested);
-        } else {
-            wrapper.appendChild(label);
-            if (currentPath in config_input_override && 'element' in config_input_override[currentPath]) {
-                const override = config_input_override[currentPath];
-                if (override['element'] === 'select') {
-                    const input = document.createElement('select');
-                    input.dataset.path = currentPath;
-
-                    for (const val in override.values) {
-                        const option = document.createElement('option');
-                        option.value = val;
-                        option.textContent = override.values[val];
-                        if (val === value) {
-                            option.selected = true;
-                        }
-
-                        input.appendChild(option);
+    
+    /* -----------------------------
+       CONFIG EDITOR LOGIC
+    ----------------------------- */
+    Screens.config = (() => {
+        let screenroot = null;
+        function init() {
+            screenroot = document.getElementById('screen-config');
+            document.getElementById('config-save-btn').addEventListener('click', async () => {
+                const res = await fetch('/api/v1/config');
+                const original = await res.json();
+                const updated = serialize(original);
+            
+                try {
+                    const saveRes = await fetch('/api/v1/config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updated, null, 2)
+                    });
+            
+                    if (!saveRes.ok) {
+                        alert("Failed to save config: " + await saveRes.text());
+                        return;
                     }
-
-                    wrapper.appendChild(input);
+            
+                    alert("Configuration saved successfully!");
+                } catch (err) {
+                    alert("Error saving configuration: " + err);
                 }
-            } else {
-                const input = document.createElement('input');
-                if (currentPath in config_input_override && 'input-type' in config_input_override[currentPath]) {
-                    input.type = config_input_override[currentPath]['input-type'];
-                }
-                input.value = value === null ? "" : value;
-                input.dataset.path = currentPath;
-
-                wrapper.appendChild(input);
+            });
+        }
+        
+        async function onShow() {
+            const container = document.getElementById('config-container');
+            container.innerHTML = "Loading…";
+            document.getElementById('config-save-btn').disabled = true;
+        
+            try {
+                const res = await fetch('/api/v1/config');
+                const config = await res.json();
+                render(config);
+            } catch (err) {
+                container.innerHTML = "Failed to load config: " + err;
             }
         }
-    });
+    
+        function render(config) {
+            const container = document.getElementById('config-container');
+            container.innerHTML = "";
+            container.appendChild(renderObject(config, "root"));
+            document.getElementById('config-save-btn').disabled = false;
+        }
+    
+        const config_names = {
+            'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
+            'root.BUTTON_MAP': 'Button map',
+            'root.BUTTON_MAP.NEXT': 'Next track',
+            'root.BUTTON_MAP.PREV': 'Previous track',
+            'root.BUTTON_MAP.VOLUP': 'Volume up',
+            'root.BUTTON_MAP.VOLDOWN': 'Volume down',
+            'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
+            'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
+            'root.TAGMODE': 'Tag mode',
+            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
+        };
+        const config_input_override = {
+            'root.TAGMODE': {
+                'element': 'select',
+                'values': {
+                    'tagremains': 'Play until tag is removed',
+                    'tagstartstop': 'Present tag once to start, present again to stop playback'
+                }
+            },
+            'root.IDLE_TIMEOUT_SECS': {
+                'input-type': 'number'
+            },
+            'root.TAG_TIMEOUT_SECS': {
+                'input-type': 'number'
+            },
+            'root.LED_COUNT': {
+                'input-type': 'number'
+            },
+        };
+    
+        function renderObject(obj, path) {
+            const wrapper = document.createElement('div');
+        
+            Object.entries(obj).forEach(([key, value]) => {
+                const currentPath = path + '.' + key;
+                const label = document.createElement('label');
+                if (currentPath in config_names) {
+                    label.textContent = config_names[currentPath];
+                } else {
+                    label.textContent = key;
+                }
+        
+                if (value !== null && typeof value === 'object') {
+                    wrapper.appendChild(label);
+                    const nested = document.createElement('div');
+                    nested.className = "nested";
+                    nested.appendChild(renderObject(value, currentPath));
+                    wrapper.appendChild(nested);
+                } else {
+                    wrapper.appendChild(label);
+                    if (currentPath in config_input_override && 'element' in config_input_override[currentPath]) {
+                        const override = config_input_override[currentPath];
+                        if (override['element'] === 'select') {
+                            const input = document.createElement('select');
+                            input.dataset.path = currentPath;
+        
+                            for (const val in override.values) {
+                                const option = document.createElement('option');
+                                option.value = val;
+                                option.textContent = override.values[val];
+                                if (val === value) {
+                                    option.selected = true;
+                                }
+        
+                                input.appendChild(option);
+                            }
+        
+                            wrapper.appendChild(input);
+                        }
+                    } else {
+                        const input = document.createElement('input');
+                        if (currentPath in config_input_override && 'input-type' in config_input_override[currentPath]) {
+                            input.type = config_input_override[currentPath]['input-type'];
+                        }
+                        input.value = value === null ? "" : value;
+                        input.dataset.path = currentPath;
+        
+                        wrapper.appendChild(input);
+                    }
+                }
+            });
+        
+            return wrapper;
+        }
+    
+        function serialize(rootObj) {
+            const inputs = screenroot.querySelectorAll("input[data-path], select[data-path]");
+        
+            inputs.forEach(input => {
+                const path = input.dataset.path.split('.').slice(1); // remove "root"
+                let current = rootObj;
+        
+                for (let i = 0; i < path.length - 1; i++) {
+                    current = current[path[i]];
+                }
+        
+                let val = input.value.trim();
+                if (val === "") val = null;
+                else if (!isNaN(val)) val = Number(val);
+        
+                current[path[path.length - 1]] = val;
+            });
+        
+            return rootObj;
+        }
+    
+        return { init, onShow };
+    })();
 
-    return wrapper;
-}
+/* ----------------------------------------
+   PLAYLIST EDITOR LOGIC - SELECTION SCREEN
+------------------------------------------- */
+    Screens.playlist = (() => {
+        let lastSelected = null;
+        
+        function init() {
+            //tree.init();
+            document.getElementById('playlist-new-button-gettag')
+                .addEventListener('click', updateLastTag);
+            document.getElementById('playlist-new-button-new')
+                .addEventListener('click', (e) => {
+                    const tagid = document.getElementById('playlist-new-tag').value;
+                    if (/^[0-9a-fA-F]+$/.exec(tagid)) {
+                        showScreen("playlist_edit", {create: tagid});
+                    } else {
+                        alert("Invalid tag id");
+                    }
+                });
+            document.getElementById('playlist-exist-button-delete')
+                .addEventListener('click', (e) => {
+                    if (lastSelected === null) return;
+                    const tagid = lastSelected.innerText;
+                    if(confirm(`Really delete playlist ${tagid}?`)) {
+                        fetch(`/api/v1/playlist/${tagid}`, {
+                            method: 'DELETE'})
+                            .then(() => showScreen('playlist'));
+                    }
+                });
+            document.getElementById('playlist-exist-button-gettag')
+                .addEventListener('click', selectLastTag);
+            document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
+                showScreen("playlist_edit", {load: lastSelected.innerText});
+            });
+            document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
+                const node = e.target.closest("li");
+                if (!node) return;
 
-function serializeConfig(rootObj) {
-    const inputs = document.querySelectorAll("input[data-path], select[data-path]");
+                document.getElementById('playlist-exist-list')
+                    .querySelectorAll(".selected")
+                    .forEach(n => n.classList.remove("selected")
+                );
+                
+                node.classList.toggle("selected");
 
-    inputs.forEach(input => {
-        const path = input.dataset.path.split('.').slice(1); // remove "root"
-        let current = rootObj;
-
-        for (let i = 0; i < path.length - 1; i++) {
-            current = current[path[i]];
+                lastSelected = node;
+            });
+        }
+        
+        async function onShow() {
+            const container = document.getElementById('playlist-exist-list');
+            container.innerHTML = "<li>Loading…</li>";
+            //document.getElementById('playlist-save-btn').disabled = true;
+        
+            fetch('/api/v1/playlists')
+                .then((res) => res.json())
+                .then((playlists) => renderPlaylistForm(playlists))
+                .catch((err) => {
+                    container.innerHTML = "<li>Failed to load playlists: " + err + "</li>";
+                });
+            fetch('/api/v1/last_tag_uid')
+                .then((res) => res.json())
+                .then((tag) => {
+                    if (tag.tag !== null) {
+                        fillLastTag(tag);
+                        selectTag(tag);
+                    }
+                });
         }
 
-        let val = input.value.trim();
-        if (val === "") val = null;
-        else if (!isNaN(val)) val = Number(val);
-
-        current[path[path.length - 1]] = val;
-    });
-
-    return rootObj;
-}
-
-document.getElementById('save-btn').addEventListener('click', async () => {
-    const res = await fetch('/api/v1/config');
-    const original = await res.json();
-    const updated = serializeConfig(original);
-
-    try {
-        const saveRes = await fetch('/api/v1/config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updated, null, 2)
-        });
-
-        if (!saveRes.ok) {
-            alert("Failed to save config: " + await saveRes.text());
-            return;
+        async function updateLastTag() {
+            fetch('/api/v1/last_tag_uid')
+                .then((res) => res.json())
+                .then((tag) => fillLastTag(tag));
         }
 
-        alert("Configuration saved successfully!");
-    } catch (err) {
-        alert("Error saving configuration: " + err);
-    }
-});
+        async function selectLastTag() {
+            fetch('/api/v1/last_tag_uid')
+                .then((res) => res.json())
+                .then((tag) => selectTag(tag));
+        }
+        
+        function renderPlaylistForm(playlists) {
+            const container = document.getElementById('playlist-exist-list');
+            container.innerHTML = "";
+            for (const playlist of playlists) {
+                const li = document.createElement("li");
+                li.innerHTML = playlist;
+                li.className = "node"
+                container.appendChild(li)
+            }
+        }
 
-// Load main menu by default
-showScreen('menu');
+        function bytesToHex(bytes) {
+            return bytes
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+        
+        function fillLastTag(tag) {
+            const container = document.getElementById('playlist-new-tag');
+            if (tag.tag !== null) {
+                container.value = bytesToHex(tag.tag);
+            }
+        }
+
+        function selectTag(tag) {
+            const container = document.getElementById('playlist-exist-list');
+            const tagtext = bytesToHex(tag.tag);
+            document.getElementById('playlist-exist-list')
+                    .querySelectorAll("li")
+                    .forEach(n => {
+                        if (n.innerText == tagtext) {
+                            n.classList.add("selected");
+                        } else {
+                            n.classList.remove("selected");
+                        }
+                    });
+        }
+ 
+        return { init, onShow };
+    })();
+
+/* -----------------------------------
+   PLAYLIST EDITOR LOGIC - EDIT SCREEN
+-------------------------------------- */
+    Screens.playlist_edit = (() => {
+        let lastSelected = null;
+        let playlistId = null;
+        
+        function init() {
+            document.getElementById('playlist-edit-list').addEventListener("click", (e) => {
+                const node = e.target.closest("li");
+                if (!node) return;
+
+                if (e.ctrlKey || e.metaKey) {
+                    node.classList.toggle("selected");
+                } else {
+                    clearSelection();
+                    node.classList.add("selected");
+                }
+
+                lastSelected = node;
+            });
+            document.getElementById('playlist-edit-trackmove-up').addEventListener("click", (e) => moveSelectedTracks(true));
+            document.getElementById('playlist-edit-trackmove-down').addEventListener("click", (e) => moveSelectedTracks(false));
+            document.getElementById('playlist-edit-removetrack').addEventListener("click", (e) => deleteSelectedTracks());
+            document.getElementById('playlist-edit-addtrack').addEventListener("click", (e) => {
+                showScreen("playlist_filebrowser");
+            });
+            document.getElementById('playlist-edit-save').addEventListener("click", (e) => save());
+        }
+
+        function clearSelection() {
+            document.getElementById('playlist-edit-list')
+                    .querySelectorAll(".selected")
+                    .forEach(n => n.classList.remove("selected"));
+        }
+        
+        async function onShow(intent) {
+            const container = document.getElementById('playlist-edit-list');
+            if ('load' in intent) {
+                const playlist = intent.load;
+                document.getElementById('playlist-edit-save').disabled = true;
+                container.innerHTML = "<li>Loading…</li>";
+            
+                fetch(`/api/v1/playlist/${playlist}`)
+                    .then((res) => res.json())
+                    .then((playlistRes) => {
+                        playlistId = playlist;
+                        renderPlaylistForm(playlistRes);
+                        document.getElementById('playlist-edit-save').disabled = false;
+                    }).catch((err) => {
+                        container.innerHTML = "<li>Failed to load playlist: " + err + "</li>";
+                    });
+            } else if ('create' in intent) {
+                const container = document.getElementById('playlist-edit-list');
+                container.innerHTML = "";
+                playlistId = intent.create;
+                const playlisttype = document.getElementById('playlist-edit-type');
+                playlisttype.value = "album";
+                document.getElementById('playlist-edit-save').disabled = false;
+            } else if ('addtracks' in intent) {
+                const container = document.getElementById('playlist-edit-list');
+                intent.addtracks.forEach((track) => {
+                    const li = document.createElement("li");
+                    li.innerHTML = track;
+                    li.className = "node"
+                    container.appendChild(li)
+                });
+            }
+        }
+
+        function renderPlaylistForm(playlist) {
+            const container = document.getElementById('playlist-edit-list');
+            container.innerHTML = "";
+            for (const track of playlist.paths) {
+                const li = document.createElement("li");
+                li.innerHTML = track;
+                li.className = "node"
+                container.appendChild(li)
+            }
+            const playlisttype = document.getElementById('playlist-edit-type');
+            if (playlist.persist === "no" && playlist.shuffle === "no") {
+                playlisttype.value = "album";
+            } else if (playlist.persist === "offset" && playlist.shuffle === "no") {
+                playlisttype.value = "audiobook";
+            } else if (playlist.persist === "no" && playlist.shuffle === "yes") {
+                playlisttype.value = "random";
+            } else if (playlist.persist === "track" && playlist.shuffle === "no") {
+                playlisttype.value = "audioplay";
+            }
+        }
+
+        async function save() {
+            const playlistData = {};
+            switch(document.getElementById('playlist-edit-type').value) {
+                case "album":
+                    playlistData.persist = "no";
+                    playlistData.shuffle = "no";
+                    break;
+                case "audiobook":
+                    playlistData.persist = "offset";
+                    playlistData.shuffle = "no";
+                    break;
+                case "random":
+                    playlistData.persist = "no";
+                    playlistData.shuffle = "yes";
+                    break;
+                case "audioplay":
+                    playlistData.persist = "track";
+                    playlistData.shuffle = "no";
+                    break;
+            }
+            const container = document.getElementById('playlist-edit-list');
+            playlistData.paths = [...container.querySelectorAll("li")].map((node) => node.innerText);
+            const saveRes = await fetch(`/api/v1/playlist/${playlistId}`,
+                  {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(playlistData)});
+            
+            if (!saveRes.ok) {
+                alert("Failed to save playlist: " + await saveRes.text());
+                return;
+            }
+        }
+        
+        function moveSelectedTracks(up) {
+            const container = document.getElementById('playlist-edit-list');
+            let selected_nodes = [...container.querySelectorAll(".selected")];
+            if (!up) {
+                selected_nodes = selected_nodes.reverse()
+            }
+            for (node of selected_nodes) {
+                const sibling = up ? node.previousElementSibling : node.nextElementSibling;
+                if (sibling === null ||
+                   sibling.classList.contains("selected")) continue;
+                container.insertBefore(node, up ? sibling : sibling.nextElementSibling);
+            }
+        }
+
+        function deleteSelectedTracks() {
+            const container = document.getElementById('playlist-edit-list');
+            container.querySelectorAll(".selected").forEach((node) => node.remove());
+        }
+        
+        return { init, onShow };
+    })();
+
+    /* ----------------------------------------
+       PLAYLIST EDITOR LOGIC - ADD FILES SCREEN
+    ------------------------------------------- */
+    Screens.playlist_filebrowser = (() => {
+        function init() {
+            document.getElementById('playlist-filebrowser-cancel').addEventListener("click", (e) => {
+                showScreen("playlist_edit", {});
+            });
+            document.getElementById('playlist-filebrowser-addtrack').addEventListener("click", (e) => {
+                returnSelectedTracks();
+            });
+            tree.init();
+        }
+        
+        async function onShow(intent) {
+            document.getElementById('playlist-filebrowser-addtrack').disabled = true;
+            tree = document.getElementById("playlist-filebrowser-tree");
+            tree.innerHTML = "Loading...";
+            fetch('/api/v1/audiofiles')
+                .then((res) => res.json())
+                .then((files) => renderFilebrowserForm(files))
+                .catch((err) => {
+                    alert("Failed to load file list: " + err);
+                });
+        }
+
+        function findChildByName(node, name) {
+            for (const child of node.querySelectorAll(':scope > li')) {
+                const childLabel = child.querySelector(':scope > span.node');
+                if (childLabel.innerText === name) 
+                    return child.querySelector(':scope > ul');
+            }
+            return null;
+        }
+
+        function addTreeNode(parent, name, type, data) {
+            const node = document.createElement('li');
+            const caret = document.createElement('span');
+            const label = document.createElement('span');
+            caret.className = 'caret';
+            label.className = 'node';
+            label.innerText = name;
+            node.appendChild(caret);
+            node.appendChild(label);
+            if (data !== null)
+                label.setAttribute('data-path', data);
+            label.setAttribute('data-type', type);
+            if (type === 'directory') {
+                const nested = document.createElement('ul');
+                node.appendChild(nested);
+                node.classList.add('expanded');
+                parent.appendChild(node);
+                return nested;
+            }
+            parent.appendChild(node);
+            return null;
+        }
+        
+        function renderFilebrowserForm(files) {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            tree.innerHTML = "";
+            const rootnode = document.createElement('ul');
+            tree.appendChild(rootnode);
+        
+            files.sort();    
+            for (const file of files) {
+                const path = file.split('/').slice(1);
+                let treeIterator = rootnode;
+                let curPath = ''
+                for (const elem of path) {
+                    curPath += '/' + elem;
+                    let node = findChildByName(treeIterator, elem);
+                    if (node === null) {
+                        const isFile = path.slice(-1)[0] === elem;
+                        node = addTreeNode(treeIterator, elem, isFile ? 'file':'directory', curPath);
+                    }
+                    treeIterator = node;
+                }
+            }
+            
+            document.getElementById('playlist-filebrowser-addtrack').disabled = false;
+        }
+
+        function returnSelectedTracks() {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            const tracks = [];
+            for (const node of selectedNodes) {
+                if (node.getAttribute('data-type') === "file") {
+                    tracks.push(node.getAttribute('data-path'));
+                } else {
+                    // recursivly add directory contents
+                    for (const child of node.parentNode.querySelector('ul').querySelectorAll("span.node")) {
+                        if (child.getAttribute('data-type') === "file")
+                            tracks.push(child.getAttribute('data-path'));
+                    }
+                }
+            }
+            showScreen("playlist_edit", {addtracks: tracks});
+        }
+        
+        let tree = (() => {
+            let tree = null;
+            function init() {
+                tree = document.getElementById("playlist-filebrowser-tree");
+                tree.addEventListener("click", (e) => {
+                    // CARET CLICK → expand/collapse
+                    const caret = e.target.closest(".caret");
+                    if (caret) {
+                        const li = caret.parentElement;
+                        if (li.querySelector("ul")) {
+                          li.classList.toggle("expanded");
+                        }
+                        return; // IMPORTANT: don't affect selection
+                    }
+                    
+                    // NODE LABEL CLICK → selection only
+                    const node = e.target.closest(".node");
+                    if (!node) return;
+                    
+                    if (e.shiftKey && lastSelected) {
+                        selectRange(lastSelected, node);
+                    } else if (e.ctrlKey || e.metaKey) {
+                        node.classList.toggle("selected");
+                    } else {
+                        clearSelection();
+                        node.classList.add("selected");
+                    }
+                    
+                    lastSelected = node;
+                });
+            }
+
+            function clearSelection() {
+                tree.querySelectorAll(".selected").forEach(n =>
+                    n.classList.remove("selected")
+                );
+            }
+            
+            function selectRange(start, end) {
+                const nodes = [...tree.querySelectorAll(".node")];
+                const startIndex = nodes.indexOf(start);
+                const endIndex = nodes.indexOf(end);
+        
+                const [from, to] = startIndex < endIndex
+                    ? [startIndex, endIndex]
+                    : [endIndex, startIndex];
+        
+                clearSelection();
+                nodes.slice(from, to + 1).forEach(n =>
+                    n.classList.add("selected")
+                );
+            }
+
+            return { init };
+        })();
+        
+        return { init, onShow };
+    })();
+    
+// Initialization
+    Object.values(Screens).forEach(screen => {
+        screen.init?.();
+    });
+
+    showScreen("menu");
 </script>
 
 </body>
