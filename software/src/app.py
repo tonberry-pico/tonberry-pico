@@ -51,7 +51,7 @@ class PlayerApp:
         self.playlist_db = deps.playlistdb(self)
         self.hwconfig = deps.hwconfig(self)
         self.leds = deps.leds(self)
-        self.tag_mode = self.playlist_db.getSetting('tagmode')
+        self.tag_mode = self.config.get_tagmode()
         self.playing_tag = None
         self.playlist = None
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
