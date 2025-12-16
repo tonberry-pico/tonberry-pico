@@ -71,4 +71,4 @@ async def config_put(request):
 @webapp.route('/api/v1/last_tag_uid', methods=['GET'])
 async def last_tag_uid_get(request):
     tag, _ = nfc.get_last_uid()
-    return "No tag present" if tag is None else tag
+    return {'tag': tag}
