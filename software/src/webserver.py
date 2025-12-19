@@ -4,6 +4,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import os
 
 from microdot import Microdot
 
@@ -78,3 +79,24 @@ async def last_tag_uid_get(request):
 @webapp.route('/api/v1/playlists', methods=['GET'])
 async def playlists_get(request):
     return sorted(playlist_db.getPlaylistTags())
+
+
+@webapp.route('/api/v1/audiofiles', methods=['GET'])
+async def audiofiles_get(request):
+    root = b'/sd'
+    audiofiles = set()
+    dirstack = [root]    
+    
+    while dirstack:
+        current_dir = dirstack.pop()
+        for entry in os.ilistdir(current_dir):
+            name = entry[0]
+            type_ = entry[1]
+            current_path = current_dir + '/' + name
+            if type_ == 0x4000:
+                dirstack.append(current_path)
+            elif type_ == 0x8000:
+                if name.lower().endswith('.mp3'):
+                    audiofiles.add(current_path[len(root):])
+
+    return sorted(audiofiles)
