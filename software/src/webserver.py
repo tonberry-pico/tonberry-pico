@@ -12,14 +12,15 @@ server = None
 config = None
 app = None
 nfc = None
-
+playlist_db = None
 
 def start_webserver(config_, app_):
-    global server, config, app, nfc
+    global server, config, app, nfc, playlist_db
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
     app = app_
     nfc = app.get_nfc()
+    playlist_db = app.get_playlist_db()
 
 
 @webapp.before_request
@@ -72,3 +73,8 @@ async def config_put(request):
 async def last_tag_uid_get(request):
     tag, _ = nfc.get_last_uid()
     return {'tag': tag}
+
+
+@webapp.route('/api/v1/playlists', methods=['GET'])
+async def playlists_get(request):
+    return sorted(playlist_db.getPlaylistTags())

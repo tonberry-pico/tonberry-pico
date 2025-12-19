@@ -251,6 +251,16 @@ class BTreeDB(IPlaylistDB):
         if flush:
             self._flush()
 
+    def getPlaylistTags(self):
+        """
+        Get a keys-only dict of all defined playlists. Playlists currently do not have names, but are identified by
+        their tag.
+        """
+        playlist_tags = set()
+        for item in self.db:
+            playlist_tags.add(item.split(b'/')[0])
+        return playlist_tags
+
     def getPlaylistForTag(self, tag: bytes):
         """
         Lookup the playlist for 'tag' and return the Playlist object. Return None if no playlist exists for the given
