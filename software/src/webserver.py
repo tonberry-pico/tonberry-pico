@@ -138,19 +138,26 @@ async def playlist_delete(request, tag):
 
 @webapp.route('/api/v1/audiofiles', methods=['GET'])
 async def audiofiles_get(request):
-    audiofiles = set()
-    dirstack = [fsroot]
+    def directory_iterator():
+        yield '['
+        first = True
+        dirstack = [fsroot]
+        while dirstack:
+            current_dir = dirstack.pop()
+            for entry in os.ilistdir(current_dir):
+                name = entry[0]
+                type_ = entry[1]
+                current_path = current_dir + b'/' + name
+                if type_ == 0x4000:
+                    dirstack.append(current_path)
+                elif type_ == 0x8000:
+                    if name.lower().endswith('.mp3'):
+                        jsonpath = json.dumps(current_path[len(fsroot):])
+                        if not first:
+                            yield ','+jsonpath
+                        else:
+                            yield jsonpath
+                        first = False
+        yield ']'
 
-    while dirstack:
-        current_dir = dirstack.pop()
-        for entry in os.ilistdir(current_dir):
-            name = entry[0]
-            type_ = entry[1]
-            current_path = current_dir + '/' + name
-            if type_ == 0x4000:
-                dirstack.append(current_path)
-            elif type_ == 0x8000:
-                if name.lower().endswith('.mp3'):
-                    audiofiles.add(current_path[len(fsroot):])
-
-    return sorted(audiofiles)
+    return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}
