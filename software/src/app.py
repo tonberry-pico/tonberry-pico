@@ -116,6 +116,10 @@ class PlayerApp:
             # Check again in a minute
             self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
 
+    def reset_idle_timeout(self):
+        if not self.playing:
+            self.timer_manager.schedule(time.ticks_ms() + self.idle_timeout_ms, self.onIdleTimeout)
+
     def is_playing(self) -> bool:
         return self.playing
 
@@ -186,3 +190,6 @@ class PlayerApp:
         self.timer_manager.cancel(self.onIdleTimeout)
         self.leds.set_state(self.leds.PLAYING)
         self.playing = True
+
+    def get_nfc(self):
+        return self.nfc

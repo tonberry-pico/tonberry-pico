@@ -11,13 +11,22 @@ webapp = Microdot()
 server = None
 config = None
 app = None
+nfc = None
 
 
 def start_webserver(config_, app_):
-    global server, config, app
+    global server, config, app, nfc
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
     app = app_
+    nfc = app.get_nfc()
+
+
+@webapp.before_request
+async def before_request_handler(request):
+    if request.method in ['PUT', 'POST'] and app.is_playing():
+        return "Cannot write to device while playback is active", 503
+    app.reset_idle_timeout()
 
 
 @webapp.route('/')
@@ -52,10 +61,14 @@ async def config_get(request):
 
 @webapp.route('/api/v1/config', methods=['PUT'])
 async def config_put(request):
-    if app.is_playing():
-        return 503
     try:
         config.set_config(request.json)
     except ValueError as ex:
         return str(ex), 400
     return '', 204
+
+
+@webapp.route('/api/v1/last_tag_uid', methods=['GET'])
+async def last_tag_uid_get(request):
+    tag, _ = nfc.get_last_uid()
+    return {'tag': tag}
