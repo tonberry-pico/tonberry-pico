@@ -16,6 +16,7 @@ app = None
 nfc = None
 playlist_db = None
 
+
 def start_webserver(config_, app_):
     global server, config, app, nfc, playlist_db
     server = asyncio.create_task(webapp.start_server(port=80))
@@ -96,6 +97,8 @@ async def playlist_get(request, tag):
         return 'invalid tag', 400
 
     playlist = playlist_db.getPlaylistForTag(tag.encode())
+    if playlist is None:
+        return None, 404
 
     return {
             'shuffle': playlist.__dict__.get('shuffle'),
@@ -103,6 +106,35 @@ async def playlist_get(request, tag):
             'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
                       for p in playlist.getPaths()],
     }
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['PUT'])
+async def playlist_put(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+
+    playlist = request.json
+    if 'persist' in playlist and \
+       playlist['persist'] not in ['no', 'track', 'offset']:
+        return "Invalid 'persist' setting", 400
+    if 'shuffle' in playlist and \
+       playlist['shuffle'] not in ['no', 'yes']:
+        return "Invalid 'shuffle' setting", 400
+
+    playlist_db.createPlaylistForTag(tag.encode(),
+                                     (fsroot + path.encode() for path in playlist.get('paths', [])),
+                                     playlist.get('persist', 'track').encode(),
+                                     playlist.get('shuffle', 'no').encode())
+    return '', 204
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['DELETE'])
+async def playlist_delete(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+    playlist_db.deletePlaylistForTag(tag.encode())
+    return '', 204
+
 
 @webapp.route('/api/v1/audiofiles', methods=['GET'])
 async def audiofiles_get(request):

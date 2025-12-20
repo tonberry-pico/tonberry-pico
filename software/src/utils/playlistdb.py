@@ -297,6 +297,9 @@ class BTreeDB(IPlaylistDB):
             key = key.encode()
         return self.db.get(b'settings/' + key, self.DEFAULT_SETTINGS[key]).decode()
 
+    def deletePlaylistForTag(self, tag: bytes):
+        self._deletePlaylist(tag)
+
     def validate(self, dump=False):
         """
         Validate the structure of the playlist database.
