@@ -58,7 +58,7 @@ async def wdt_task(wdt):
     # TODO: more checking of app health
     # Right now this only protects against the asyncio executor crashing completely
     while True:
-        await asyncio.sleep_ms(500)
+        await asyncio.sleep_ms(100)
         wdt.feed()
 
 DB_PATH = '/sd/tonberry.db'
@@ -105,7 +105,7 @@ def run():
 
             start_webserver(config, the_app)
             # Start
-            wdt = machine.WDT(timeout=1000)
+            wdt = machine.WDT(timeout=2000)
             asyncio.create_task(aiorepl.task({'timer_manager': TimerManager(),
                                               'app': the_app}))
             asyncio.create_task(wdt_task(wdt))
