@@ -4,6 +4,8 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import json
+import os
 
 from microdot import Microdot, redirect, send_file
 
@@ -12,14 +14,16 @@ server = None
 config = None
 app = None
 nfc = None
+playlist_db = None
 
 
 def start_webserver(config_, app_):
-    global server, config, app, nfc
+    global server, config, app, nfc, playlist_db
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
     app = app_
     nfc = app.get_nfc()
+    playlist_db = app.get_playlist_db()
 
 
 @webapp.before_request
@@ -90,3 +94,88 @@ async def static(request, path):
         # directory traversal is not allowed
         return 'Not found', 404
     return send_file('/frontend/static/' + path, max_age=86400)
+
+
+@webapp.route('/api/v1/playlists', methods=['GET'])
+async def playlists_get(request):
+    return sorted(playlist_db.getPlaylistTags())
+
+
+def is_hex(s):
+    hex_chars = '0123456789abcdef'
+    return all(c in hex_chars for c in s)
+
+
+fsroot = b'/sd'
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['GET'])
+async def playlist_get(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+
+    playlist = playlist_db.getPlaylistForTag(tag.encode())
+    if playlist is None:
+        return None, 404
+
+    return {
+            'shuffle': playlist.__dict__.get('shuffle'),
+            'persist': playlist.__dict__.get('persist'),
+            'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
+                      for p in playlist.getPaths()],
+    }
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['PUT'])
+async def playlist_put(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+
+    playlist = request.json
+    if 'persist' in playlist and \
+       playlist['persist'] not in ['no', 'track', 'offset']:
+        return "Invalid 'persist' setting", 400
+    if 'shuffle' in playlist and \
+       playlist['shuffle'] not in ['no', 'yes']:
+        return "Invalid 'shuffle' setting", 400
+
+    playlist_db.createPlaylistForTag(tag.encode(),
+                                     (fsroot + path.encode() for path in playlist.get('paths', [])),
+                                     playlist.get('persist', 'track').encode(),
+                                     playlist.get('shuffle', 'no').encode())
+    return '', 204
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['DELETE'])
+async def playlist_delete(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+    playlist_db.deletePlaylistForTag(tag.encode())
+    return '', 204
+
+
+@webapp.route('/api/v1/audiofiles', methods=['GET'])
+async def audiofiles_get(request):
+    def directory_iterator():
+        yield '['
+        first = True
+        dirstack = [fsroot]
+        while dirstack:
+            current_dir = dirstack.pop()
+            for entry in os.ilistdir(current_dir):
+                name = entry[0]
+                type_ = entry[1]
+                current_path = current_dir + b'/' + name
+                if type_ == 0x4000:
+                    dirstack.append(current_path)
+                elif type_ == 0x8000:
+                    if name.lower().endswith('.mp3'):
+                        jsonpath = json.dumps(current_path[len(fsroot):])
+                        if not first:
+                            yield ','+jsonpath
+                        else:
+                            yield jsonpath
+                        first = False
+        yield ']'
+
+    return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}

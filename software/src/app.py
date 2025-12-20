@@ -193,3 +193,6 @@ class PlayerApp:
 
     def get_nfc(self):
         return self.nfc
+
+    def get_playlist_db(self):
+        return self.playlist_db
