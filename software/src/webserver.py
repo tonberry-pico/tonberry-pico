@@ -81,6 +81,27 @@ async def playlists_get(request):
     return sorted(playlist_db.getPlaylistTags())
 
 
+def is_hex(s):
+    hex_chars = '0123456789abcdef'
+    return all(c in hex_chars for c in s)
+
+
+@webapp.route('/api/v1/playlist/<tag>', methods=['GET'])
+async def playlist_get(request, tag):
+    if not is_hex(tag):
+        return 'invalid tag', 400
+
+    playlist = playlist_db.getPlaylistForTag(tag.encode())
+    paths = []
+
+    if playlist is not None:
+       for path in playlist.getPaths():
+            paths.append({'path': path})
+
+    # empty paths are okay, tag might be know, but playlist may be empty
+    return paths
+
+
 @webapp.route('/api/v1/audiofiles', methods=['GET'])
 async def audiofiles_get(request):
     root = b'/sd'
