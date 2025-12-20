@@ -4,6 +4,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import json
 import os
 
 from microdot import Microdot
@@ -86,28 +87,28 @@ def is_hex(s):
     return all(c in hex_chars for c in s)
 
 
+fsroot = b'/sd'
+
+
 @webapp.route('/api/v1/playlist/<tag>', methods=['GET'])
 async def playlist_get(request, tag):
     if not is_hex(tag):
         return 'invalid tag', 400
 
     playlist = playlist_db.getPlaylistForTag(tag.encode())
-    paths = []
 
-    if playlist is not None:
-       for path in playlist.getPaths():
-            paths.append({'path': path})
-
-    # empty paths are okay, tag might be know, but playlist may be empty
-    return paths
-
+    return {
+            'shuffle': playlist.__dict__.get('shuffle'),
+            'persist': playlist.__dict__.get('persist'),
+            'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
+                      for p in playlist.getPaths()],
+    }
 
 @webapp.route('/api/v1/audiofiles', methods=['GET'])
 async def audiofiles_get(request):
-    root = b'/sd'
     audiofiles = set()
-    dirstack = [root]    
-    
+    dirstack = [fsroot]
+
     while dirstack:
         current_dir = dirstack.pop()
         for entry in os.ilistdir(current_dir):
@@ -118,6 +119,6 @@ async def audiofiles_get(request):
                 dirstack.append(current_path)
             elif type_ == 0x8000:
                 if name.lower().endswith('.mp3'):
-                    audiofiles.add(current_path[len(root):])
+                    audiofiles.add(current_path[len(fsroot):])
 
     return sorted(audiofiles)
