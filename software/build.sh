@@ -25,6 +25,11 @@ mkdir  "$FS_STAGE_DIR"/fs
 trap 'rm -rf $FS_STAGE_DIR' EXIT
 tools/mklittlefs/mklittlefs -p 256 -s 868352 -c "$FS_STAGE_DIR"/fs "$FS_STAGE_DIR"/filesystem.bin
 
+FRONTEND_STAGE_DIR=$(mktemp -d)
+trap 'rm -rf $FRONTEND_STAGE_DIR' EXIT
+gzip -c frontend/index.html > "$FRONTEND_STAGE_DIR"/index.html.gz
+python -m freezefs "$FRONTEND_STAGE_DIR" build/frozen_frontend.py --target=/frontend
+
 for hwconfig in boards/RPI_PICO_W/manifest-*.py; do
     hwconfig_base=$(basename "$hwconfig")
     hwname=${hwconfig_base##manifest-}
