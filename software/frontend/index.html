@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Device Admin</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        max-width: 700px;
+        margin: auto;
+    }
+
+    /* Navigation */
+    nav button {
+        margin: 5px;
+        padding: 10px 16px;
+        cursor: pointer;
+    }
+
+    /* Screens */
+    .screen {
+        display: none;
+        margin-top: 20px;
+    }
+    .screen.active {
+        display: block;
+    }
+
+    /* Config editor UI */
+    label {
+        font-weight: bold;
+        margin-top: 12px;
+        display: block;
+    }
+    input {
+        width: 100%;
+        padding: 6px;
+        box-sizing: border-box;
+        margin-top: 4px;
+    }
+    .nested {
+        margin-left: 20px;
+        border-left: 2px solid #ddd;
+        padding-left: 10px;
+        margin-top: 10px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Device Admin</h1>
+
+<nav>
+    <button onclick="showScreen('menu')">🏠 Main Menu</button>
+    <button onclick="showScreen('config')">⚙️ Config Editor</button>
+</nav>
+
+<!-- MAIN MENU -->
+<div id="screen-menu" class="screen active">
+    <h2>Main Menu</h2>
+    <p>Select a tool:</p>
+
+    <ul>
+        <li><button onclick="showScreen('config')">Open Config Editor</button></li>
+        <!-- More screens can be added later -->
+    </ul>
+</div>
+
+<!-- CONFIG EDITOR SCREEN -->
+<div id="screen-config" class="screen">
+    <h2>Configuration Editor</h2>
+    <div id="config-container">Loading…</div>
+    <button id="save-btn" disabled>Save</button>
+</div>
+
+<script>
+/* -----------------------------
+   Screen switching
+----------------------------- */
+function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+
+    if (name === "config") {
+        loadConfig(); // refresh most up-to-date config
+    }
+}
+
+/* -----------------------------
+   CONFIG EDITOR LOGIC
+----------------------------- */
+async function loadConfig() {
+    const container = document.getElementById('config-container');
+    container.innerHTML = "Loading…";
+    document.getElementById('save-btn').disabled = true;
+
+    try {
+        const res = await fetch('/api/v1/config');
+        const config = await res.json();
+        renderConfigForm(config);
+    } catch (err) {
+        container.innerHTML = "Failed to load config: " + err;
+    }
+}
+
+function renderConfigForm(config) {
+    const container = document.getElementById('config-container');
+    container.innerHTML = "";
+    container.appendChild(renderObject(config, "root"));
+    document.getElementById('save-btn').disabled = false;
+}
+
+const config_names = {
+    'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
+    'root.BUTTON_MAP': 'Button map',
+    'root.BUTTON_MAP.NEXT': 'Next track',
+    'root.BUTTON_MAP.PREV': 'Previous track',
+    'root.BUTTON_MAP.VOLUP': 'Volume up',
+    'root.BUTTON_MAP.VOLDOWN': 'Volume down',
+    'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
+    'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
+    'root.TAGMODE': 'Tag mode',
+    'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
+};
+const config_input_override = {
+    'root.TAGMODE': {
+        'element': 'select',
+        'values': {
+            'tagremains': 'Play until tag is removed',
+            'tagstartstop': 'Present tag once to start, present again to stop playback'
+        }
+    },
+    'root.IDLE_TIMEOUT_SECS': {
+        'input-type': 'number'
+    },
+    'root.TAG_TIMEOUT_SECS': {
+        'input-type': 'number'
+    },
+    'root.LED_COUNT': {
+        'input-type': 'number'
+    },
+};
+
+function renderObject(obj, path) {
+    const wrapper = document.createElement('div');
+
+    Object.entries(obj).forEach(([key, value]) => {
+        const currentPath = path + '.' + key;
+        const label = document.createElement('label');
+        if (currentPath in config_names) {
+            label.textContent = config_names[currentPath];
+        } else {
+            label.textContent = key;
+        }
+
+        if (value !== null && typeof value === 'object') {
+            wrapper.appendChild(label);
+            const nested = document.createElement('div');
+            nested.className = "nested";
+            nested.appendChild(renderObject(value, currentPath));
+            wrapper.appendChild(nested);
+        } else {
+            wrapper.appendChild(label);
+            if (currentPath in config_input_override && 'element' in config_input_override[currentPath]) {
+                const override = config_input_override[currentPath];
+                if (override['element'] === 'select') {
+                    const input = document.createElement('select');
+                    input.dataset.path = currentPath;
+
+                    for (const val in override.values) {
+                        const option = document.createElement('option');
+                        option.value = val;
+                        option.textContent = override.values[val];
+                        if (val === value) {
+                            option.selected = true;
+                        }
+
+                        input.appendChild(option);
+                    }
+
+                    wrapper.appendChild(input);
+                }
+            } else {
+                const input = document.createElement('input');
+                if (currentPath in config_input_override && 'input-type' in config_input_override[currentPath]) {
+                    input.type = config_input_override[currentPath]['input-type'];
+                }
+                input.value = value === null ? "" : value;
+                input.dataset.path = currentPath;
+
+                wrapper.appendChild(input);
+            }
+        }
+    });
+
+    return wrapper;
+}
+
+function serializeConfig(rootObj) {
+    const inputs = document.querySelectorAll("input[data-path], select[data-path]");
+
+    inputs.forEach(input => {
+        const path = input.dataset.path.split('.').slice(1); // remove "root"
+        let current = rootObj;
+
+        for (let i = 0; i < path.length - 1; i++) {
+            current = current[path[i]];
+        }
+
+        let val = input.value.trim();
+        if (val === "") val = null;
+        else if (!isNaN(val)) val = Number(val);
+
+        current[path[path.length - 1]] = val;
+    });
+
+    return rootObj;
+}
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+    const res = await fetch('/api/v1/config');
+    const original = await res.json();
+    const updated = serializeConfig(original);
+
+    try {
+        const saveRes = await fetch('/api/v1/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated, null, 2)
+        });
+
+        if (!saveRes.ok) {
+            alert("Failed to save config: " + await saveRes.text());
+            return;
+        }
+
+        alert("Configuration saved successfully!");
+    } catch (err) {
+        alert("Error saving configuration: " + err);
+    }
+});
+
+// Load main menu by default
+showScreen('menu');
+</script>
+
+</body>
+</html>

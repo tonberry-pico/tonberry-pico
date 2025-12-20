@@ -22,3 +22,5 @@ module("mp3player.py", "../../src")
 module("webserver.py", "../../src")
 package("utils", base_path="../../src")
 package("nfc", base_path="../../src")
+
+module("frozen_frontend.py", "../../build")

@@ -5,7 +5,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 
 import asyncio
 
-from microdot import Microdot
+from microdot import Microdot, redirect, send_file
 
 webapp = Microdot()
 server = None
@@ -29,7 +29,14 @@ async def before_request_handler(request):
     app.reset_idle_timeout()
 
 
-@webapp.route('/')
+@webapp.before_request
+async def before_request_handler(request):
+    if request.method in ['PUT', 'POST'] and app.is_playing():
+        return "Cannot write to device while playback is active", 503
+    app.reset_idle_timeout()
+
+
+@webapp.route('/api/v1/hello')
 async def index(request):
     print("wohoo, a guest :)")
     print(f"  app: {request.app}")
@@ -72,3 +79,21 @@ async def config_put(request):
 async def last_tag_uid_get(request):
     tag, _ = nfc.get_last_uid()
     return {'tag': tag}
+
+
+@webapp.route('/', methods=['GET'])
+async def root_get(request):
+    return redirect('/index.html')
+
+
+@webapp.route('/index.html', methods=['GET'])
+async def index_get(request):
+    return send_file('/frontend/index.html.gz', content_type='text/html', compressed='gzip')
+
+
+@webapp.route('/static/<path:path>', methods=['GET'])
+async def static(request, path):
+    if '..' in path:
+        # directory traversal is not allowed
+        return 'Not found', 404
+    return send_file('/frontend/static/' + path, max_age=86400)
