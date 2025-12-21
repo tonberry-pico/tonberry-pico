@@ -104,9 +104,6 @@ class PlayerApp:
             self._pause_toggle()
 
     def onPlaybackDone(self):
-        assert self.mp3file is not None
-        self.mp3file.close()
-        self.mp3file = None
         self._play_next()
 
     def onIdleTimeout(self):
@@ -141,9 +138,7 @@ class PlayerApp:
             self.playlist = None
 
     def _play_next(self):
-        if self.playlist is None:
-            return
-        filename = self.playlist.getNextPath()
+        filename = self.playlist.getNextPath() if self.playlist is not None else None
         self._play(filename)
         if filename is None:
             self.playlist = None
