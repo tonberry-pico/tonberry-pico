@@ -162,6 +162,15 @@ async def audiofiles_get(request):
     def directory_iterator():
         yield '['
         first = True
+
+        def make_json_str(obj):
+            nonlocal first
+            jsonpath = json.dumps(obj)
+            if not first:
+                jsonpath = ',' + jsonpath
+            first = False
+            return jsonpath
+
         dirstack = [fsroot]
         while dirstack:
             current_dir = dirstack.pop()
@@ -170,15 +179,11 @@ async def audiofiles_get(request):
                 type_ = entry[1]
                 current_path = current_dir + b'/' + name
                 if type_ == 0x4000:
+                    yield make_json_str({'name': current_path[len(fsroot):], 'type': 'directory'})
                     dirstack.append(current_path)
                 elif type_ == 0x8000:
                     if name.lower().endswith('.mp3'):
-                        jsonpath = json.dumps(current_path[len(fsroot):])
-                        if not first:
-                            yield ','+jsonpath
-                        else:
-                            yield jsonpath
-                        first = False
+                        yield make_json_str({'name': current_path[len(fsroot):], 'type': 'file'})
         yield ']'
 
     return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}

@@ -565,6 +565,7 @@
 
         function selectTag(tag) {
             const container = document.getElementById('playlist-exist-list');
+            if (tag.tag === null) return;
             const tagtext = bytesToHex(tag.tag);
             document.getElementById('playlist-exist-list')
                     .querySelectorAll("li")
@@ -797,17 +798,16 @@
             const rootnode = document.createElement('ul');
             tree.appendChild(rootnode);
         
-            files.sort();    
+            files.sort((a, b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));    
             for (const file of files) {
-                const path = file.split('/').slice(1);
+                const path = file.name.split('/').slice(1);
                 let treeIterator = rootnode;
                 let curPath = ''
                 for (const elem of path) {
                     curPath += '/' + elem;
                     let node = findChildByName(treeIterator, elem);
                     if (node === null) {
-                        const isFile = path.slice(-1)[0] === elem;
-                        node = addTreeNode(treeIterator, elem, isFile ? 'file':'directory', curPath);
+                        node = addTreeNode(treeIterator, elem, file.type, curPath);
                     }
                     treeIterator = node;
                 }
