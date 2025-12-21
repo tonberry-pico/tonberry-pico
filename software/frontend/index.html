@@ -153,6 +153,8 @@
         <li><button onclick="showScreen('playlist')">Open Playlist Editor</button></li>
         <!-- More screens can be added later -->
     </ul>
+    <hr>
+    <button onclick="fetch('/api/v1/reboot/bootloader', {'method': 'POST'});">Reboot to bootloader</button>
 </div>
 
 <!-- CONFIG EDITOR SCREEN -->
