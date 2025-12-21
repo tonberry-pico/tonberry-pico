@@ -271,6 +271,12 @@
             <button id="playlist-filebrowser-cancel">Cancel</button>
             <button id="playlist-filebrowser-addtrack">Add track(s)</button>
         </div>
+        <label>Upload files</label>
+        <div class="flex-horizontal">
+            <input type="file" id="playlist-filebrowser-upload-files" multiple accept="audio/mpeg" />
+            <button id="playlist-filebrowser-upload">Upload</button>
+            <progress id="playlist-filebrowser-upload-progress" max="100" value="0">0%</progress>
+        </div>
     </div>
 </div>
     
@@ -482,7 +488,8 @@
             document.getElementById('playlist-exist-button-gettag')
                 .addEventListener('click', selectLastTag);
             document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
-                showScreen("playlist_edit", {load: lastSelected.innerText});
+                if (lastSelected !== null)
+                    showScreen("playlist_edit", {load: lastSelected.innerText});
             });
             document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
                 const node = e.target.closest("li");
@@ -564,6 +571,7 @@
                     .forEach(n => {
                         if (n.innerText == tagtext) {
                             n.classList.add("selected");
+                            lastSelected = n;
                         } else {
                             n.classList.remove("selected");
                         }
@@ -733,6 +741,9 @@
             document.getElementById('playlist-filebrowser-addtrack').addEventListener("click", (e) => {
                 returnSelectedTracks();
             });
+            document.getElementById('playlist-filebrowser-upload').addEventListener("click", (e) => {
+               uploadFiles();
+            });
             tree.init();
         }
         
@@ -821,6 +832,54 @@
                 }
             }
             showScreen("playlist_edit", {addtracks: tracks});
+        }
+
+        function uploadFiles() {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
+            if (selectedNodes.length !== 1 ||
+               selectedNodes[0].getAttribute('data-type') !== "directory") {
+                alert("Please select a single directory for upload");
+                return;
+            }
+            uploadFileHelper(files.length, 0, selectedNodes[0].getAttribute('data-path'), files);
+        }
+
+        function uploadFileHelper(totalcount, donecount, destdir, files) {
+            // Upload files sequentially by recursivly calling this function from the 'load' callback when
+            // the previous upload is completed.
+            if (files.length === 0)
+                return;
+            const reader = new FileReader();
+            const ctrl = document.getElementById("playlist-filebrowser-upload-progress");
+            const xhr = new XMLHttpRequest();
+            const location = destdir + '/' + files[0].name;
+
+            xhr.upload.addEventListener("progress", (e) => {
+                if (e.lengthComputable) {
+                    const percentage = Math.round((e.loaded * 100) / e.total / totalcount + donecount * 100 / totalcount);
+                    ctrl.value = percentage;
+                }
+            });
+            //xhr.upload.addEventListener("load", (e) => {
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status !== 204) {
+                        alert(`File upload failed: ${xhr.responseText} (${xhr.status})`);
+                        return;
+                    }
+                    if (donecount + 1 === totalcount) {
+                        // Reload file list from device
+                        onShow();
+                    } else {
+                        uploadFileHelper(totalcount, donecount + 1, destdir, files.slice(1));
+                    }
+                }
+            };
+            xhr.open("POST", `/api/v1/audiofiles?type=file&location=${location}`);
+            xhr.overrideMimeType("audio/mpeg");
+            xhr.send(files[0]);
         }
         
         let tree = (() => {

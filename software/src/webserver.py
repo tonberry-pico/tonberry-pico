@@ -7,7 +7,8 @@ import asyncio
 import json
 import os
 
-from microdot import Microdot, redirect, send_file
+from array import array
+from microdot import Microdot, redirect, send_file, Request
 
 webapp = Microdot()
 server = None
@@ -15,6 +16,8 @@ config = None
 app = None
 nfc = None
 playlist_db = None
+
+Request.max_content_length = 128 * 1024 * 1024  # 128MB requests allowed
 
 
 def start_webserver(config_, app_):
@@ -28,7 +31,7 @@ def start_webserver(config_, app_):
 
 @webapp.before_request
 async def before_request_handler(request):
-    if request.method in ['PUT', 'POST'] and app.is_playing():
+    if request.method in ['PUT', 'POST', 'DELETE'] and app.is_playing():
         return "Cannot write to device while playback is active", 503
     app.reset_idle_timeout()
 
@@ -179,3 +182,39 @@ async def audiofiles_get(request):
         yield ']'
 
     return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}
+
+
+@webapp.route('/api/v1/audiofiles', methods=['POST'])
+async def audiofile_upload(request):
+    if 'type' not in request.args or request.args['type'] not in ['file', 'directory']:
+        return 'invalid or missing type', 400
+    if 'location' not in request.args:
+        return 'missing location', 400
+    path = fsroot + '/' + request.args['location']
+    type_ = request.args['type']
+    length = request.content_length
+    print(f'Got upload request of type {type_} to {path} with length {length}')
+    if type_ == 'directory':
+        if length != 0:
+            return 'directory request may not have content', 400
+        os.mkdir(path)
+        return '', 204
+    with open(path, 'wb') as newfile:
+        data = array('b', range(4096))
+        bytes_copied = 0
+        while True:
+            bytes_read = await request.stream.readinto(data)
+            if bytes_read == 0:
+                # End of body
+                break
+            bytes_written = newfile.write(data[:bytes_read])
+            if bytes_written != bytes_read:
+                # short writes shouldn't happen
+                return 'write failure', 500
+            bytes_copied += bytes_written
+            if bytes_copied == length:
+                break
+    if bytes_copied == length:
+        return '', 204
+    else:
+        return 'size mismatch', 500
