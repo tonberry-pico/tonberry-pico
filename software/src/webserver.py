@@ -4,6 +4,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import hwconfig
 import json
 import machine
 import os
@@ -257,6 +258,9 @@ async def audiofile_delete(request):
 
 @webapp.route('/api/v1/reboot/<method>', methods=['POST'])
 async def reboot(request, method):
+    if hwconfig.get_on_battery():
+        return 'not allowed: no vbus', 403
+
     if method == 'bootloader':
         leds.set_state(LedManager.REBOOTING)
         timer_manager.schedule(time.ticks_ms() + 1500, machine.bootloader)
