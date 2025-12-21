@@ -153,6 +153,8 @@
         <li><button onclick="showScreen('playlist')">Open Playlist Editor</button></li>
         <!-- More screens can be added later -->
     </ul>
+    <hr>
+    <button onclick="requestReboot()">Reboot to bootloader</button>
 </div>
 
 <!-- CONFIG EDITOR SCREEN -->
@@ -220,6 +222,7 @@
                 </div>
             </div>
             <div class="flex-horizontal">
+                <button id="playlist-edit-back">Cancel</button>
                 <button id="playlist-edit-removetrack">Remove track(s)</button>
                 <button id="playlist-edit-addtrack">Add track(s)</button>
                 <button id="playlist-edit-save">Save</button>
@@ -235,41 +238,22 @@
         <div class="scroll-container">
             <div class="tree" id="playlist-filebrowser-tree">
                 <ul><li>Loading...</li></ul>
-                <!--<ul>
-                    <li>
-                      <span class="caret"></span>
-                      <span class="node">Fruits</span>
-                      <ul>
-                        <li>
-                            <span class="caret"></span>
-                            <span class="node">Apple</span>
-                        </li>
-                        <li>
-                          <span class="caret"></span>
-                          <span class="node">Citrus</span>
-                          <ul>
-                            <li>
-                              <span class="caret"></span>
-                              <span class="node">Orange</span>
-                            </li>
-                            <li>
-                              <span class="caret"></span>
-                              <span class="node">Lemon</span>
-                            </li>
-                          </ul>
-                        </li>
-                        <li>
-                          <span class="caret"></span>
-                          <span class="node">Strawberry</span>
-                        </li>
-                      </ul>
-                    </li>
-                </ul> -->
             </div>
         </div>
         <div class="flex-horizontal">
             <button id="playlist-filebrowser-cancel">Cancel</button>
+            <button id="playlist-filebrowser-delete" style="background-color: orangered">Delete selected</button>
             <button id="playlist-filebrowser-addtrack">Add track(s)</button>
+        </div>
+        <hr>
+        <div class="flex-horizontal">
+            <input type="file" id="playlist-filebrowser-upload-files" multiple accept="audio/mpeg" />
+            <progress id="playlist-filebrowser-upload-progress" max="100" value="0" style:"flex-grow: 1">0%</progress>
+            <button id="playlist-filebrowser-upload">Upload</button>
+        </div>
+        <div class="flex-horizontal">
+            <input type="text" id="playlist-filebrowser-mkdir-name" placeholder="Directory Name" />
+            <button id="playlist-filebrowser-mkdir" style="width: 20%">Create directory</button>
         </div>
     </div>
 </div>
@@ -482,7 +466,8 @@
             document.getElementById('playlist-exist-button-gettag')
                 .addEventListener('click', selectLastTag);
             document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
-                showScreen("playlist_edit", {load: lastSelected.innerText});
+                if (lastSelected !== null)
+                    showScreen("playlist_edit", {load: lastSelected.innerText});
             });
             document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
                 const node = e.target.closest("li");
@@ -558,12 +543,14 @@
 
         function selectTag(tag) {
             const container = document.getElementById('playlist-exist-list');
+            if (tag.tag === null) return;
             const tagtext = bytesToHex(tag.tag);
             document.getElementById('playlist-exist-list')
                     .querySelectorAll("li")
                     .forEach(n => {
                         if (n.innerText == tagtext) {
                             n.classList.add("selected");
+                            lastSelected = n;
                         } else {
                             n.classList.remove("selected");
                         }
@@ -597,6 +584,7 @@
             document.getElementById('playlist-edit-trackmove-up').addEventListener("click", (e) => moveSelectedTracks(true));
             document.getElementById('playlist-edit-trackmove-down').addEventListener("click", (e) => moveSelectedTracks(false));
             document.getElementById('playlist-edit-removetrack').addEventListener("click", (e) => deleteSelectedTracks());
+            document.getElementById('playlist-edit-back').addEventListener("click", (e) => showScreen('playlist'));
             document.getElementById('playlist-edit-addtrack').addEventListener("click", (e) => {
                 showScreen("playlist_filebrowser");
             });
@@ -698,6 +686,7 @@
                 alert("Failed to save playlist: " + await saveRes.text());
                 return;
             }
+            showScreen('playlist');
         }
         
         function moveSelectedTracks(up) {
@@ -732,6 +721,15 @@
             });
             document.getElementById('playlist-filebrowser-addtrack').addEventListener("click", (e) => {
                 returnSelectedTracks();
+            });
+            document.getElementById('playlist-filebrowser-upload').addEventListener("click", (e) => {
+               uploadFiles();
+            });
+            document.getElementById('playlist-filebrowser-mkdir').addEventListener("click", (e) => {
+               createDirectory();
+            });
+            document.getElementById('playlist-filebrowser-delete').addEventListener("click", (e) => {
+               deleteItems();
             });
             tree.init();
         }
@@ -786,17 +784,16 @@
             const rootnode = document.createElement('ul');
             tree.appendChild(rootnode);
         
-            files.sort();    
+            files.sort((a, b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));    
             for (const file of files) {
-                const path = file.split('/').slice(1);
+                const path = file.name.split('/').slice(1);
                 let treeIterator = rootnode;
                 let curPath = ''
                 for (const elem of path) {
                     curPath += '/' + elem;
                     let node = findChildByName(treeIterator, elem);
                     if (node === null) {
-                        const isFile = path.slice(-1)[0] === elem;
-                        node = addTreeNode(treeIterator, elem, isFile ? 'file':'directory', curPath);
+                        node = addTreeNode(treeIterator, elem, file.type, curPath);
                     }
                     treeIterator = node;
                 }
@@ -821,6 +818,94 @@
                 }
             }
             showScreen("playlist_edit", {addtracks: tracks});
+        }
+
+        function uploadFiles() {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
+            if (selectedNodes.length !== 1 ||
+               selectedNodes[0].getAttribute('data-type') !== "directory") {
+                alert("Please select a single directory for upload");
+                return;
+            }
+            uploadFileHelper(files.length, 0, selectedNodes[0].getAttribute('data-path'), files);
+        }
+
+        function uploadFileHelper(totalcount, donecount, destdir, files) {
+            // Upload files sequentially by recursivly calling this function from the 'load' callback when
+            // the previous upload is completed.
+            if (files.length === 0)
+                return;
+            const reader = new FileReader();
+            const ctrl = document.getElementById("playlist-filebrowser-upload-progress");
+            const xhr = new XMLHttpRequest();
+            const location = destdir + '/' + files[0].name;
+
+            xhr.upload.addEventListener("progress", (e) => {
+                if (e.lengthComputable) {
+                    const percentage = Math.round((e.loaded * 100) / e.total / totalcount + donecount * 100 / totalcount);
+                    ctrl.value = percentage;
+                }
+            });
+            //xhr.upload.addEventListener("load", (e) => {
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status !== 204) {
+                        alert(`File upload failed: ${xhr.responseText} (${xhr.status})`);
+                        return;
+                    }
+                    if (donecount + 1 === totalcount) {
+                        // Reload file list from device
+                        onShow();
+                    } else {
+                        uploadFileHelper(totalcount, donecount + 1, destdir, files.slice(1));
+                    }
+                }
+            };
+            xhr.open("POST", `/api/v1/audiofiles?type=file&location=${location}`);
+            xhr.overrideMimeType("audio/mpeg");
+            xhr.send(files[0]);
+        }
+
+        async function createDirectory() {
+            const name = document.getElementById('playlist-filebrowser-mkdir-name');
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
+            if (selectedNodes.length > 1 ||
+                (selectedNodes.length === 1 &&
+                 selectedNodes[0].getAttribute('data-type') !== "directory")) {
+                alert("Please select a single directory for upload");
+                return;
+            }
+            const location = selectedNodes.length === 1
+                ? selectedNodes[0].getAttribute('data-path') + '/' + name.value
+                : '/' + name.value;
+            const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
+                  {method: 'POST'});
+            // Reload file list from device
+            onShow();
+        }
+
+        async function deleteItems() {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            if (selectedNodes.length === 0) {
+                alert("Please select something to delete");
+                return;
+            }
+            const items = selectedNodes.map(n => n.getAttribute('data-path'));
+            items.sort();
+            items.reverse();
+            for (const item of items) {
+                const saveRes = await fetch(`/api/v1/audiofiles?location=${item}`,
+                  {method: 'DELETE'});
+                if (!saveRes.ok) {
+                    alert(`Failed to delete item ${item}: ${await saveRes.text()}`);
+                }
+            }
+            // Reload file list from device
+            onShow();
         }
         
         let tree = (() => {
@@ -881,6 +966,14 @@
         
         return { init, onShow };
     })();
+
+// Misc
+    async function requestReboot() {
+        const resp = await fetch('/api/v1/reboot/bootloader', {'method': 'POST'});
+        if (!resp.ok) {
+            alert('Reboot to bootloader failed: ' + await resp.text());
+        }
+    }
     
 // Initialization
     Object.values(Screens).forEach(screen => {

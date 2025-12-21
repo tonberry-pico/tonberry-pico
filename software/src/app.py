@@ -161,7 +161,11 @@ class PlayerApp:
             self._onIdle()
         if filename is not None:
             print(f'Playing {filename!r}')
-            self.mp3file = open(filename, 'rb')
+            try:
+                self.mp3file = open(filename, 'rb')
+            except OSError as ex:
+                print(f"Could not play file {filename}: {ex}")
+                return
             self.player.play(self.mp3file, offset)
             self.paused = False
             self._onActive()
@@ -191,3 +195,6 @@ class PlayerApp:
 
     def get_playlist_db(self):
         return self.playlist_db
+
+    def get_leds(self):
+        return self.leds
