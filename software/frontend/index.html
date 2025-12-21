@@ -220,6 +220,7 @@
                 </div>
             </div>
             <div class="flex-horizontal">
+                <button id="playlist-edit-back">Cancel</button>
                 <button id="playlist-edit-removetrack">Remove track(s)</button>
                 <button id="playlist-edit-addtrack">Add track(s)</button>
                 <button id="playlist-edit-save">Save</button>
@@ -581,6 +582,7 @@
             document.getElementById('playlist-edit-trackmove-up').addEventListener("click", (e) => moveSelectedTracks(true));
             document.getElementById('playlist-edit-trackmove-down').addEventListener("click", (e) => moveSelectedTracks(false));
             document.getElementById('playlist-edit-removetrack').addEventListener("click", (e) => deleteSelectedTracks());
+            document.getElementById('playlist-edit-back').addEventListener("click", (e) => showScreen('playlist'));
             document.getElementById('playlist-edit-addtrack').addEventListener("click", (e) => {
                 showScreen("playlist_filebrowser");
             });
@@ -682,6 +684,7 @@
                 alert("Failed to save playlist: " + await saveRes.text());
                 return;
             }
+            showScreen('playlist');
         }
         
         function moveSelectedTracks(up) {
