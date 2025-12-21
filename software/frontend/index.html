@@ -277,6 +277,10 @@
             <button id="playlist-filebrowser-upload">Upload</button>
             <progress id="playlist-filebrowser-upload-progress" max="100" value="0">0%</progress>
         </div>
+        <div class="flex-horizontal">
+            <input type="text" id="playlist-filebrowser-mkdir-name" />
+            <button id="playlist-filebrowser-mkdir">Create directory</button>
+        </div>
     </div>
 </div>
     
@@ -745,6 +749,9 @@
             document.getElementById('playlist-filebrowser-upload').addEventListener("click", (e) => {
                uploadFiles();
             });
+            document.getElementById('playlist-filebrowser-mkdir').addEventListener("click", (e) => {
+               createDirectory();
+            });
             tree.init();
         }
         
@@ -880,6 +887,25 @@
             xhr.open("POST", `/api/v1/audiofiles?type=file&location=${location}`);
             xhr.overrideMimeType("audio/mpeg");
             xhr.send(files[0]);
+        }
+
+        async function createDirectory() {
+            const name = document.getElementById('playlist-filebrowser-mkdir-name');
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
+            if (selectedNodes.length > 1 ||
+                (selectedNodes.length === 1 &&
+                 selectedNodes[0].getAttribute('data-type') !== "directory")) {
+                alert("Please select a single directory for upload");
+                return;
+            }
+            const location = selectedNodes.length === 1
+                ? selectedNodes[0].getAttribute('data-path') + '/' + name.value
+                : '/' + name.value;
+            const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
+                  {method: 'POST'});
+            // Reload file list from device
+            onShow();
         }
         
         let tree = (() => {
