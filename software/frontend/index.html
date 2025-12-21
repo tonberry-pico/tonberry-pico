@@ -235,51 +235,22 @@
         <div class="scroll-container">
             <div class="tree" id="playlist-filebrowser-tree">
                 <ul><li>Loading...</li></ul>
-                <!--<ul>
-                    <li>
-                      <span class="caret"></span>
-                      <span class="node">Fruits</span>
-                      <ul>
-                        <li>
-                            <span class="caret"></span>
-                            <span class="node">Apple</span>
-                        </li>
-                        <li>
-                          <span class="caret"></span>
-                          <span class="node">Citrus</span>
-                          <ul>
-                            <li>
-                              <span class="caret"></span>
-                              <span class="node">Orange</span>
-                            </li>
-                            <li>
-                              <span class="caret"></span>
-                              <span class="node">Lemon</span>
-                            </li>
-                          </ul>
-                        </li>
-                        <li>
-                          <span class="caret"></span>
-                          <span class="node">Strawberry</span>
-                        </li>
-                      </ul>
-                    </li>
-                </ul> -->
             </div>
         </div>
         <div class="flex-horizontal">
             <button id="playlist-filebrowser-cancel">Cancel</button>
+            <button id="playlist-filebrowser-delete" style="background-color: orangered">Delete selected</button>
             <button id="playlist-filebrowser-addtrack">Add track(s)</button>
         </div>
-        <label>Upload files</label>
+        <hr>
         <div class="flex-horizontal">
             <input type="file" id="playlist-filebrowser-upload-files" multiple accept="audio/mpeg" />
+            <progress id="playlist-filebrowser-upload-progress" max="100" value="0" style:"flex-grow: 1">0%</progress>
             <button id="playlist-filebrowser-upload">Upload</button>
-            <progress id="playlist-filebrowser-upload-progress" max="100" value="0">0%</progress>
         </div>
         <div class="flex-horizontal">
-            <input type="text" id="playlist-filebrowser-mkdir-name" />
-            <button id="playlist-filebrowser-mkdir">Create directory</button>
+            <input type="text" id="playlist-filebrowser-mkdir-name" placeholder="Directory Name" />
+            <button id="playlist-filebrowser-mkdir" style="width: 20%">Create directory</button>
         </div>
     </div>
 </div>
@@ -752,6 +723,9 @@
             document.getElementById('playlist-filebrowser-mkdir').addEventListener("click", (e) => {
                createDirectory();
             });
+            document.getElementById('playlist-filebrowser-delete').addEventListener("click", (e) => {
+               deleteItems();
+            });
             tree.init();
         }
         
@@ -904,6 +878,27 @@
                 : '/' + name.value;
             const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
                   {method: 'POST'});
+            // Reload file list from device
+            onShow();
+        }
+
+        async function deleteItems() {
+            const tree = document.getElementById("playlist-filebrowser-tree");
+            const selectedNodes = [...tree.querySelectorAll(".selected")];
+            if (selectedNodes.length === 0) {
+                alert("Please select something to delete");
+                return;
+            }
+            const items = selectedNodes.map(n => n.getAttribute('data-path'));
+            items.sort();
+            items.reverse();
+            for (const item of items) {
+                const saveRes = await fetch(`/api/v1/audiofiles?location=${item}`,
+                  {method: 'DELETE'});
+                if (!saveRes.ok) {
+                    alert(`Failed to delete item ${item}: ${await saveRes.text()}`);
+                }
+            }
             // Reload file list from device
             onShow();
         }

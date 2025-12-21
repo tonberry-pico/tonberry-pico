@@ -223,3 +223,26 @@ async def audiofile_upload(request):
         return '', 204
     else:
         return 'size mismatch', 500
+
+
+def recursive_delete(path):
+    stat = os.stat(path)
+    if stat[0] == 0x8000:
+        os.remove(path)
+    elif stat[0] == 0x4000:
+        for entry in os.ilistdir(path):
+            entry_path = path + '/' + entry[0]
+            recursive_delete(entry_path)
+        os.rmdir(path)
+
+
+@webapp.route('/api/v1/audiofiles', methods=['DELETE'])
+async def audiofile_delete(request):
+    if 'location' not in request.args:
+        return 'missing location', 400
+    location = request.args['location']
+    if '..' in location or len(location) == 0:
+        return 'bad location', 400
+    path = fsroot + '/' + request.args['location']
+    recursive_delete(path)
+    return '', 204
