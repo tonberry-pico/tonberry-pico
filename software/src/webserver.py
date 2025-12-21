@@ -33,7 +33,7 @@ def start_webserver(config_, app_):
     nfc = app.get_nfc()
     playlist_db = app.get_playlist_db()
     leds = app.get_leds()
-    timer_manager = app.get_timer_manager()
+    timer_manager = TimerManager()
 
 
 @webapp.before_request
@@ -260,7 +260,7 @@ async def reboot(request, method):
     if method == 'bootloader':
         leds.set_state(LedManager.REBOOTING)
         timer_manager.schedule(time.ticks_ms() + 1500, machine.bootloader)
-    elif method =='application':
+    elif method == 'application':
         leds.set_state(LedManager.REBOOTING)
         timer_manager.schedule(time.ticks_ms() + 1500, machine.reset)
     else:

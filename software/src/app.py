@@ -196,8 +196,5 @@ class PlayerApp:
     def get_playlist_db(self):
         return self.playlist_db
 
-    def get_timer_manager(self):
-        return self.timer_manager
-
     def get_leds(self):
         return self.leds
