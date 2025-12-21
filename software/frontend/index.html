@@ -131,6 +131,12 @@
         list-style: none;
     }
 
+    .footer {
+        font-size: x-small;
+        color: gray;
+        margin-top: 20px;
+    }
+
 </style>
 </head>
 <body>
@@ -257,7 +263,17 @@
         </div>
     </div>
 </div>
-    
+<div class="footer">
+    <hr>
+    <div class="flex-horizontal">
+        <div>
+            <a href="https://git.ka.blankertz.org/TonBERRY/tonberry-pico">TonBERRY pico</a>
+        </div>
+        <div>
+            Version: <span id="footer-version">unknown</span>
+        </div>
+    </div>
+</div>
 <script>
     const Screens = {};
     let activeScreen = null;
@@ -981,6 +997,13 @@
     });
 
     showScreen("menu");
+
+    fetch('/api/v1/info')
+        .then((resp) => resp.json())
+        .then((info) => {
+            const version = document.getElementById('footer-version');
+            version.innerText = info.version;
+        });
 </script>
 
 </body>

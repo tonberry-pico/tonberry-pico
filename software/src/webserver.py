@@ -4,11 +4,14 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import board
 import hwconfig
 import json
 import machine
+import network
 import os
 import time
+import ubinascii
 
 from array import array
 from microdot import Microdot, redirect, send_file, Request
@@ -270,3 +273,10 @@ async def reboot(request, method):
     else:
         return 'method not supported', 400
     return '', 204
+
+
+@webapp.route('/api/v1/info', methods=['GET'])
+async def get_info(request):
+    mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+    return {'version': board.version,
+            'mac': mac}
