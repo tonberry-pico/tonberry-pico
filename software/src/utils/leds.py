@@ -10,6 +10,7 @@ import time
 class LedManager:
     IDLE = const(0)
     PLAYING = const(1)
+    REBOOTING = const(2)
 
     def __init__(self, np):
         self.led_state = LedManager.IDLE
@@ -19,7 +20,7 @@ class LedManager:
         asyncio.create_task(self.run())
 
     def set_state(self, state):
-        assert state in [LedManager.IDLE, LedManager.PLAYING]
+        assert state in [LedManager.IDLE, LedManager.PLAYING, LedManager.REBOOTING]
         self.led_state = state
 
     def _gamma(self, value, X=2.2):
@@ -50,6 +51,8 @@ class LedManager:
                 self._pulse(time_, (0, 1, 0), 3)
             elif self.led_state == LedManager.PLAYING:
                 self._rainbow(time_)
+            elif self.led_state == LedManager.REBOOTING:
+                self._pulse(time_, (1, 0, 1), 0.2)
             time_ += 0.02
             before = time.ticks_ms()
             await self.np.async_write()

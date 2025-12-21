@@ -5,10 +5,13 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 
 import asyncio
 import json
+import machine
 import os
+import time
 
 from array import array
 from microdot import Microdot, redirect, send_file, Request
+from utils import TimerManager, LedManager
 
 webapp = Microdot()
 server = None
@@ -16,17 +19,21 @@ config = None
 app = None
 nfc = None
 playlist_db = None
+leds = None
+timer_manager = None
 
 Request.max_content_length = 128 * 1024 * 1024  # 128MB requests allowed
 
 
 def start_webserver(config_, app_):
-    global server, config, app, nfc, playlist_db
+    global server, config, app, nfc, playlist_db, leds, timer_manager
     server = asyncio.create_task(webapp.start_server(port=80))
     config = config_
     app = app_
     nfc = app.get_nfc()
     playlist_db = app.get_playlist_db()
+    leds = app.get_leds()
+    timer_manager = app.get_timer_manager()
 
 
 @webapp.before_request
@@ -245,4 +252,17 @@ async def audiofile_delete(request):
         return 'bad location', 400
     path = fsroot + '/' + request.args['location']
     recursive_delete(path)
+    return '', 204
+
+
+@webapp.route('/api/v1/reboot/<method>', methods=['POST'])
+async def reboot(request, method):
+    if method == 'bootloader':
+        leds.set_state(LedManager.REBOOTING)
+        timer_manager.schedule(time.ticks_ms() + 1500, machine.bootloader)
+    elif method =='application':
+        leds.set_state(LedManager.REBOOTING)
+        timer_manager.schedule(time.ticks_ms() + 1500, machine.reset)
+    else:
+        return 'method not supported', 400
     return '', 204
