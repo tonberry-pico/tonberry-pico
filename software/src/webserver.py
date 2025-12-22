@@ -219,11 +219,17 @@ async def audiofile_upload(request):
         data = array('b', range(4096))
         bytes_copied = 0
         while True:
-            bytes_read = await request.stream.readinto(data)
+            try:
+                bytes_read = await request.stream.readinto(data)
+            except OSError as ex:
+                return f'read error: {ex}', 500
             if bytes_read == 0:
                 # End of body
                 break
-            bytes_written = newfile.write(data[:bytes_read])
+            try:
+                bytes_written = newfile.write(data[:bytes_read])
+            except OSError as ex:
+                return f'write error: {ex}', 500
             if bytes_written != bytes_read:
                 # short writes shouldn't happen
                 return 'write failure', 500
