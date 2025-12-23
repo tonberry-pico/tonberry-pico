@@ -37,14 +37,22 @@ hwconfig.board_init()
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 
-def setup_wifi():
+def setup_wifi(ssid='', passphrase='', sec=network.WLAN.SEC_WPA2_WPA3):
     network.hostname("TonberryPico")
-    wlan = network.WLAN(network.WLAN.IF_AP)
-    wlan.config(ssid=f"TonberryPicoAP_{machine.unique_id().hex()}", security=wlan.SEC_OPEN)
-    wlan.active(True)
+    if ssid is None or ssid == '':
+        apname = f"TonberryPicoAP_{machine.unique_id().hex()}"
+        print(f"Create AP {apname}")
+        wlan = network.WLAN(network.WLAN.IF_AP)
+        wlan.config(ssid=apname, security=wlan.SEC_OPEN)
+        wlan.active(True)
+    else:
+        print(f"Connect to SSID {ssid} with passphrase {passphrase}...")
+        wlan = network.WLAN()
+        wlan.active(True)
+        wlan.connect(ssid, passphrase if passphrase is not None else '', security=sec)
 
-    # disable power management
-    wlan.config(pm=network.WLAN.PM_NONE)
+    # configure power management
+    wlan.config(pm=network.WLAN.PM_PERFORMANCE)
 
     mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
     print(f"     mac: {mac}")
@@ -71,8 +79,11 @@ def run():
     # Setup LEDs
     np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
 
-    # Wifi with default config
-    setup_wifi()
+    if machine.Pin(hwconfig.BUTTONS[1], machine.Pin.IN, machine.Pin.PULL_UP).value() == 0:
+        # Force default access point
+        setup_wifi('', '')
+    else:
+        setup_wifi(config.get_wifi_ssid(), config.get_wifi_passphrase())
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,

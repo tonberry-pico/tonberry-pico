@@ -22,7 +22,11 @@ class Configuration:
             'PREV': None,
             'NEXT': 1,
         },
-        'TAGMODE': 'tagremains'
+        'TAGMODE': 'tagremains',
+        'WIFI': {
+            'SSID': '',
+            'PASSPHRASE': '',
+        }
     }
 
     def __init__(self, config_path='/config.json'):
@@ -86,6 +90,12 @@ class Configuration:
 
     def get_tagmode(self) -> str:
         return self._get('TAGMODE')
+
+    def get_wifi_ssid(self) -> str:
+        return self._get('WIFI')['SSID']
+
+    def get_wifi_passphrase(self) -> str:
+        return self._get('WIFI')['PASSPHRASE']
 
     # For the web API
     def get_config(self) -> Mapping[str, Any]:
