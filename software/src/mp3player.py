@@ -74,7 +74,7 @@ class MP3Player:
             # Call onPlaybackDone after flush
             send_done = True
         finally:
-            self.audiocore.flush()
+            await self.audiocore.async_flush()
         if send_done:
             # Only call onPlaybackDone if exit due to end of stream
             # Use timer with time 0 to call callback "immediately" but from a different task

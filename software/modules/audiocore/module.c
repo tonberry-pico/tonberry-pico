@@ -5,6 +5,8 @@
 
 // Include MicroPython API.
 #include "py/mperrno.h"
+#include "py/obj.h"
+#include "py/persistentcode.h"
 #include "py/runtime.h"
 #include "shared/runtime/mpirq.h"
 
@@ -59,6 +61,20 @@ static uint32_t get_fifo_read_value_blocking(struct audiocore_obj *obj)
         __nop(); // Ensure at least two instructions between enable interrupts and subsequent disable
         __nop();
     }
+}
+
+static bool get_fifo_read_value(struct audiocore_obj *obj, uint32_t *result)
+{
+    const long flags = save_and_disable_interrupts();
+    const uint32_t value = obj->fifo_read_value;
+    obj->fifo_read_value = 0;
+    if (value & AUDIOCORE_FIFO_DATA_FLAG) {
+        restore_interrupts(flags);
+        *result = value & ~AUDIOCORE_FIFO_DATA_FLAG;
+        return true;
+    }
+    restore_interrupts(flags);
+    return false;
 }
 
 /*
@@ -125,15 +141,31 @@ static MP_DEFINE_CONST_FUN_OBJ_2(audiocore_put_obj, audiocore_put);
  * Tells the audiocore to stop playback as soon as all MP3 frames still in the buffer have been decoded.
  * This function blocks until playback has ended.
  */
-static mp_obj_t audiocore_flush(mp_obj_t self_in)
+static mp_obj_t audiocore_flush(size_t n_args, const mp_obj_t *args)
 {
-    struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
+    struct audiocore_obj *self = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_t blocking = MP_ROM_TRUE;
+    if (n_args == 2) {
+        blocking = args[1];
+    }
     multicore_fifo_push_blocking(AUDIOCORE_CMD_FLUSH);
     wake_core1();
-    get_fifo_read_value_blocking(self);
+    if (mp_obj_is_true(blocking))
+        get_fifo_read_value_blocking(self);
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_1(audiocore_flush_obj, audiocore_flush);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(audiocore_flush_obj, 1, 2, audiocore_flush);
+
+static mp_obj_t audiocore_get_async_result(mp_obj_t self_in)
+{
+    uint32_t result;
+    struct audiocore_obj *self = MP_OBJ_TO_PTR(self_in);
+    if (get_fifo_read_value(self, &result)) {
+        return mp_obj_new_int(result);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(audiocore_get_async_result_obj, audiocore_get_async_result);
 
 /*
  * audiocore.set_volume(self, volume)
@@ -240,6 +272,7 @@ static const mp_rom_map_elem_t audiocore_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&audiocore_deinit_obj)},
     {MP_ROM_QSTR(MP_QSTR_put), MP_ROM_PTR(&audiocore_put_obj)},
     {MP_ROM_QSTR(MP_QSTR_flush), MP_ROM_PTR(&audiocore_flush_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_async_result), MP_ROM_PTR(&audiocore_get_async_result_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_volume), MP_ROM_PTR(&audiocore_set_volume_obj)},
 };
 static MP_DEFINE_CONST_DICT(audiocore_locals_dict, audiocore_locals_dict_table);

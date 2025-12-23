@@ -2,7 +2,8 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 import _audiocore
-from asyncio import ThreadSafeFlag
+import asyncio
+from asyncio import Lock, ThreadSafeFlag
 from utils import get_pin_index
 
 
@@ -11,19 +12,34 @@ class Audiocore:
         # PIO requires sideset pins to be adjacent
         assert get_pin_index(lrclk) == get_pin_index(dclk)+1 or get_pin_index(lrclk) == get_pin_index(dclk)-1
         self.notify = ThreadSafeFlag()
+        self.audiocore_lock = Lock()
         self._audiocore = _audiocore.Audiocore(din, dclk, lrclk, self._interrupt)
 
     def deinit(self):
+        assert not self.audiocore_lock.locked()
         self._audiocore.deinit()
 
     def _interrupt(self, _):
         self.notify.set()
 
     def flush(self):
+        assert not self.audiocore_lock.locked()
         self._audiocore.flush()
 
+    async def async_flush(self):
+        async with self.audiocore_lock:
+            self._audiocore.flush(False)
+            while True:
+                if self._audiocore.get_async_result() is not None:
+                    return
+                await self.notify.wait()
+
+    async def async_set_volume(self, volume):
+        async with self.audiocore_lock:
+            self._audiocore.set_volume(volume)
+
     def set_volume(self, volume):
-        self._audiocore.set_volume(volume)
+        asyncio.create_task(self.async_set_volume(volume))
 
     def put(self, buffer, blocking=False):
         pos = 0
