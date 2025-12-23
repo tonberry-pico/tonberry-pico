@@ -26,7 +26,8 @@ class Configuration:
         'WIFI': {
             'SSID': '',
             'PASSPHRASE': '',
-        }
+        },
+        'VOLUME_MAX': 255
     }
 
     def __init__(self, config_path='/config.json'):
@@ -96,6 +97,9 @@ class Configuration:
 
     def get_wifi_passphrase(self) -> str:
         return self._get('WIFI')['PASSPHRASE']
+
+    def get_volume_max(self) -> int:
+        return self._get('VOLUME_MAX')
 
     # For the web API
     def get_config(self) -> Mapping[str, Any]:

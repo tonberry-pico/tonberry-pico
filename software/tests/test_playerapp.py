@@ -139,6 +139,9 @@ class FakeConfig:
     def get_tagmode(self):
         return 'tagremains'
 
+    def get_volume_max(self):
+        return 255
+
 
 def fake_open(filename, mode):
     return FakeFile(filename, mode)

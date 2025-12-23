@@ -9,8 +9,8 @@ from utils import TimerManager
 Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds',
                                            'config'))
 
-# Should be ~ 6dB steps
-VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
+# Should be ~ 3dB steps
+VOLUME_CURVE = [1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 91, 128, 181, 255]
 
 
 class PlayerApp:
@@ -52,6 +52,7 @@ class PlayerApp:
         self.hwconfig = deps.hwconfig(self)
         self.leds = deps.leds(self)
         self.tag_mode = self.config.get_tagmode()
+        self.volume_max = self.config.get_volume_max()
         self.playing_tag = None
         self.playlist = None
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
@@ -91,8 +92,10 @@ class PlayerApp:
     def onButtonPressed(self, what):
         assert self.buttons is not None
         if what == self.buttons.VOLUP:
-            self.volume_pos = min(self.volume_pos + 1, len(VOLUME_CURVE) - 1)
-            self.player.set_volume(VOLUME_CURVE[self.volume_pos])
+            new_volume = min(self.volume_pos + 1, len(VOLUME_CURVE) - 1)
+            if VOLUME_CURVE[new_volume] <= self.volume_max:
+                self.volume_pos = new_volume
+                self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         elif what == self.buttons.VOLDOWN:
             self.volume_pos = max(self.volume_pos - 1, 0)
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])

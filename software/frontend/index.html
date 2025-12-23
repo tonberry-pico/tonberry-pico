@@ -354,7 +354,8 @@
             'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
             'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
             'root.TAGMODE': 'Tag mode',
-            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
+            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain',
+            'root.VOLUME_MAX': 'Maximum volume (0-255)'
         };
         const config_input_override = {
             'root.TAGMODE': {
@@ -393,6 +394,9 @@
             },
             'root.WLAN.PASSPHRASE': {
                 'input-type': 'text'
+            },
+            'root.VOLUME_MAX': {
+                'input-type': 'number'
             }
         };
     
