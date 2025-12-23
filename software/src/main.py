@@ -10,6 +10,7 @@ import network
 import os
 import time
 import ubinascii
+import sys
 
 # Own modules
 import app
@@ -73,13 +74,18 @@ DB_PATH = '/sd/tonberry.db'
 
 config = Configuration()
 
+# Setup LEDs
+np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
+np.fill((32, 32, 0))
+np.write()
+
 
 def run():
     asyncio.new_event_loop()
-    # Setup LEDs
-    np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
 
     if machine.Pin(hwconfig.BUTTONS[1], machine.Pin.IN, machine.Pin.PULL_UP).value() == 0:
+        np.fill((0, 0, 32))
+        np.write()
         # Force default access point
         setup_wifi('', '')
     else:
@@ -141,7 +147,24 @@ def builddb():
     os.sync()
 
 
+def error_blink():
+    while True:
+        np.fill((32, 0, 0))
+        np.write()
+        time.sleep_ms(500)
+        np.fill((0, 0, 0))
+        np.write()
+        time.sleep_ms(500)
+
+
 if __name__ == '__main__':
     time.sleep(1)
     if machine.Pin(hwconfig.BUTTONS[0], machine.Pin.IN, machine.Pin.PULL_UP).value() != 0:
-        run()
+        try:
+            run()
+        except Exception as ex:
+            sys.print_exception(ex)
+            error_blink()
+    else:
+        np.fill((32, 0, 0))
+        np.write()
