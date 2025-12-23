@@ -31,7 +31,7 @@ Request.max_content_length = 128 * 1024 * 1024  # 128MB requests allowed
 
 def start_webserver(config_, app_):
     global server, config, app, nfc, playlist_db, leds, timer_manager
-    server = asyncio.create_task(webapp.start_server(port=80))
+    server = asyncio.create_task(webapp.start_server(host='::0', port=80))
     config = config_
     app = app_
     nfc = app.get_nfc()
