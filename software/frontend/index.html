@@ -167,7 +167,7 @@
 <div id="screen-config" class="screen">
     <h2>Configuration Editor</h2>
     <div id="config-container">Loading…</div>
-    <button id="config-save-btn" disabled>Save</button>
+    <button id="config-save-btn" disabled>Save &amp; Reboot</button>
 </div>
 
 <!-- PLAYLIST EDITOR SCREEN 1: list of playlists -->
@@ -316,7 +316,9 @@
                         return;
                     }
             
-                    alert("Configuration saved successfully!");
+                    alert("Configuration saved successfully, device will now reboot/shutdown! " +
+                          "On battery, press Power button after shutdown to restart.");
+                    await fetch('/api/v1/reboot/application', {'method': 'POST'});
                 } catch (err) {
                     alert("Error saving configuration: " + err);
                 }

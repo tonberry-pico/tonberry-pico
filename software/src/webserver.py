@@ -269,10 +269,9 @@ async def audiofile_delete(request):
 
 @webapp.route('/api/v1/reboot/<method>', methods=['POST'])
 async def reboot(request, method):
-    if hwconfig.get_on_battery():
-        return 'not allowed: usb not connected', 403
-
     if method == 'bootloader':
+        if hwconfig.get_on_battery():
+            return 'not possible: connect USB first', 403
         leds.set_state(LedManager.REBOOTING)
         timer_manager.schedule(time.ticks_ms() + 1500, machine.bootloader)
     elif method == 'application':
