@@ -360,6 +360,21 @@
                     'tagstartstop': 'Present tag once to start, present again to stop playback'
                 }
             },
+            'root.BUTTON_MAP.NEXT':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.PREV':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.VOLUP':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.VOLDOWN':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.PLAY_PAUSE':  {
+                'input-type': 'number'
+            },
             'root.IDLE_TIMEOUT_SECS': {
                 'input-type': 'number'
             },
@@ -439,7 +454,7 @@
         
                 let val = input.value.trim();
                 if (val === "") val = null;
-                else if (!isNaN(val)) val = Number(val);
+                else if (!isNaN(val) && input.type != 'text') val = Number(val);
         
                 current[path[path.length - 1]] = val;
             });
