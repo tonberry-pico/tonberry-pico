@@ -112,7 +112,7 @@ async def static(request, path):
 
 @webapp.route('/api/v1/playlists', methods=['GET'])
 async def playlists_get(request):
-    return sorted(playlist_db.getPlaylistTags())
+    return playlist_db.getPlaylists()
 
 
 def is_hex(s):
@@ -133,10 +133,11 @@ async def playlist_get(request, tag):
         return None, 404
 
     return {
-            'shuffle': playlist.__dict__.get('shuffle'),
-            'persist': playlist.__dict__.get('persist'),
+            'shuffle': playlist.shuffle,
+            'persist': playlist.persist,
             'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
                       for p in playlist.getPaths()],
+            'name': playlist.name
     }
 
 
@@ -156,7 +157,8 @@ async def playlist_put(request, tag):
     playlist_db.createPlaylistForTag(tag.encode(),
                                      (fsroot + path.encode() for path in playlist.get('paths', [])),
                                      playlist.get('persist', 'track').encode(),
-                                     playlist.get('shuffle', 'no').encode())
+                                     playlist.get('shuffle', 'no').encode(),
+                                     playlist.get('name', ''))
     return '', 204
 
 

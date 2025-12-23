@@ -213,6 +213,10 @@
                     <option value="audioplay">Audioplay (no shuffle, start at previous track)</option>
                 </select>
             </div>
+            <div>
+                <label>Playlist name</label>
+                <input type="text" placeholder="Playlist name" id="playlist-edit-name" />
+            </div>
             <div class="flex-horizontal">
                 <div style="flex-grow: 1">
                     <label>Tracks</label>
@@ -493,7 +497,7 @@
             document.getElementById('playlist-exist-button-delete')
                 .addEventListener('click', (e) => {
                     if (lastSelected === null) return;
-                    const tagid = lastSelected.innerText;
+                    const tagid = lastSelected.getAttribute('data-tag');
                     if(confirm(`Really delete playlist ${tagid}?`)) {
                         fetch(`/api/v1/playlist/${tagid}`, {
                             method: 'DELETE'})
@@ -504,7 +508,7 @@
                 .addEventListener('click', selectLastTag);
             document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
                 if (lastSelected !== null)
-                    showScreen("playlist_edit", {load: lastSelected.innerText});
+                    showScreen("playlist_edit", {load: lastSelected.getAttribute('data-tag')});
             });
             document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
                 const node = e.target.closest("li");
@@ -559,8 +563,9 @@
             container.innerHTML = "";
             for (const playlist of playlists) {
                 const li = document.createElement("li");
-                li.innerHTML = playlist;
+                li.innerHTML = `${playlist.name} (${playlist.tag})`;
                 li.className = "node"
+                li.setAttribute('data-tag', playlist.tag);
                 container.appendChild(li)
             }
         }
@@ -585,7 +590,7 @@
             document.getElementById('playlist-exist-list')
                     .querySelectorAll("li")
                     .forEach(n => {
-                        if (n.innerText == tagtext) {
+                        if (n.getAttribute('data-tag') == tagtext) {
                             n.classList.add("selected");
                             lastSelected = n;
                         } else {
@@ -687,6 +692,8 @@
             } else if (playlist.persist === "track" && playlist.shuffle === "no") {
                 playlisttype.value = "audioplay";
             }
+            const playlistname = document.getElementById('playlist-edit-name');
+            playlistname.value = playlist.name;
         }
 
         async function save() {
@@ -709,6 +716,8 @@
                     playlistData.shuffle = "no";
                     break;
             }
+            const playlistname = document.getElementById('playlist-edit-name');
+            playlistData.name = playlistname.value;
             const container = document.getElementById('playlist-edit-list');
             playlistData.paths = [...container.querySelectorAll("li")].map((node) => node.innerText);
             const saveRes = await fetch(`/api/v1/playlist/${playlistId}`,
