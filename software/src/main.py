@@ -150,6 +150,8 @@ def builddb():
 
 def error_blink():
     while True:
+        if machine.Pin(hwconfig.BUTTONS[0], machine.Pin.IN, machine.Pin.PULL_UP).value() == 0:
+            machine.reset()
         np.fill((led_max, 0, 0))
         np.write()
         time.sleep_ms(500)
