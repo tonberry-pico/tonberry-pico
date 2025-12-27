@@ -27,7 +27,8 @@ class Configuration:
             'SSID': '',
             'PASSPHRASE': '',
         },
-        'VOLUME_MAX': 255
+        'VOLUME_MAX': 255,
+        'LED_MAX': 255,
     }
 
     def __init__(self, config_path='/config.json'):
@@ -100,6 +101,9 @@ class Configuration:
 
     def get_volume_max(self) -> int:
         return self._get('VOLUME_MAX')
+
+    def get_led_max(self) -> int:
+        return self._get('LED_MAX')
 
     # For the web API
     def get_config(self) -> Mapping[str, Any]:

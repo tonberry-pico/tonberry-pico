@@ -76,7 +76,8 @@ config = Configuration()
 
 # Setup LEDs
 np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
-np.fill((32, 32, 0))
+led_max = config.get_led_max()
+np.fill((led_max, led_max, 0))
 np.write()
 
 
@@ -84,7 +85,7 @@ def run():
     asyncio.new_event_loop()
 
     if machine.Pin(hwconfig.BUTTONS[1], machine.Pin.IN, machine.Pin.PULL_UP).value() == 0:
-        np.fill((0, 0, 32))
+        np.fill((0, 0, led_max))
         np.write()
         # Force default access point
         setup_wifi('', '')
@@ -116,7 +117,7 @@ def run():
                                     buttons=lambda the_app: Buttons(the_app, config, hwconfig),
                                     playlistdb=lambda _: playlistdb,
                                     hwconfig=lambda _: hwconfig,
-                                    leds=lambda _: LedManager(np),
+                                    leds=lambda _: LedManager(np, config),
                                     config=lambda _: config)
             the_app = app.PlayerApp(deps)
 
@@ -149,7 +150,7 @@ def builddb():
 
 def error_blink():
     while True:
-        np.fill((32, 0, 0))
+        np.fill((led_max, 0, 0))
         np.write()
         time.sleep_ms(500)
         np.fill((0, 0, 0))
@@ -166,5 +167,5 @@ if __name__ == '__main__':
             sys.print_exception(ex)
             error_blink()
     else:
-        np.fill((32, 0, 0))
+        np.fill((led_max, 0, 0))
         np.write()
