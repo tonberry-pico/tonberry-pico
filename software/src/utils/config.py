@@ -28,6 +28,7 @@ class Configuration:
             'PASSPHRASE': '',
         },
         'VOLUME_MAX': 255,
+        'VOLUME_BOOT': 16,
         'LED_MAX': 255,
     }
 
@@ -104,6 +105,9 @@ class Configuration:
 
     def get_led_max(self) -> int:
         return self._get('LED_MAX')
+
+    def get_volume_boot(self) -> int:
+        return self._get('VOLUME_BOOT')
 
     # For the web API
     def get_config(self) -> Mapping[str, Any]:

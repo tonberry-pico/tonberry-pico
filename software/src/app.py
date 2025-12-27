@@ -53,11 +53,18 @@ class PlayerApp:
         self.leds = deps.leds(self)
         self.tag_mode = self.config.get_tagmode()
         self.volume_max = self.config.get_volume_max()
+        self.volume_pos = 3  # fallback if config.get_volume_boot is nonsense
+        try:
+            for idx, val in enumerate(VOLUME_CURVE):
+                if val >= self.config.get_volume_boot():
+                    self.volume_pos = idx
+                    break
+        except (TypeError, ValueError):
+            pass
         self.playing_tag = None
         self.playlist = None
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
-        self.volume_pos = 3
         self.paused = False
         self.playing = False
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])

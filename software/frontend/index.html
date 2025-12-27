@@ -358,6 +358,7 @@
             'root.TAGMODE': 'Tag mode',
             'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain',
             'root.VOLUME_MAX': 'Maximum volume (0-255)',
+            'root.VOLUME_BOOT': 'Volume at startup (0-255)',
             'root.LED_MAX': 'Maximum LED brightness (0-255)'
         };
         const config_input_override = {
@@ -399,6 +400,9 @@
                 'input-type': 'text'
             },
             'root.VOLUME_MAX': {
+                'input-type': 'number'
+            },
+            'root.VOLUME_BOOT': {
                 'input-type': 'number'
             },
             'root.LED_MAX': {
