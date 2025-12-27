@@ -5,6 +5,7 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 
 import asyncio
 import board
+import errno
 import hwconfig
 import json
 import machine
@@ -202,6 +203,25 @@ async def audiofiles_get(request):
     return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}
 
 
+async def stream_to_file(stream, file_, length):
+    data = array('b', range(16384))
+    bytes_copied = 0
+    while True:
+        bytes_read = await stream.readinto(data)
+        if bytes_read == 0:
+            # End of body
+            break
+        bytes_written = file_.write(data[:bytes_read])
+        if bytes_written != bytes_read:
+            # short writes shouldn't happen
+            raise OSError(errno.EIO, 'unexpected short write')
+        bytes_copied += bytes_written
+        if bytes_copied == length:
+            break
+        app.reset_idle_timeout()
+    return bytes_copied
+
+
 @webapp.route('/api/v1/audiofiles', methods=['POST'])
 async def audiofile_upload(request):
     if 'type' not in request.args or request.args['type'] not in ['file', 'directory']:
@@ -218,26 +238,13 @@ async def audiofile_upload(request):
         os.mkdir(path)
         return '', 204
     with open(path, 'wb') as newfile:
-        data = array('b', range(4096))
-        bytes_copied = 0
-        while True:
-            try:
-                bytes_read = await request.stream.readinto(data)
-            except OSError as ex:
-                return f'read error: {ex}', 500
-            if bytes_read == 0:
-                # End of body
-                break
-            try:
-                bytes_written = newfile.write(data[:bytes_read])
-            except OSError as ex:
-                return f'write error: {ex}', 500
-            if bytes_written != bytes_read:
-                # short writes shouldn't happen
-                return 'write failure', 500
-            bytes_copied += bytes_written
-            if bytes_copied == length:
-                break
+        try:
+            if length > Request.max_body_length:
+                bytes_copied = await stream_to_file(request.stream, newfile, length)
+            else:
+                bytes_copied = newfile.write(request.body)
+        except OSError as ex:
+            return f'error writing data to file: {ex}', 500
     if bytes_copied == length:
         return '', 204
     else:
