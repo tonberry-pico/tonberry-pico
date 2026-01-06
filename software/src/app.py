@@ -82,7 +82,7 @@ class PlayerApp:
         uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
         if self.tag_mode == 'tagremains' or (self.tag_mode == 'tagstartstop' and new_tag != self.playing_tag):
             self._set_playlist(uid_str)
-            self.playing_tag = new_tag
+            self.playing_tag = new_tag if self.playlist is not None else None
         elif self.tag_mode == 'tagstartstop':
             print('Tag presented again, stopping playback')
             self._unset_playlist()
