@@ -36,19 +36,19 @@ hwconfig.board_init()
 machine.mem32[0x40030000 + 0x00] = 0x10
 
 
-def setup_wifi(ssid='', passphrase='', sec=network.WLAN.SEC_WPA2_WPA3):
+def setup_wifi(ssid='', passphrase='', security=network.WLAN.SEC_WPA_WPA2):
     network.hostname("TonberryPico")
     if ssid is None or ssid == '':
         apname = f"TonberryPicoAP_{machine.unique_id().hex()}"
         print(f"Create AP {apname}")
         wlan = network.WLAN(network.WLAN.IF_AP)
-        wlan.config(ssid=apname, security=wlan.SEC_OPEN)
+        wlan.config(ssid=apname, password=passphrase if passphrase is not None else '', security=security)
         wlan.active(True)
     else:
         print(f"Connect to SSID {ssid} with passphrase {passphrase}...")
         wlan = network.WLAN()
         wlan.active(True)
-        wlan.connect(ssid, passphrase if passphrase is not None else '', security=sec)
+        wlan.connect(ssid, passphrase if passphrase is not None else '', security=security)
 
     # configure power management
     wlan.config(pm=network.WLAN.PM_PERFORMANCE)
@@ -86,9 +86,19 @@ def run():
         np.fill((0, 0, led_max))
         np.write()
         # Force default access point
-        setup_wifi('', '')
+        setup_wifi('', '', network.WLAN.SEC_OPEN)
     else:
-        setup_wifi(config.get_wifi_ssid(), config.get_wifi_passphrase())
+        secstring = config.get_wifi_security()
+        security = network.WLAN.SEC_WPA_WPA2
+        if secstring == 'open':
+            security = network.WLAN.SEC_OPEN
+        elif secstring == 'wpa_wpa2':
+            security = network.WLAN.SEC_WPA_WPA2
+        elif secstring == 'wpa3':
+            security = network.WLAN.SEC_WPA3
+        elif secstring == 'wpa2_wpa3':
+            security = network.WLAN.SEC_WPA2_WPA3
+        setup_wifi(config.get_wifi_ssid(), config.get_wifi_passphrase(), security)
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,

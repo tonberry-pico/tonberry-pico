@@ -26,6 +26,7 @@ class Configuration:
         'WIFI': {
             'SSID': '',
             'PASSPHRASE': '',
+            'SECURITY': 'wpa_wpa2',
         },
         'VOLUME_MAX': 255,
         'VOLUME_BOOT': 16,
@@ -100,6 +101,9 @@ class Configuration:
     def get_wifi_passphrase(self) -> str:
         return self._get('WIFI')['PASSPHRASE']
 
+    def get_wifi_security(self) -> str:
+        return self._get('WIFI')['SECURITY']
+
     def get_volume_max(self) -> int:
         return self._get('VOLUME_MAX')
 
@@ -126,6 +130,9 @@ class Configuration:
         self._validate(self.DEFAULT_CONFIG, config)
         if 'TAGMODE' in config and config['TAGMODE'] not in ['tagremains', 'tagstartstop']:
             raise ValueError("Invalid TAGMODE: Must be 'tagremains' or 'tagstartstop'")
+        if 'WLAN' in config and 'SECURITY' in config['WLAN'] and \
+           config['WLAN']['SECURITY'] not in ['open', 'wpa_wpa2', 'wpa3', 'wpa2_wpa3']:
+            raise ValueError("Invalid WLAN SECURITY: Must be 'open', 'wpa_wpa2', 'wpa3' or 'wpa2_wpa3'")
         self._merge_configs(self.config, config)
         self.config = config
         self._save()

@@ -359,7 +359,10 @@
             'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain',
             'root.VOLUME_MAX': 'Maximum volume (0-255)',
             'root.VOLUME_BOOT': 'Volume at startup (0-255)',
-            'root.LED_MAX': 'Maximum LED brightness (0-255)'
+            'root.LED_MAX': 'Maximum LED brightness (0-255)',
+            'root.WIFI.SSID': 'Network name (SSID) (leave empty for AP mode)',
+            'root.WIFI.PASSPHRASE': 'Password',
+            'root.WIFI.SECURITY': 'Security mode'
         };
         const config_input_override = {
             'root.TAGMODE': {
@@ -393,11 +396,20 @@
             'root.LED_COUNT': {
                 'input-type': 'number'
             },
-            'root.WLAN.SSID': {
+            'root.WIFI.SSID': {
                 'input-type': 'text'
             },
-            'root.WLAN.PASSPHRASE': {
+            'root.WIFI.PASSPHRASE': {
                 'input-type': 'text'
+            },
+            'root.WIFI.SECURITY': {
+                'element': 'select',
+                'values': {
+                    'open': 'Open',
+                    'wpa_wpa2': 'WPA/WPA2 (PSK Mixed)',
+                    'wpa3': 'WPA3 (SAE AES)',
+                    'wpa2_wpa3': 'WPA2/WPA3 (PSK AES)'
+                }
             },
             'root.VOLUME_MAX': {
                 'input-type': 'number'
