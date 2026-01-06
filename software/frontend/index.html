@@ -796,6 +796,10 @@
         
         async function onShow(intent) {
             document.getElementById('playlist-filebrowser-addtrack').disabled = true;
+            if (intent !== 'refresh') {
+                document.getElementById('playlist-filebrowser-upload-progress').value = 0;
+                document.getElementById("playlist-filebrowser-upload-files").value = "";
+            }
             tree = document.getElementById("playlist-filebrowser-tree");
             tree.innerHTML = "Loading...";
             fetch('/api/v1/audiofiles')
@@ -830,7 +834,6 @@
             if (type === 'directory') {
                 const nested = document.createElement('ul');
                 node.appendChild(nested);
-                node.classList.add('expanded');
                 parent.appendChild(node);
                 return nested;
             }
@@ -917,7 +920,7 @@
                     }
                     if (donecount + 1 === totalcount) {
                         // Reload file list from device
-                        onShow();
+                        onShow('refresh');
                     } else {
                         uploadFileHelper(totalcount, donecount + 1, destdir, files.slice(1));
                     }
@@ -944,7 +947,7 @@
             const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
                   {method: 'POST'});
             // Reload file list from device
-            onShow();
+            onShow('refresh');
         }
 
         async function deleteItems() {
@@ -965,7 +968,7 @@
                 }
             }
             // Reload file list from device
-            onShow();
+            onShow('refresh');
         }
         
         let tree = (() => {
