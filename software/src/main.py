@@ -3,11 +3,9 @@
 
 import aiorepl  # type: ignore
 import asyncio
-from errno import ENOENT
 import machine
 import micropython
 import network
-import os
 import time
 import ubinascii
 import sys
@@ -95,15 +93,6 @@ def run():
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
                    baudrate=hwconfig.SD_CLOCKRATE):
-        # Temporary hack: build database from folders if no database exists
-        # Can be removed once playlists can be created via API
-        try:
-            _ = os.stat(DB_PATH)
-        except OSError as ex:
-            if ex.errno == ENOENT:
-                print("No playlist DB found, trying to build DB from tag dirs")
-                builddb()
-
         with BTreeFileManager(DB_PATH) as playlistdb, \
              AudioContext(hwconfig.I2S_DIN, hwconfig.I2S_DCLK, hwconfig.I2S_LRCLK) as audioctx:
 
@@ -128,24 +117,6 @@ def run():
                                               'app': the_app}))
             asyncio.create_task(wdt_task(wdt))
             asyncio.get_event_loop().run_forever()
-
-
-def builddb():
-    """
-    For testing, build a playlist db based on the previous tag directory format.
-    Can be removed once uploading files / playlist via the web api is possible.
-    """
-    try:
-        os.unlink(DB_PATH)
-    except OSError:
-        pass
-    with BTreeFileManager(DB_PATH) as db:
-        for name, type_, _, _ in os.ilistdir(b'/sd'):
-            if type_ != 0x4000:
-                continue
-            fl = [b'/sd/' + name + b'/' + x for x in os.listdir(b'/sd/' + name) if x.endswith(b'.mp3')]
-            db.createPlaylistForTag(name, fl)
-    os.sync()
 
 
 def error_blink():
