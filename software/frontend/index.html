@@ -147,6 +147,7 @@
     <button onclick="showScreen('menu')">🏠 Main Menu</button>
     <button onclick="showScreen('config')">⚙️ Config Editor</button>
     <button onclick="showScreen('playlist')">🖹 Playlist Editor</button>
+    <button onclick="showScreen('playlist_filebrowser', 'filesystem')">📂 Filesystem</button>
 </nav>
 
 <!-- MAIN MENU -->
@@ -243,7 +244,7 @@
 
 <!-- PLAYLIST EDITOR SCREEN 3: file browser -->
 <div id="screen-playlist_filebrowser" class="screen">
-    <h2>Playlist Editor</h2>
+    <h2 id="playlist-filebrowser-title">Playlist Editor</h2>
     <div id="playlist-filebrowser-container">
         <div class="scroll-container">
             <div class="tree" id="playlist-filebrowser-tree">
@@ -787,6 +788,8 @@
        PLAYLIST EDITOR LOGIC - ADD FILES SCREEN
     ------------------------------------------- */
     Screens.playlist_filebrowser = (() => {
+        let isFilesystemMode = false;
+
         function init() {
             document.getElementById('playlist-filebrowser-cancel').addEventListener("click", (e) => {
                 showScreen("playlist_edit", {});
@@ -805,13 +808,32 @@
             });
             tree.init();
         }
-        
+
         async function onShow(intent) {
+            console.log(intent)
             document.getElementById('playlist-filebrowser-addtrack').disabled = true;
+
+            const title = document.getElementById('playlist-filebrowser-title');
+            const cancelButton = document.getElementById('playlist-filebrowser-cancel');
+            const addTracksButton = document.getElementById('playlist-filebrowser-addtrack');
+
             if (intent !== 'refresh') {
+                isFilesystemMode = (intent === 'filesystem');
+
                 document.getElementById('playlist-filebrowser-upload-progress').value = 0;
                 document.getElementById("playlist-filebrowser-upload-files").value = "";
             }
+
+            if (isFilesystemMode) {
+                title.innerText = "Filesystem";
+                cancelButton.style.display = 'none';
+                addTracksButton.style.display = 'none';
+            } else {
+                title.innerText = "Playlist Editor";
+                cancelButton.style.display = ''
+                addTracksButton.style.display = ''
+            }
+
             tree = document.getElementById("playlist-filebrowser-tree");
             tree.innerHTML = "Loading...";
             fetch('/api/v1/audiofiles')
