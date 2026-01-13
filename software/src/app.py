@@ -9,8 +9,8 @@ from utils import TimerManager
 Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds',
                                            'config'))
 
-# Should be ~ 6dB steps
-VOLUME_CURVE = [1, 2, 4, 8, 16, 32, 63, 126, 251]
+# Should be ~ 3dB steps
+VOLUME_CURVE = [1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 91, 128, 181, 255]
 
 
 class PlayerApp:
@@ -52,11 +52,19 @@ class PlayerApp:
         self.hwconfig = deps.hwconfig(self)
         self.leds = deps.leds(self)
         self.tag_mode = self.config.get_tagmode()
+        self.volume_max = self.config.get_volume_max()
+        self.volume_pos = 3  # fallback if config.get_volume_boot is nonsense
+        try:
+            for idx, val in enumerate(VOLUME_CURVE):
+                if val >= self.config.get_volume_boot():
+                    self.volume_pos = idx
+                    break
+        except (TypeError, ValueError):
+            pass
         self.playing_tag = None
         self.playlist = None
         self.buttons = deps.buttons(self) if deps.buttons is not None else None
         self.mp3file = None
-        self.volume_pos = 3
         self.paused = False
         self.playing = False
         self.player.set_volume(VOLUME_CURVE[self.volume_pos])
@@ -74,7 +82,7 @@ class PlayerApp:
         uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
         if self.tag_mode == 'tagremains' or (self.tag_mode == 'tagstartstop' and new_tag != self.playing_tag):
             self._set_playlist(uid_str)
-            self.playing_tag = new_tag
+            self.playing_tag = new_tag if self.playlist is not None else None
         elif self.tag_mode == 'tagstartstop':
             print('Tag presented again, stopping playback')
             self._unset_playlist()
@@ -91,8 +99,10 @@ class PlayerApp:
     def onButtonPressed(self, what):
         assert self.buttons is not None
         if what == self.buttons.VOLUP:
-            self.volume_pos = min(self.volume_pos + 1, len(VOLUME_CURVE) - 1)
-            self.player.set_volume(VOLUME_CURVE[self.volume_pos])
+            new_volume = min(self.volume_pos + 1, len(VOLUME_CURVE) - 1)
+            if VOLUME_CURVE[new_volume] <= self.volume_max:
+                self.volume_pos = new_volume
+                self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         elif what == self.buttons.VOLDOWN:
             self.volume_pos = max(self.volume_pos - 1, 0)
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])

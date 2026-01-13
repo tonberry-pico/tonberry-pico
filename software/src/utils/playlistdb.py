@@ -33,12 +33,13 @@ class BTreeDB(IPlaylistDB):
     PERSIST_OFFSET = b'offset'
 
     class Playlist(IPlaylist):
-        def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle):
+        def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle, name):
             self.parent = parent
             self.tag = tag
             self.pos = pos
             self.persist = persist
             self.shuffle = shuffle
+            self.name = name
             self.length = self.parent._getPlaylistLength(self.tag)
             self._shuffle()
 
@@ -168,6 +169,10 @@ class BTreeDB(IPlaylistDB):
         return (b''.join([tag, b'/playlist/']),
                 b''.join([tag, b'/playlist0']))
 
+    @staticmethod
+    def _keyPlaylistName(tag):
+        return b''.join([tag, b'/playlistname'])
+
     def _flush(self):
         """
         Flush the database and call the flush_func if it was provided.
@@ -222,12 +227,13 @@ class BTreeDB(IPlaylistDB):
             raise RuntimeError("Malformed playlist key")
         return int(elements[2])+1
 
-    def _savePlaylist(self, tag, entries, persist, shuffle, flush=True):
+    def _savePlaylist(self, tag, entries, persist, shuffle, name, flush=True):
         self._deletePlaylist(tag, False)
         for idx, entry in enumerate(entries):
             self.db[self._keyPlaylistEntry(tag, idx)] = entry
         self.db[self._keyPlaylistPersist(tag)] = persist
         self.db[self._keyPlaylistShuffle(tag)] = shuffle
+        self.db[self._keyPlaylistName(tag)] = name.encode()
         if flush:
             self._flush()
 
@@ -240,7 +246,7 @@ class BTreeDB(IPlaylistDB):
                 pass
         for k in (self._keyPlaylistPos(tag), self._keyPlaylistPosOffset(tag),
                   self._keyPlaylistPersist(tag), self._keyPlaylistShuffle(tag),
-                  self._keyPlaylistShuffleSeed(tag)):
+                  self._keyPlaylistShuffleSeed(tag), self._keyPlaylistName(tag)):
             try:
                 del self.db[k]
             except KeyError:
@@ -248,15 +254,18 @@ class BTreeDB(IPlaylistDB):
         if flush:
             self._flush()
 
-    def getPlaylistTags(self):
+    def getPlaylists(self):
         """
-        Get a keys-only dict of all defined playlists. Playlists currently do not have names, but are identified by
-        their tag.
+        Get a list of all defined playlists with their tag and names.
         """
         playlist_tags = set()
         for item in self.db:
             playlist_tags.add(item.split(b'/')[0])
-        return playlist_tags
+        playlists = []
+        for tag in playlist_tags:
+            name = self.db.get(self._keyPlaylistName(tag), b'').decode()
+            playlists.append({'tag': tag, 'name': name})
+        return playlists
 
     def getPlaylistForTag(self, tag: bytes):
         """
@@ -275,18 +284,19 @@ class BTreeDB(IPlaylistDB):
             return None
         if self._keyPlaylistEntry(tag, pos) not in self.db:
             pos = 0
+        name = self.db.get(self._keyPlaylistName(tag), b'').decode()
         shuffle = self.db.get(self._keyPlaylistShuffle(tag), self.SHUFFLE_NO)
-        return self.Playlist(self, tag, pos, persist, shuffle)
+        return self.Playlist(self, tag, pos, persist, shuffle, name)
 
     def createPlaylistForTag(self, tag: bytes, entries: typing.Iterable[bytes], persist=PERSIST_TRACK,
-                             shuffle=SHUFFLE_NO):
+                             shuffle=SHUFFLE_NO, name: str = ''):
         """
         Create and save a playlist for 'tag' and return the Playlist object. If a playlist already existed for 'tag' it
         is overwritten.
         """
         assert persist in (self.PERSIST_NO, self.PERSIST_TRACK, self.PERSIST_OFFSET)
         assert shuffle in (self.SHUFFLE_NO, self.SHUFFLE_YES)
-        self._savePlaylist(tag, entries, persist, shuffle)
+        self._savePlaylist(tag, entries, persist, shuffle, name)
         return self.getPlaylistForTag(tag)
 
     def deletePlaylistForTag(self, tag: bytes):
@@ -370,6 +380,14 @@ class BTreeDB(IPlaylistDB):
                     _ = int(val)
                 except ValueError:
                     fail(f' Bad playlistposoffset value for {last_tag}: {val!r}')
+            elif fields[1] == b'playlistname':
+                val = self.db[k]
+                try:
+                    name = val.decode()
+                    if dump:
+                        print(f'\tName: {name}')
+                except UnicodeError:
+                    fail(f' Bad playlistname for {last_tag}: Not valid unicode')
             else:
                 fail(f'Unknown key {k!r}')
         return result

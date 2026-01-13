@@ -22,7 +22,15 @@ class Configuration:
             'PREV': None,
             'NEXT': 1,
         },
-        'TAGMODE': 'tagremains'
+        'TAGMODE': 'tagremains',
+        'WIFI': {
+            'SSID': '',
+            'PASSPHRASE': '',
+            'SECURITY': 'wpa_wpa2',
+        },
+        'VOLUME_MAX': 255,
+        'VOLUME_BOOT': 16,
+        'LED_MAX': 255,
     }
 
     def __init__(self, config_path='/config.json'):
@@ -87,6 +95,24 @@ class Configuration:
     def get_tagmode(self) -> str:
         return self._get('TAGMODE')
 
+    def get_wifi_ssid(self) -> str:
+        return self._get('WIFI')['SSID']
+
+    def get_wifi_passphrase(self) -> str:
+        return self._get('WIFI')['PASSPHRASE']
+
+    def get_wifi_security(self) -> str:
+        return self._get('WIFI')['SECURITY']
+
+    def get_volume_max(self) -> int:
+        return self._get('VOLUME_MAX')
+
+    def get_led_max(self) -> int:
+        return self._get('LED_MAX')
+
+    def get_volume_boot(self) -> int:
+        return self._get('VOLUME_BOOT')
+
     # For the web API
     def get_config(self) -> Mapping[str, Any]:
         return self.config
@@ -104,6 +130,9 @@ class Configuration:
         self._validate(self.DEFAULT_CONFIG, config)
         if 'TAGMODE' in config and config['TAGMODE'] not in ['tagremains', 'tagstartstop']:
             raise ValueError("Invalid TAGMODE: Must be 'tagremains' or 'tagstartstop'")
+        if 'WLAN' in config and 'SECURITY' in config['WLAN'] and \
+           config['WLAN']['SECURITY'] not in ['open', 'wpa_wpa2', 'wpa3', 'wpa2_wpa3']:
+            raise ValueError("Invalid WLAN SECURITY: Must be 'open', 'wpa_wpa2', 'wpa3' or 'wpa2_wpa3'")
         self._merge_configs(self.config, config)
         self.config = config
         self._save()

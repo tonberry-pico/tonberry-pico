@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Device Admin</title>
+<title>TonBERRY pico</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -131,11 +131,17 @@
         list-style: none;
     }
 
+    .footer {
+        font-size: x-small;
+        color: gray;
+        margin-top: 20px;
+    }
+
 </style>
 </head>
 <body>
 
-<h1>Device Admin</h1>
+<h1>TonBERRY pico</h1>
 
 <nav>
     <button onclick="showScreen('menu')">🏠 Main Menu</button>
@@ -161,7 +167,7 @@
 <div id="screen-config" class="screen">
     <h2>Configuration Editor</h2>
     <div id="config-container">Loading…</div>
-    <button id="config-save-btn" disabled>Save</button>
+    <button id="config-save-btn" disabled>Save &amp; Reboot</button>
 </div>
 
 <!-- PLAYLIST EDITOR SCREEN 1: list of playlists -->
@@ -206,6 +212,10 @@
                     <option value="random">Random Collection (shuffle)</option>
                     <option value="audioplay">Audioplay (no shuffle, start at previous track)</option>
                 </select>
+            </div>
+            <div>
+                <label>Playlist name</label>
+                <input type="text" placeholder="Playlist name" id="playlist-edit-name" />
             </div>
             <div class="flex-horizontal">
                 <div style="flex-grow: 1">
@@ -257,7 +267,17 @@
         </div>
     </div>
 </div>
-    
+<div class="footer">
+    <hr>
+    <div class="flex-horizontal">
+        <div>
+            <a href="https://git.ka.blankertz.org/TonBERRY/tonberry-pico">TonBERRY pico</a>
+        </div>
+        <div>
+            Version: <span id="footer-version">unknown</span>
+        </div>
+    </div>
+</div>
 <script>
     const Screens = {};
     let activeScreen = null;
@@ -296,7 +316,9 @@
                         return;
                     }
             
-                    alert("Configuration saved successfully!");
+                    alert("Configuration saved successfully, device will now reboot/shutdown! " +
+                          "On battery, press Power button after shutdown to restart.");
+                    await fetch('/api/v1/reboot/application', {'method': 'POST'});
                 } catch (err) {
                     alert("Error saving configuration: " + err);
                 }
@@ -334,7 +356,13 @@
             'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
             'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
             'root.TAGMODE': 'Tag mode',
-            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain'
+            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain',
+            'root.VOLUME_MAX': 'Maximum volume (0-255)',
+            'root.VOLUME_BOOT': 'Volume at startup (0-255)',
+            'root.LED_MAX': 'Maximum LED brightness (0-255)',
+            'root.WIFI.SSID': 'Network name (SSID) (leave empty for AP mode)',
+            'root.WIFI.PASSPHRASE': 'Password',
+            'root.WIFI.SECURITY': 'Security mode'
         };
         const config_input_override = {
             'root.TAGMODE': {
@@ -343,6 +371,21 @@
                     'tagremains': 'Play until tag is removed',
                     'tagstartstop': 'Present tag once to start, present again to stop playback'
                 }
+            },
+            'root.BUTTON_MAP.NEXT':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.PREV':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.VOLUP':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.VOLDOWN':  {
+                'input-type': 'number'
+            },
+            'root.BUTTON_MAP.PLAY_PAUSE':  {
+                'input-type': 'number'
             },
             'root.IDLE_TIMEOUT_SECS': {
                 'input-type': 'number'
@@ -353,6 +396,30 @@
             'root.LED_COUNT': {
                 'input-type': 'number'
             },
+            'root.WIFI.SSID': {
+                'input-type': 'text'
+            },
+            'root.WIFI.PASSPHRASE': {
+                'input-type': 'text'
+            },
+            'root.WIFI.SECURITY': {
+                'element': 'select',
+                'values': {
+                    'open': 'Open',
+                    'wpa_wpa2': 'WPA/WPA2 (PSK Mixed)',
+                    'wpa3': 'WPA3 (SAE AES)',
+                    'wpa2_wpa3': 'WPA2/WPA3 (PSK AES)'
+                }
+            },
+            'root.VOLUME_MAX': {
+                'input-type': 'number'
+            },
+            'root.VOLUME_BOOT': {
+                'input-type': 'number'
+            },
+            'root.LED_MAX': {
+                'input-type': 'number'
+            }
         };
     
         function renderObject(obj, path) {
@@ -423,7 +490,7 @@
         
                 let val = input.value.trim();
                 if (val === "") val = null;
-                else if (!isNaN(val)) val = Number(val);
+                else if (!isNaN(val) && input.type != 'text') val = Number(val);
         
                 current[path[path.length - 1]] = val;
             });
@@ -456,7 +523,7 @@
             document.getElementById('playlist-exist-button-delete')
                 .addEventListener('click', (e) => {
                     if (lastSelected === null) return;
-                    const tagid = lastSelected.innerText;
+                    const tagid = lastSelected.getAttribute('data-tag');
                     if(confirm(`Really delete playlist ${tagid}?`)) {
                         fetch(`/api/v1/playlist/${tagid}`, {
                             method: 'DELETE'})
@@ -467,7 +534,7 @@
                 .addEventListener('click', selectLastTag);
             document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
                 if (lastSelected !== null)
-                    showScreen("playlist_edit", {load: lastSelected.innerText});
+                    showScreen("playlist_edit", {load: lastSelected.getAttribute('data-tag')});
             });
             document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
                 const node = e.target.closest("li");
@@ -522,8 +589,9 @@
             container.innerHTML = "";
             for (const playlist of playlists) {
                 const li = document.createElement("li");
-                li.innerHTML = playlist;
+                li.innerHTML = `${playlist.name} (${playlist.tag})`;
                 li.className = "node"
+                li.setAttribute('data-tag', playlist.tag);
                 container.appendChild(li)
             }
         }
@@ -548,7 +616,7 @@
             document.getElementById('playlist-exist-list')
                     .querySelectorAll("li")
                     .forEach(n => {
-                        if (n.innerText == tagtext) {
+                        if (n.getAttribute('data-tag') == tagtext) {
                             n.classList.add("selected");
                             lastSelected = n;
                         } else {
@@ -650,6 +718,8 @@
             } else if (playlist.persist === "track" && playlist.shuffle === "no") {
                 playlisttype.value = "audioplay";
             }
+            const playlistname = document.getElementById('playlist-edit-name');
+            playlistname.value = playlist.name;
         }
 
         async function save() {
@@ -672,6 +742,8 @@
                     playlistData.shuffle = "no";
                     break;
             }
+            const playlistname = document.getElementById('playlist-edit-name');
+            playlistData.name = playlistname.value;
             const container = document.getElementById('playlist-edit-list');
             playlistData.paths = [...container.querySelectorAll("li")].map((node) => node.innerText);
             const saveRes = await fetch(`/api/v1/playlist/${playlistId}`,
@@ -736,6 +808,10 @@
         
         async function onShow(intent) {
             document.getElementById('playlist-filebrowser-addtrack').disabled = true;
+            if (intent !== 'refresh') {
+                document.getElementById('playlist-filebrowser-upload-progress').value = 0;
+                document.getElementById("playlist-filebrowser-upload-files").value = "";
+            }
             tree = document.getElementById("playlist-filebrowser-tree");
             tree.innerHTML = "Loading...";
             fetch('/api/v1/audiofiles')
@@ -770,7 +846,6 @@
             if (type === 'directory') {
                 const nested = document.createElement('ul');
                 node.appendChild(nested);
-                node.classList.add('expanded');
                 parent.appendChild(node);
                 return nested;
             }
@@ -857,7 +932,7 @@
                     }
                     if (donecount + 1 === totalcount) {
                         // Reload file list from device
-                        onShow();
+                        onShow('refresh');
                     } else {
                         uploadFileHelper(totalcount, donecount + 1, destdir, files.slice(1));
                     }
@@ -884,7 +959,7 @@
             const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
                   {method: 'POST'});
             // Reload file list from device
-            onShow();
+            onShow('refresh');
         }
 
         async function deleteItems() {
@@ -905,7 +980,7 @@
                 }
             }
             // Reload file list from device
-            onShow();
+            onShow('refresh');
         }
         
         let tree = (() => {
@@ -981,6 +1056,13 @@
     });
 
     showScreen("menu");
+
+    fetch('/api/v1/info')
+        .then((resp) => resp.json())
+        .then((info) => {
+            const version = document.getElementById('footer-version');
+            version.innerText = info.version;
+        });
 </script>
 
 </body>

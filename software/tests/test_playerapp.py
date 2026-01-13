@@ -139,6 +139,12 @@ class FakeConfig:
     def get_tagmode(self):
         return 'tagremains'
 
+    def get_volume_max(self):
+        return 255
+
+    def get_volume_boot(self):
+        return 16
+
 
 def fake_open(filename, mode):
     return FakeFile(filename, mode)
@@ -167,7 +173,7 @@ def test_construct_app(micropythonify, faketimermanager):
     deps = _makedeps(mp3player=fake_mp3)
     dut = app.PlayerApp(deps)
     fake_mp3 = dut.player
-    assert fake_mp3.volume is not None
+    assert fake_mp3.volume is not None and fake_mp3.volume >= 16
 
 
 def test_load_playlist_on_tag(micropythonify, faketimermanager, monkeypatch):

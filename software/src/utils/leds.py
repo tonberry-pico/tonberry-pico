@@ -12,10 +12,10 @@ class LedManager:
     PLAYING = const(1)
     REBOOTING = const(2)
 
-    def __init__(self, np):
+    def __init__(self, np, config):
         self.led_state = LedManager.IDLE
+        self.brightness = config.get_led_max() / 255
         self.np = np
-        self.brightness = 0.1
         self.leds = len(self.np)
         asyncio.create_task(self.run())
 

@@ -4,11 +4,15 @@ Copyright (c) 2024-2025 Stefan Kratochwil <Kratochwil-LA@gmx.de>
 '''
 
 import asyncio
+import board
+import errno
 import hwconfig
 import json
 import machine
+import network
 import os
 import time
+import ubinascii
 
 from array import array
 from microdot import Microdot, redirect, send_file, Request
@@ -28,7 +32,7 @@ Request.max_content_length = 128 * 1024 * 1024  # 128MB requests allowed
 
 def start_webserver(config_, app_):
     global server, config, app, nfc, playlist_db, leds, timer_manager
-    server = asyncio.create_task(webapp.start_server(port=80))
+    server = asyncio.create_task(webapp.start_server(host='::0', port=80))
     config = config_
     app = app_
     nfc = app.get_nfc()
@@ -109,7 +113,7 @@ async def static(request, path):
 
 @webapp.route('/api/v1/playlists', methods=['GET'])
 async def playlists_get(request):
-    return sorted(playlist_db.getPlaylistTags())
+    return playlist_db.getPlaylists()
 
 
 def is_hex(s):
@@ -130,10 +134,11 @@ async def playlist_get(request, tag):
         return None, 404
 
     return {
-            'shuffle': playlist.__dict__.get('shuffle'),
-            'persist': playlist.__dict__.get('persist'),
+            'shuffle': playlist.shuffle,
+            'persist': playlist.persist,
             'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
                       for p in playlist.getPaths()],
+            'name': playlist.name
     }
 
 
@@ -153,7 +158,8 @@ async def playlist_put(request, tag):
     playlist_db.createPlaylistForTag(tag.encode(),
                                      (fsroot + path.encode() for path in playlist.get('paths', [])),
                                      playlist.get('persist', 'track').encode(),
-                                     playlist.get('shuffle', 'no').encode())
+                                     playlist.get('shuffle', 'no').encode(),
+                                     playlist.get('name', ''))
     return '', 204
 
 
@@ -197,6 +203,25 @@ async def audiofiles_get(request):
     return directory_iterator(), {'Content-Type': 'application/json; charset=UTF-8'}
 
 
+async def stream_to_file(stream, file_, length):
+    data = array('b', range(16384))
+    bytes_copied = 0
+    while True:
+        bytes_read = await stream.readinto(data)
+        if bytes_read == 0:
+            # End of body
+            break
+        bytes_written = file_.write(data[:bytes_read])
+        if bytes_written != bytes_read:
+            # short writes shouldn't happen
+            raise OSError(errno.EIO, 'unexpected short write')
+        bytes_copied += bytes_written
+        if bytes_copied == length:
+            break
+        app.reset_idle_timeout()
+    return bytes_copied
+
+
 @webapp.route('/api/v1/audiofiles', methods=['POST'])
 async def audiofile_upload(request):
     if 'type' not in request.args or request.args['type'] not in ['file', 'directory']:
@@ -213,20 +238,13 @@ async def audiofile_upload(request):
         os.mkdir(path)
         return '', 204
     with open(path, 'wb') as newfile:
-        data = array('b', range(4096))
-        bytes_copied = 0
-        while True:
-            bytes_read = await request.stream.readinto(data)
-            if bytes_read == 0:
-                # End of body
-                break
-            bytes_written = newfile.write(data[:bytes_read])
-            if bytes_written != bytes_read:
-                # short writes shouldn't happen
-                return 'write failure', 500
-            bytes_copied += bytes_written
-            if bytes_copied == length:
-                break
+        try:
+            if length > Request.max_body_length:
+                bytes_copied = await stream_to_file(request.stream, newfile, length)
+            else:
+                bytes_copied = newfile.write(request.body)
+        except OSError as ex:
+            return f'error writing data to file: {ex}', 500
     if bytes_copied == length:
         return '', 204
     else:
@@ -258,10 +276,9 @@ async def audiofile_delete(request):
 
 @webapp.route('/api/v1/reboot/<method>', methods=['POST'])
 async def reboot(request, method):
-    if hwconfig.get_on_battery():
-        return 'not allowed: usb not connected', 403
-
     if method == 'bootloader':
+        if hwconfig.get_on_battery():
+            return 'not possible: connect USB first', 403
         leds.set_state(LedManager.REBOOTING)
         timer_manager.schedule(time.ticks_ms() + 1500, machine.bootloader)
     elif method == 'application':
@@ -270,3 +287,10 @@ async def reboot(request, method):
     else:
         return 'method not supported', 400
     return '', 204
+
+
+@webapp.route('/api/v1/info', methods=['GET'])
+async def get_info(request):
+    mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
+    return {'version': board.version,
+            'mac': mac}

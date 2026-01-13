@@ -5,7 +5,7 @@ import asyncio
 import machine
 import micropython
 import time
-from utils import safe_callback
+from utils import safe_callback, TimerManager
 try:
     from typing import TYPE_CHECKING  # type: ignore
 except ImportError:
@@ -32,6 +32,7 @@ class Buttons:
     def __init__(self, cb: "ButtonCallback", config, hwconfig):
         self.button_map = config.get_button_map()
         self.hw_buttons = hwconfig.BUTTONS
+        self.hwconfig = hwconfig
         self.cb = cb
         self.buttons = dict()
         for key_id, key_name in self.KEYMAP.items():
@@ -42,6 +43,7 @@ class Buttons:
         self.int_flag = asyncio.ThreadSafeFlag()
         self.pressed: list[int] = []
         self.last: dict[int, int] = {}
+        self.timer_manager = TimerManager()
         for button in self.buttons.keys():
             button.irq(handler=self._interrupt, trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING)
         asyncio.create_task(self.task())
@@ -69,6 +71,10 @@ class Buttons:
             # print(f'B{keycode} {now}')
             self.pressed.append(keycode)
             self.int_flag.set()
+            if keycode == self.VOLDOWN:
+                self.timer_manager.schedule(time.ticks_ms() + 5000, self.long_press_shutdown)
+        if button.value() == 1 and keycode == self.VOLDOWN:
+            self.timer_manager.cancel(self.long_press_shutdown)
 
     async def task(self):
         while True:
@@ -76,3 +82,9 @@ class Buttons:
             while len(self.pressed) > 0:
                 what = self.pressed.pop()
                 safe_callback(lambda: self.cb.onButtonPressed(what), "button callback")
+
+    def long_press_shutdown(self):
+        if self.hwconfig.get_on_battery():
+            self.hwconfig.power_off()
+        else:
+            machine.reset()
