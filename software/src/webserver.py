@@ -204,7 +204,7 @@ async def audiofiles_get(request):
 
 
 async def stream_to_file(stream, file_, length):
-    data = array('b', range(16384))
+    data = array('b', range(4096))
     bytes_copied = 0
     while True:
         bytes_read = await stream.readinto(data)
