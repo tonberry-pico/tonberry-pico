@@ -2,6 +2,7 @@
 #include "sd.h"
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,6 +20,14 @@
 extern void sd_spi_dbg_clk(const int div, const int frac);
 
 extern void sd_spi_dbg_loop(void);
+
+void sd_printf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    va_end(ap);
+}
 
 #define MAX_VOLUME 0x8000u
 
@@ -157,7 +166,7 @@ static void write_test(struct sd_context *sd_context)
             data_buffer[i] ^= 0xff;
         }
 
-        if (!sd_writeblock(sd_context, 0, data_buffer)) {
+        if (!sd_writeblocks(sd_context, 0, sizeof(data_buffer) / SD_SECTOR_SIZE, data_buffer)) {
             printf("sd_writeblock failed\n");
             return;
         }
