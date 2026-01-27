@@ -235,16 +235,19 @@ async def audiofile_upload(request):
     if type_ == 'directory':
         if length != 0:
             return 'directory request may not have content', 400
-        os.mkdir(path)
-        return '', 204
-    with open(path, 'wb') as newfile:
         try:
+            os.mkdir(path)
+        except OSError as ex:
+            return f'error creating directory: {ex}', 500
+        return '', 204
+    try:
+        with open(path, 'wb') as newfile:
             if length > Request.max_body_length:
                 bytes_copied = await stream_to_file(request.stream, newfile, length)
             else:
                 bytes_copied = newfile.write(request.body)
-        except OSError as ex:
-            return f'error writing data to file: {ex}', 500
+    except OSError as ex:
+        return f'error writing data to file: {ex}', 500
     if bytes_copied == length:
         return '', 204
     else:
