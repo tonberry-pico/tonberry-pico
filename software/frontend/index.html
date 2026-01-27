@@ -938,7 +938,7 @@
                     }
                 }
             };
-            xhr.open("POST", `/api/v1/audiofiles?type=file&location=${location}`);
+            xhr.open("POST", `/api/v1/audiofiles?type=file&location=${encodeURIComponent(location)}`);
             xhr.overrideMimeType("audio/mpeg");
             xhr.send(files[0]);
         }
@@ -956,7 +956,7 @@
             const location = selectedNodes.length === 1
                 ? selectedNodes[0].getAttribute('data-path') + '/' + name.value
                 : '/' + name.value;
-            const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${location}`,
+            const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${encodeURIComponent(location)}`,
                   {method: 'POST'});
             // Reload file list from device
             onShow('refresh');
@@ -973,7 +973,7 @@
             items.sort();
             items.reverse();
             for (const item of items) {
-                const saveRes = await fetch(`/api/v1/audiofiles?location=${item}`,
+                const saveRes = await fetch(`/api/v1/audiofiles?location=${encodeURIComponent(item)}`,
                   {method: 'DELETE'});
                 if (!saveRes.ok) {
                     alert(`Failed to delete item ${item}: ${await saveRes.text()}`);
