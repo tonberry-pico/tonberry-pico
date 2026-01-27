@@ -147,7 +147,7 @@
     <button onclick="showScreen('menu')">🏠 Main Menu</button>
     <button onclick="showScreen('config')">⚙️ Config Editor</button>
     <button onclick="showScreen('playlist')">🖹 Playlist Editor</button>
-    <button onclick="showScreen('playlist_filebrowser', 'filesystem')">📂 Filesystem</button>
+    <button onclick="showScreen('filebrowser', 'filesystem')">📂 Filesystem</button>
 </nav>
 
 <!-- MAIN MENU -->
@@ -243,7 +243,7 @@
 </div>
 
 <!-- PLAYLIST EDITOR SCREEN 3: file browser -->
-<div id="screen-playlist_filebrowser" class="screen">
+<div id="screen-filebrowser" class="screen">
     <h2 id="playlist-filebrowser-title">Playlist Editor</h2>
     <div id="playlist-filebrowser-container">
         <div class="scroll-container">
@@ -655,7 +655,7 @@
             document.getElementById('playlist-edit-removetrack').addEventListener("click", (e) => deleteSelectedTracks());
             document.getElementById('playlist-edit-back').addEventListener("click", (e) => showScreen('playlist'));
             document.getElementById('playlist-edit-addtrack').addEventListener("click", (e) => {
-                showScreen("playlist_filebrowser");
+                showScreen("filebrowser", "playlist");
             });
             document.getElementById('playlist-edit-save').addEventListener("click", (e) => save());
         }
@@ -787,7 +787,7 @@
     /* ----------------------------------------
        PLAYLIST EDITOR LOGIC - ADD FILES SCREEN
     ------------------------------------------- */
-    Screens.playlist_filebrowser = (() => {
+    Screens.filebrowser = (() => {
         let isFilesystemMode = false;
 
         function init() {
