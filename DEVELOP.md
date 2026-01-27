@@ -52,3 +52,23 @@ would be stored in the following key/value pairs in the btree db:
  * 00aa11bb22/playlist/00000: a.mp3
  * 00aa11bb22/playlist/00001: b.mp3
  * 00aa11bb22/playlistpos: 00000
+
+## Notes for UI development with chromium
+
+Features for the web interface are best prototyped in a browser directly. By using the built-in developmer tools and
+and their "override" feature, the web contents are replaced by a locally stored copy, which can be used to directly
+test the modifications without going all the way through the build and flash process.
+
+However, modern browsers may restrict or even completely forbid the execution of dynamic content like JavaScript, if
+the content is stored on the local machine and/or the content is accessed using http. In such a case, chromium issues
+an error message similar to the following one:
+
+> Access to fetch at 'http://192.168.4.1/api/v1/audiofiles' from origin 'http://192.168.4.1' has been blocked by CORS
+> policy: The request client is not a secure context and the resource is in more-private address space `local`.
+
+To mitigate this, chromium offers two flags that need modification:
+- 'chrome://flags/#local-network-access-check' must be `Disabled`
+- 'chrome://flags/#unsafely-treat-insecure-origin-as-secure' must be `Enabled`
+
+Note that these settings leave the browser susceptible to security issues and should be returned to
+their default values as soon as possible.
