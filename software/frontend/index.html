@@ -2,1090 +2,887 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#bf5a1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>TonBERRY pico</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        max-width: 700px;
-        margin: auto;
-    }
-
-    /* Navigation */
-    nav button {
-        margin: 5px;
-        padding: 10px 16px;
-        cursor: pointer;
-    }
-
-    /* Screens */
-    .screen {
-        display: none;
-        margin-top: 20px;
-    }
-    .screen.active {
-        display: block;
-    }
-
-    /* Config editor UI */
-    label {
-        font-weight: bold;
-        margin-top: 12px;
-        display: block;
-    }
-    input {
-        width: 100%;
-        padding: 6px;
-        box-sizing: border-box;
-        margin-top: 4px;
-    }
-    .nested {
-        margin-left: 20px;
-        border-left: 2px solid #ddd;
-        padding-left: 10px;
-        margin-top: 10px;
-    }
-
-    /* Tree view */
-    .tree ul {
-      list-style: none;
-      padding-left: 1rem;
-    }
-    
-    .tree li {
-      margin: 2px 0;
-    }
-    
-    .caret {
-      cursor: pointer;
-      display: inline-block;
-      width: 1em;
-      height: 1em;
-      user-select: none;
-    }
-    
-    .caret::before {
-      content: "▶";
-      opacity: 0.6;
-    }
-    
-    li.expanded > .caret::before {
-      content: "▼";
-    }
-    
-    li:not(:has(ul)) > .caret::before {
-      content: "";
-    }
-    
-    .node {
-      cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 4px;
-      user-select: none;
-    }
-    
-    .node:hover {
-      background: #eee;
-    }
-    
-    .node.selected {
-      background: #0078d7;
-      color: white;
-    }
-    
-    .tree ul ul {
-      display: none;
-    }
-    
-    li.expanded > ul {
-      display: block;
-    }
-
-    .scroll-container {
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    
-      height: 500px;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    .flex-horizontal {
-        display:flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-
-    .flex-vertical {
-        display:flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .list {
-        list-style: none;
-    }
-
-    .footer {
-        font-size: x-small;
-        color: gray;
-        margin-top: 20px;
-    }
-
+:root {
+  --bg:           #f7f4ef;
+  --surface:      #ffffff;
+  --surface-alt:  #faf8f5;
+  --accent:       #bf5a1e;
+  --accent-dark:  #9e4a18;
+  --accent-light: #f5ddc8;
+  --danger:       #c0392b;
+  --danger-dark:  #962d22;
+  --text:         #1e1b18;
+  --text-muted:   #706860;
+  --border:       #e0d8cf;
+  --radius:       8px;
+  --radius-sm:    5px;
+  --shadow:       0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:var(--text);background:var(--bg)}
+.app-header{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:12px;height:56px}
+.app-title{font-size:20px;font-weight:800;color:var(--accent);margin:0;flex:1;letter-spacing:-.02em}
+.app-version{font-size:12px;color:var(--text-muted)}
+.app-nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:2px;padding:6px 10px;overflow-x:auto}
+.app-main{max-width:720px;margin:0 auto;padding:20px 16px 32px}
+.nav-btn{display:flex;flex-direction:row;align-items:center;gap:6px;padding:7px 14px;border:none;border-radius:var(--radius-sm);background:none;color:var(--text-muted);cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;transition:background .12s,color .12s;white-space:nowrap}
+.nav-btn:hover{background:var(--surface-alt);color:var(--text)}
+.nav-btn.active{background:var(--accent-light);color:var(--accent-dark);font-weight:700}
+.nav-icon{font-size:17px;line-height:1}
+@media(max-width:599px){
+  .app-nav{position:fixed;bottom:0;left:0;right:0;top:auto;border-top:1px solid var(--border);border-bottom:none;padding:4px 0 env(safe-area-inset-bottom,4px);justify-content:space-around;z-index:90}
+  .app-main{padding-bottom:88px}
+  .nav-btn{flex-direction:column;gap:2px;padding:6px 10px;font-size:10px;min-width:64px;justify-content:center}
+  .nav-icon{font-size:22px}
+}
+.screen{display:none}
+.screen.active{display:block}
+.section-title{font-size:18px;font-weight:700;margin:0 0 16px;color:var(--text)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+.nested{margin-left:0;padding-left:16px;border-left:3px solid var(--accent-light);margin-top:4px;margin-bottom:4px}
+.form-group{margin-bottom:14px}
+label,.form-label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:16px;font-family:inherit;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;appearance:auto}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+input[type="file"]{padding:7px 10px;font-size:13px;cursor:pointer}
+button{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);cursor:pointer;font-size:14px;font-family:inherit;font-weight:500;transition:background .12s,border-color .12s,opacity .12s;white-space:nowrap;min-height:38px}
+button:hover{background:var(--surface-alt)}
+button:active{opacity:.75}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn-danger:hover{background:var(--danger-dark);border-color:var(--danger-dark)}
+.btn-sm{padding:5px 11px;font-size:13px;min-height:32px}
+.action-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.action-row.space-between{justify-content:space-between}
+.action-row.right{justify-content:flex-end}
+.scroll-container{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);height:300px;overflow-y:auto;overflow-x:hidden;margin-bottom:10px}
+@media(min-width:600px){.scroll-container{height:380px}}
+.list{list-style:none;margin:0;padding:0}
+.list li{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;transition:background .1s}
+.list li:last-child{border-bottom:none}
+.list li:hover{background:var(--surface-alt)}
+.list li.selected{background:var(--accent);color:#fff}
+.list li.selected:hover{background:var(--accent-dark)}
+.tree ul{list-style:none;padding-left:0;margin:0}
+.tree>ul{padding:6px 0}
+.tree ul ul{padding-left:14px;display:none}
+li.expanded>ul{display:block}
+.tree li{display:flex;align-items:center;padding:1px 6px}
+.caret{display:inline-flex;align-items:center;justify-content:center;width:22px;height:28px;flex-shrink:0;cursor:pointer;color:var(--text-muted);font-size:9px;user-select:none}
+.caret::before{content:"▶"}
+li.expanded>.caret::before{content:"▼"}
+li:not(:has(ul))>.caret{opacity:0;cursor:default;pointer-events:none}
+.node{cursor:pointer;padding:4px 8px;border-radius:var(--radius-sm);user-select:none;font-size:14px;transition:background .1s;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node:hover{background:var(--surface-alt)}
+.node.selected{background:var(--accent);color:#fff}
+progress{width:100%;height:8px;border:none;border-radius:4px;overflow:hidden;margin:8px 0;display:block}
+progress::-webkit-progress-bar{background:var(--border);border-radius:4px}
+progress::-webkit-progress-value{background:var(--accent);border-radius:4px;transition:width .3s}
+progress::-moz-progress-bar{background:var(--accent);border-radius:4px}
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(12px);padding:10px 22px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:500;max-width:340px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast-show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:#2c2c2c;color:#fff}
+.toast-success{background:#1e7e34;color:#fff}
+.toast-error{background:var(--danger);color:#fff}
+@media(min-width:600px){.toast{bottom:24px}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:400;padding:16px}
+.modal{background:var(--surface);border-radius:var(--radius);padding:24px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal-title{font-size:16px;font-weight:700;margin:0 0 8px}
+.modal-msg{font-size:14px;color:var(--text-muted);margin:0 0 20px;line-height:1.6}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.app-footer{text-align:center;padding:16px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);margin-top:8px}
+.app-footer a{color:var(--accent);text-decoration:none}
+.app-footer a:hover{text-decoration:underline}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:399px){.menu-grid{grid-template-columns:1fr}}
+.menu-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s;box-shadow:var(--shadow);font-family:inherit;font-size:15px;color:var(--text);min-height:38px}
+.menu-card:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.menu-card-icon{font-size:28px;line-height:1}
+.menu-card-title{font-weight:700;font-size:15px}
+.menu-card-desc{font-size:12px;color:var(--text-muted);line-height:1.4}
+.upload-section{margin-top:12px}
+.upload-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.upload-row input[type="file"]{flex:1;min-width:120px}
 </style>
 </head>
 <body>
 
-<h1>TonBERRY pico</h1>
+<header class="app-header">
+  <h1 class="app-title">TonBERRY pico</h1>
+  <span class="app-version">v<span id="footer-version">…</span></span>
+</header>
 
-<nav>
-    <button onclick="showScreen('menu')">🏠 Main Menu</button>
-    <button onclick="showScreen('config')">⚙️ Config Editor</button>
-    <button onclick="showScreen('playlist')">🖹 Playlist Editor</button>
-    <button onclick="showScreen('filebrowser', 'filesystem')">📂 Filesystem</button>
+<nav class="app-nav">
+  <button type="button" class="nav-btn active" data-screen="menu" onclick="showScreen('menu')">
+    <span class="nav-icon">🏠</span><span>Home</span>
+  </button>
+  <button type="button" class="nav-btn" data-screen="config" onclick="showScreen('config')">
+    <span class="nav-icon">⚙️</span><span>Config</span>
+  </button>
+  <button type="button" class="nav-btn" data-screen="playlist" onclick="showScreen('playlist')">
+    <span class="nav-icon">🎵</span><span>Playlists</span>
+  </button>
+  <button type="button" class="nav-btn" data-screen="filebrowser" onclick="showScreen('filebrowser','filesystem')">
+    <span class="nav-icon">📂</span><span>Files</span>
+  </button>
 </nav>
+
+<main class="app-main">
 
 <!-- MAIN MENU -->
 <div id="screen-menu" class="screen active">
-    <h2>Main Menu</h2>
-    <p>Select a tool:</p>
-
-    <ul>
-        <li><button onclick="showScreen('config')">Open Config Editor</button></li>
-        <li><button onclick="showScreen('playlist')">Open Playlist Editor</button></li>
-        <!-- More screens can be added later -->
-    </ul>
-    <hr>
-    <button onclick="requestReboot()">Reboot to bootloader</button>
+  <h2 class="section-title">Welcome</h2>
+  <div class="menu-grid">
+    <button type="button" class="menu-card" onclick="showScreen('config')">
+      <span class="menu-card-icon">⚙️</span>
+      <span class="menu-card-title">Config Editor</span>
+      <span class="menu-card-desc">WiFi, buttons, volume and LED settings</span>
+    </button>
+    <button type="button" class="menu-card" onclick="showScreen('playlist')">
+      <span class="menu-card-icon">🎵</span>
+      <span class="menu-card-title">Playlist Editor</span>
+      <span class="menu-card-desc">Manage NFC tag playlists and track order</span>
+    </button>
+    <button type="button" class="menu-card" onclick="showScreen('filebrowser','filesystem')">
+      <span class="menu-card-icon">📂</span>
+      <span class="menu-card-title">Filesystem</span>
+      <span class="menu-card-desc">Upload, browse and delete audio files</span>
+    </button>
+    <button type="button" class="menu-card" onclick="requestReboot()">
+      <span class="menu-card-icon">🔄</span>
+      <span class="menu-card-title">Reboot</span>
+      <span class="menu-card-desc">Restart into UF2 bootloader mode</span>
+    </button>
+  </div>
 </div>
 
-<!-- CONFIG EDITOR SCREEN -->
+<!-- CONFIG EDITOR -->
 <div id="screen-config" class="screen">
-    <h2>Configuration Editor</h2>
-    <div id="config-container">Loading…</div>
-    <button id="config-save-btn" disabled>Save &amp; Reboot</button>
+  <h2 class="section-title">Configuration</h2>
+  <div id="config-container" class="card">Loading…</div>
+  <div class="action-row right">
+    <button type="button" id="config-save-btn" class="btn-primary" disabled>Save &amp; Reboot</button>
+  </div>
 </div>
 
-<!-- PLAYLIST EDITOR SCREEN 1: list of playlists -->
+<!-- PLAYLIST LIST -->
 <div id="screen-playlist" class="screen">
-    <h2>Playlist Editor</h2>
-    <div id="playlist-container">
-        <div id="playlist-new">
-            <label>New playlist</label>
-            <div class="flex-horizontal">
-                <input id="playlist-new-tag" type="text" placeholder="Tag ID" pattern="[0-9a-fA-F]+" style="max-width: 70%" />
-                <button id="playlist-new-button-gettag">Get last Tag</button>
-                <button id="playlist-new-button-new">New playlist</button>
-            </div>
-        </div>
-        <hr />
-        <div id="playlist-existing">
-            <label>Playlists</label>
-            <div class="scroll-container" style="margin-bottom: 10px">
-                <ul class="list" id="playlist-exist-list">
-                      <li>Loading...</li>  
-                </ul>
-            </div>
-            <div class="flex-horizontal">
-                <button id="playlist-exist-button-delete" style="background-color: orangered">Delete Playlist</button>
-                <button id="playlist-exist-button-gettag">Select last Tag</button>
-                <button id="playlist-exist-button-edit">Edit Playlist</button>
-            </div>
-        </div>
+  <h2 class="section-title">Playlists</h2>
+  <div class="card" id="playlist-container">
+    <div id="playlist-new">
+      <label>Create new playlist</label>
+      <div class="action-row">
+        <input id="playlist-new-tag" type="text" placeholder="Tag ID (hex)" pattern="[0-9a-fA-F]+" style="flex:1;min-width:0" />
+        <button type="button" id="playlist-new-button-gettag" class="btn-sm">Get last tag</button>
+        <button type="button" id="playlist-new-button-new" class="btn-primary btn-sm">Create</button>
+      </div>
     </div>
-</div>
-
-<!-- PLAYLIST EDITOR SCREEN 2: playlist tracks -->
-<div id="screen-playlist_edit" class="screen">
-    <h2>Playlist Editor</h2>
-    <div id="playlist-edit-container">
-        <div id="playlist-edit" style="gap: 10px">
-            <div>
-                <label>Playlist type</label>
-                <select id="playlist-edit-type">
-                    <option value="album">Album (no shuffle, always start at beginning)</option>
-                    <option value="audiobook">Audiobook (no shuffle, start at previous position)</option>
-                    <option value="random">Random Collection (shuffle)</option>
-                    <option value="audioplay">Audioplay (no shuffle, start at previous track)</option>
-                </select>
-            </div>
-            <div>
-                <label>Playlist name</label>
-                <input type="text" placeholder="Playlist name" id="playlist-edit-name" />
-            </div>
-            <div class="flex-horizontal">
-                <div style="flex-grow: 1">
-                    <label>Tracks</label>
-                    <div class="scroll-container">
-                        <ul class="list" id="playlist-edit-list">
-                              <li>Loading...</li>  
-                        </ul>
-                    </div>
-                </div>
-                <div class="flex-vertical">
-                    <button id="playlist-edit-trackmove-up">↑</button>
-                    <button id="playlist-edit-trackmove-down">↓</button>
-                </div>
-            </div>
-            <div class="flex-horizontal">
-                <button id="playlist-edit-back">Cancel</button>
-                <button id="playlist-edit-removetrack">Remove track(s)</button>
-                <button id="playlist-edit-addtrack">Add track(s)</button>
-                <button id="playlist-edit-save">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- PLAYLIST EDITOR SCREEN 3: file browser -->
-<div id="screen-filebrowser" class="screen">
-    <h2 id="playlist-filebrowser-title">Playlist Editor</h2>
-    <div id="playlist-filebrowser-container">
-        <div class="scroll-container" style="margin-bottom: 10px">
-            <div class="tree" id="playlist-filebrowser-tree">
-                <ul><li>Loading...</li></ul>
-            </div>
-        </div>
-        <div class="flex-horizontal">
-            <button id="playlist-filebrowser-cancel">Cancel</button>
-            <button id="playlist-filebrowser-delete" style="background-color: orangered">Delete selected</button>
-            <button id="playlist-filebrowser-addtrack">Add track(s)</button>
-        </div>
-        <hr>
-        <div class="flex-horizontal">
-            <input type="file" id="playlist-filebrowser-upload-files" multiple accept="audio/mpeg" />
-            <progress id="playlist-filebrowser-upload-progress" max="100" value="0" style:"flex-grow: 1">0%</progress>
-            <button id="playlist-filebrowser-upload">Upload</button>
-        </div>
-        <div class="flex-horizontal">
-            <input type="text" id="playlist-filebrowser-mkdir-name" placeholder="Directory Name" />
-            <button id="playlist-filebrowser-mkdir" style="width: 20%">Create directory</button>
-        </div>
-    </div>
-</div>
-<div class="footer">
     <hr>
-    <div class="flex-horizontal">
-        <div>
-            <a href="https://git.ka.blankertz.org/TonBERRY/tonberry-pico">TonBERRY pico</a>
-        </div>
-        <div>
-            Version: <span id="footer-version">unknown</span>
-        </div>
+    <div id="playlist-existing">
+      <label>Existing playlists</label>
+      <div class="scroll-container">
+        <ul class="list" id="playlist-exist-list"><li>Loading…</li></ul>
+      </div>
+      <div class="action-row space-between">
+        <button type="button" id="playlist-exist-button-delete" class="btn-danger btn-sm">Delete</button>
+        <button type="button" id="playlist-exist-button-gettag" class="btn-sm">Select last tag</button>
+        <button type="button" id="playlist-exist-button-edit" class="btn-primary btn-sm">Edit playlist</button>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- PLAYLIST EDIT -->
+<div id="screen-playlist_edit" class="screen">
+  <h2 class="section-title">Edit Playlist</h2>
+  <div class="card">
+    <div class="form-group">
+      <label>Playlist type</label>
+      <select id="playlist-edit-type">
+        <option value="album">Album — no shuffle, always start at beginning</option>
+        <option value="audiobook">Audiobook — no shuffle, resume from last position</option>
+        <option value="random">Random Collection — shuffle tracks</option>
+        <option value="audioplay">Audioplay — no shuffle, resume from last track</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Playlist name</label>
+      <input type="text" placeholder="Enter playlist name" id="playlist-edit-name" />
+    </div>
+    <div class="form-group">
+      <label>Tracks</label>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div class="scroll-container" style="flex:1;margin-bottom:0">
+          <ul class="list" id="playlist-edit-list"><li>Loading…</li></ul>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px">
+          <button type="button" id="playlist-edit-trackmove-up" class="btn-sm" title="Move up">↑</button>
+          <button type="button" id="playlist-edit-trackmove-down" class="btn-sm" title="Move down">↓</button>
+        </div>
+      </div>
+    </div>
+    <div class="action-row space-between">
+      <button type="button" id="playlist-edit-back" class="btn-sm">Cancel</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="playlist-edit-removetrack" class="btn-sm">Remove</button>
+        <button type="button" id="playlist-edit-addtrack" class="btn-sm">Add tracks…</button>
+        <button type="button" id="playlist-edit-save" class="btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FILE BROWSER -->
+<div id="screen-filebrowser" class="screen">
+  <h2 class="section-title" id="playlist-filebrowser-title">Filesystem</h2>
+  <div class="card">
+    <div class="scroll-container">
+      <div class="tree" id="playlist-filebrowser-tree"><ul><li>Loading…</li></ul></div>
+    </div>
+    <div class="action-row space-between">
+      <button type="button" id="playlist-filebrowser-cancel" class="btn-sm">Cancel</button>
+      <div style="display:flex;gap:8px">
+        <button type="button" id="playlist-filebrowser-delete" class="btn-danger btn-sm">Delete selected</button>
+        <button type="button" id="playlist-filebrowser-addtrack" class="btn-primary btn-sm">Add track(s)</button>
+      </div>
+    </div>
+    <hr>
+    <div class="upload-section">
+      <label>Upload audio files</label>
+      <div class="upload-row">
+        <input type="file" id="playlist-filebrowser-upload-files" multiple accept="audio/mpeg" />
+        <button type="button" id="playlist-filebrowser-upload" class="btn-sm">Upload</button>
+      </div>
+      <progress id="playlist-filebrowser-upload-progress" max="100" value="0"></progress>
+    </div>
+    <div class="upload-section">
+      <label>Create directory</label>
+      <div class="upload-row">
+        <input type="text" id="playlist-filebrowser-mkdir-name" placeholder="Directory name" />
+        <button type="button" id="playlist-filebrowser-mkdir" class="btn-sm">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer class="app-footer">
+  <a href="https://git.ka.blankertz.org/TonBERRY/tonberry-pico">TonBERRY pico</a>
+</footer>
+
 <script>
-    const Screens = {};
-    let activeScreen = null;
-    /* -----------------------------
-       Screen switching
-    ----------------------------- */
-    function showScreen(name, arg=null) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen-' + name).classList.add('active');
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+    var t = document.createElement('div');
+    t.className = 'toast toast-' + (type || 'info');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ t.classList.add('toast-show'); }); });
+    setTimeout(function(){
+        t.classList.remove('toast-show');
+        setTimeout(function(){ t.remove(); }, 300);
+    }, 3500);
+}
 
-        activeScreen = name;
-        Screens[name]?.onShow?.(arg);
-    }
-    
-    /* -----------------------------
-       CONFIG EDITOR LOGIC
-    ----------------------------- */
-    Screens.config = (() => {
-        let screenroot = null;
-        function init() {
-            screenroot = document.getElementById('screen-config');
-            document.getElementById('config-save-btn').addEventListener('click', async () => {
-                const res = await fetch('/api/v1/config');
-                const original = await res.json();
-                const updated = serialize(original);
-            
-                try {
-                    const saveRes = await fetch('/api/v1/config', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated, null, 2)
-                    });
-            
-                    if (!saveRes.ok) {
-                        alert("Failed to save config: " + await saveRes.text());
-                        return;
-                    }
-            
-                    alert("Configuration saved successfully, device will now reboot/shutdown! " +
-                          "On battery, press Power button after shutdown to restart.");
-                    await fetch('/api/v1/reboot/application', {'method': 'POST'});
-                } catch (err) {
-                    alert("Error saving configuration: " + err);
-                }
-            });
-        }
-        
-        async function onShow() {
-            const container = document.getElementById('config-container');
-            container.innerHTML = "Loading…";
-            document.getElementById('config-save-btn').disabled = true;
-        
-            try {
-                const res = await fetch('/api/v1/config');
-                const config = await res.json();
-                render(config);
-            } catch (err) {
-                container.innerHTML = "Failed to load config: " + err;
-            }
-        }
-    
-        function render(config) {
-            const container = document.getElementById('config-container');
-            container.innerHTML = "";
-            container.appendChild(renderObject(config, "root"));
-            document.getElementById('config-save-btn').disabled = false;
-        }
-    
-        const config_names = {
-            'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
-            'root.BUTTON_MAP': 'Button map',
-            'root.BUTTON_MAP.NEXT': 'Next track',
-            'root.BUTTON_MAP.PREV': 'Previous track',
-            'root.BUTTON_MAP.VOLUP': 'Volume up',
-            'root.BUTTON_MAP.VOLDOWN': 'Volume down',
-            'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
-            'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
-            'root.TAGMODE': 'Tag mode',
-            'root.LED_COUNT': 'Length of WS2182 (Neopixel) LED chain',
-            'root.VOLUME_MAX': 'Maximum volume (0-255)',
-            'root.VOLUME_BOOT': 'Volume at startup (0-255)',
-            'root.LED_MAX': 'Maximum LED brightness (0-255)',
-            'root.WIFI.SSID': 'Network name (SSID) (leave empty for AP mode)',
-            'root.WIFI.PASSPHRASE': 'Password',
-            'root.WIFI.SECURITY': 'Security mode'
-        };
-        const config_input_override = {
-            'root.TAGMODE': {
-                'element': 'select',
-                'values': {
-                    'tagremains': 'Play until tag is removed',
-                    'tagstartstop': 'Present tag once to start, present again to stop playback'
-                }
-            },
-            'root.BUTTON_MAP.NEXT':  {
-                'input-type': 'number'
-            },
-            'root.BUTTON_MAP.PREV':  {
-                'input-type': 'number'
-            },
-            'root.BUTTON_MAP.VOLUP':  {
-                'input-type': 'number'
-            },
-            'root.BUTTON_MAP.VOLDOWN':  {
-                'input-type': 'number'
-            },
-            'root.BUTTON_MAP.PLAY_PAUSE':  {
-                'input-type': 'number'
-            },
-            'root.IDLE_TIMEOUT_SECS': {
-                'input-type': 'number'
-            },
-            'root.TAG_TIMEOUT_SECS': {
-                'input-type': 'number'
-            },
-            'root.LED_COUNT': {
-                'input-type': 'number'
-            },
-            'root.WIFI.SSID': {
-                'input-type': 'text'
-            },
-            'root.WIFI.PASSPHRASE': {
-                'input-type': 'text'
-            },
-            'root.WIFI.SECURITY': {
-                'element': 'select',
-                'values': {
-                    'open': 'Open',
-                    'wpa_wpa2': 'WPA/WPA2 (PSK Mixed)',
-                    'wpa3': 'WPA3 (SAE AES)',
-                    'wpa2_wpa3': 'WPA2/WPA3 (PSK AES)'
-                }
-            },
-            'root.VOLUME_MAX': {
-                'input-type': 'number'
-            },
-            'root.VOLUME_BOOT': {
-                'input-type': 'number'
-            },
-            'root.LED_MAX': {
-                'input-type': 'number'
-            }
-        };
-    
-        function renderObject(obj, path) {
-            const wrapper = document.createElement('div');
-        
-            Object.entries(obj).forEach(([key, value]) => {
-                const currentPath = path + '.' + key;
-                const label = document.createElement('label');
-                if (currentPath in config_names) {
-                    label.textContent = config_names[currentPath];
-                } else {
-                    label.textContent = key;
-                }
-        
-                if (value !== null && typeof value === 'object') {
-                    wrapper.appendChild(label);
-                    const nested = document.createElement('div');
-                    nested.className = "nested";
-                    nested.appendChild(renderObject(value, currentPath));
-                    wrapper.appendChild(nested);
-                } else {
-                    wrapper.appendChild(label);
-                    if (currentPath in config_input_override && 'element' in config_input_override[currentPath]) {
-                        const override = config_input_override[currentPath];
-                        if (override['element'] === 'select') {
-                            const input = document.createElement('select');
-                            input.dataset.path = currentPath;
-        
-                            for (const val in override.values) {
-                                const option = document.createElement('option');
-                                option.value = val;
-                                option.textContent = override.values[val];
-                                if (val === value) {
-                                    option.selected = true;
-                                }
-        
-                                input.appendChild(option);
-                            }
-        
-                            wrapper.appendChild(input);
-                        }
-                    } else {
-                        const input = document.createElement('input');
-                        if (currentPath in config_input_override && 'input-type' in config_input_override[currentPath]) {
-                            input.type = config_input_override[currentPath]['input-type'];
-                        }
-                        input.value = value === null ? "" : value;
-                        input.dataset.path = currentPath;
-        
-                        wrapper.appendChild(input);
-                    }
-                }
-            });
-        
-            return wrapper;
-        }
-    
-        function serialize(rootObj) {
-            const inputs = screenroot.querySelectorAll("input[data-path], select[data-path]");
-        
-            inputs.forEach(input => {
-                const path = input.dataset.path.split('.').slice(1); // remove "root"
-                let current = rootObj;
-        
-                for (let i = 0; i < path.length - 1; i++) {
-                    current = current[path[i]];
-                }
-        
-                let val = input.value.trim();
-                if (val === "") val = null;
-                else if (!isNaN(val) && input.type != 'text') val = Number(val);
-        
-                current[path[path.length - 1]] = val;
-            });
-        
-            return rootObj;
-        }
-    
-        return { init, onShow };
-    })();
-
-/* ----------------------------------------
-   PLAYLIST EDITOR LOGIC - SELECTION SCREEN
-------------------------------------------- */
-    Screens.playlist = (() => {
-        let lastSelected = null;
-        
-        function init() {
-            //tree.init();
-            document.getElementById('playlist-new-button-gettag')
-                .addEventListener('click', updateLastTag);
-            document.getElementById('playlist-new-button-new')
-                .addEventListener('click', (e) => {
-                    const tagid = document.getElementById('playlist-new-tag').value;
-                    if (/^[0-9a-fA-F]+$/.exec(tagid)) {
-                        showScreen("playlist_edit", {create: tagid});
-                    } else {
-                        alert("Invalid tag id");
-                    }
-                });
-            document.getElementById('playlist-exist-button-delete')
-                .addEventListener('click', (e) => {
-                    if (lastSelected === null) return;
-                    const tagid = lastSelected.getAttribute('data-tag');
-                    if(confirm(`Really delete playlist ${tagid}?`)) {
-                        fetch(`/api/v1/playlist/${tagid}`, {
-                            method: 'DELETE'})
-                            .then(() => showScreen('playlist'));
-                    }
-                });
-            document.getElementById('playlist-exist-button-gettag')
-                .addEventListener('click', selectLastTag);
-            document.getElementById('playlist-exist-button-edit').addEventListener("click", (e) => {
-                if (lastSelected !== null)
-                    showScreen("playlist_edit", {load: lastSelected.getAttribute('data-tag')});
-            });
-            document.getElementById('playlist-exist-list').addEventListener("click", (e) => {
-                const node = e.target.closest("li");
-                if (!node) return;
-
-                document.getElementById('playlist-exist-list')
-                    .querySelectorAll(".selected")
-                    .forEach(n => n.classList.remove("selected")
-                );
-                
-                node.classList.toggle("selected");
-
-                lastSelected = node;
-            });
-        }
-        
-        async function onShow() {
-            const container = document.getElementById('playlist-exist-list');
-            container.innerHTML = "<li>Loading…</li>";
-            //document.getElementById('playlist-save-btn').disabled = true;
-        
-            fetch('/api/v1/playlists')
-                .then((res) => res.json())
-                .then((playlists) => renderPlaylistForm(playlists))
-                .catch((err) => {
-                    container.innerHTML = "<li>Failed to load playlists: " + err + "</li>";
-                });
-            fetch('/api/v1/last_tag_uid')
-                .then((res) => res.json())
-                .then((tag) => {
-                    if (tag.tag !== null) {
-                        fillLastTag(tag);
-                        selectTag(tag);
-                    }
-                });
-        }
-
-        async function updateLastTag() {
-            fetch('/api/v1/last_tag_uid')
-                .then((res) => res.json())
-                .then((tag) => fillLastTag(tag));
-        }
-
-        async function selectLastTag() {
-            fetch('/api/v1/last_tag_uid')
-                .then((res) => res.json())
-                .then((tag) => selectTag(tag));
-        }
-        
-        function renderPlaylistForm(playlists) {
-            const container = document.getElementById('playlist-exist-list');
-            container.innerHTML = "";
-            for (const playlist of playlists) {
-                const li = document.createElement("li");
-                li.innerHTML = `${playlist.name} (${playlist.tag})`;
-                li.className = "node"
-                li.setAttribute('data-tag', playlist.tag);
-                container.appendChild(li)
-            }
-        }
-
-        function bytesToHex(bytes) {
-            return bytes
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-        }
-        
-        function fillLastTag(tag) {
-            const container = document.getElementById('playlist-new-tag');
-            if (tag.tag !== null) {
-                container.value = bytesToHex(tag.tag);
-            }
-        }
-
-        function selectTag(tag) {
-            const container = document.getElementById('playlist-exist-list');
-            if (tag.tag === null) return;
-            const tagtext = bytesToHex(tag.tag);
-            document.getElementById('playlist-exist-list')
-                    .querySelectorAll("li")
-                    .forEach(n => {
-                        if (n.getAttribute('data-tag') == tagtext) {
-                            n.classList.add("selected");
-                            lastSelected = n;
-                        } else {
-                            n.classList.remove("selected");
-                        }
-                    });
-        }
- 
-        return { init, onShow };
-    })();
-
-/* -----------------------------------
-   PLAYLIST EDITOR LOGIC - EDIT SCREEN
--------------------------------------- */
-    Screens.playlist_edit = (() => {
-        let lastSelected = null;
-        let playlistId = null;
-        
-        function init() {
-            document.getElementById('playlist-edit-list').addEventListener("click", (e) => {
-                const node = e.target.closest("li");
-                if (!node) return;
-
-                if (e.ctrlKey || e.metaKey) {
-                    node.classList.toggle("selected");
-                } else {
-                    clearSelection();
-                    node.classList.add("selected");
-                }
-
-                lastSelected = node;
-            });
-            document.getElementById('playlist-edit-trackmove-up').addEventListener("click", (e) => moveSelectedTracks(true));
-            document.getElementById('playlist-edit-trackmove-down').addEventListener("click", (e) => moveSelectedTracks(false));
-            document.getElementById('playlist-edit-removetrack').addEventListener("click", (e) => deleteSelectedTracks());
-            document.getElementById('playlist-edit-back').addEventListener("click", (e) => showScreen('playlist'));
-            document.getElementById('playlist-edit-addtrack').addEventListener("click", (e) => {
-                showScreen("filebrowser", "playlist");
-            });
-            document.getElementById('playlist-edit-save').addEventListener("click", (e) => save());
-        }
-
-        function clearSelection() {
-            document.getElementById('playlist-edit-list')
-                    .querySelectorAll(".selected")
-                    .forEach(n => n.classList.remove("selected"));
-        }
-        
-        async function onShow(intent) {
-            const container = document.getElementById('playlist-edit-list');
-            if ('load' in intent) {
-                const playlist = intent.load;
-                document.getElementById('playlist-edit-save').disabled = true;
-                container.innerHTML = "<li>Loading…</li>";
-            
-                fetch(`/api/v1/playlist/${playlist}`)
-                    .then((res) => res.json())
-                    .then((playlistRes) => {
-                        playlistId = playlist;
-                        renderPlaylistForm(playlistRes);
-                        document.getElementById('playlist-edit-save').disabled = false;
-                    }).catch((err) => {
-                        container.innerHTML = "<li>Failed to load playlist: " + err + "</li>";
-                    });
-            } else if ('create' in intent) {
-                const container = document.getElementById('playlist-edit-list');
-                container.innerHTML = "";
-                playlistId = intent.create;
-                const playlisttype = document.getElementById('playlist-edit-type');
-                playlisttype.value = "album";
-                document.getElementById('playlist-edit-save').disabled = false;
-            } else if ('addtracks' in intent) {
-                const container = document.getElementById('playlist-edit-list');
-                intent.addtracks.forEach((track) => {
-                    const li = document.createElement("li");
-                    li.innerHTML = track;
-                    li.className = "node"
-                    container.appendChild(li)
-                });
-            }
-        }
-
-        function renderPlaylistForm(playlist) {
-            const container = document.getElementById('playlist-edit-list');
-            container.innerHTML = "";
-            for (const track of playlist.paths) {
-                const li = document.createElement("li");
-                li.innerHTML = track;
-                li.className = "node"
-                container.appendChild(li)
-            }
-            const playlisttype = document.getElementById('playlist-edit-type');
-            if (playlist.persist === "no" && playlist.shuffle === "no") {
-                playlisttype.value = "album";
-            } else if (playlist.persist === "offset" && playlist.shuffle === "no") {
-                playlisttype.value = "audiobook";
-            } else if (playlist.persist === "no" && playlist.shuffle === "yes") {
-                playlisttype.value = "random";
-            } else if (playlist.persist === "track" && playlist.shuffle === "no") {
-                playlisttype.value = "audioplay";
-            }
-            const playlistname = document.getElementById('playlist-edit-name');
-            playlistname.value = playlist.name;
-        }
-
-        async function save() {
-            const playlistData = {};
-            switch(document.getElementById('playlist-edit-type').value) {
-                case "album":
-                    playlistData.persist = "no";
-                    playlistData.shuffle = "no";
-                    break;
-                case "audiobook":
-                    playlistData.persist = "offset";
-                    playlistData.shuffle = "no";
-                    break;
-                case "random":
-                    playlistData.persist = "no";
-                    playlistData.shuffle = "yes";
-                    break;
-                case "audioplay":
-                    playlistData.persist = "track";
-                    playlistData.shuffle = "no";
-                    break;
-            }
-            const playlistname = document.getElementById('playlist-edit-name');
-            playlistData.name = playlistname.value;
-            const container = document.getElementById('playlist-edit-list');
-            playlistData.paths = [...container.querySelectorAll("li")].map((node) => node.innerText);
-            const saveRes = await fetch(`/api/v1/playlist/${playlistId}`,
-                  {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(playlistData)});
-            
-            if (!saveRes.ok) {
-                alert("Failed to save playlist: " + await saveRes.text());
-                return;
-            }
-            showScreen('playlist');
-        }
-        
-        function moveSelectedTracks(up) {
-            const container = document.getElementById('playlist-edit-list');
-            let selected_nodes = [...container.querySelectorAll(".selected")];
-            if (!up) {
-                selected_nodes = selected_nodes.reverse()
-            }
-            for (node of selected_nodes) {
-                const sibling = up ? node.previousElementSibling : node.nextElementSibling;
-                if (sibling === null ||
-                   sibling.classList.contains("selected")) continue;
-                container.insertBefore(node, up ? sibling : sibling.nextElementSibling);
-            }
-        }
-
-        function deleteSelectedTracks() {
-            const container = document.getElementById('playlist-edit-list');
-            container.querySelectorAll(".selected").forEach((node) => node.remove());
-        }
-        
-        return { init, onShow };
-    })();
-
-    /* ----------------------------------------
-       PLAYLIST EDITOR LOGIC - ADD FILES SCREEN
-    ------------------------------------------- */
-    Screens.filebrowser = (() => {
-        let isFilesystemMode = false;
-
-        function init() {
-            document.getElementById('playlist-filebrowser-cancel').addEventListener("click", (e) => {
-                showScreen("playlist_edit", {});
-            });
-            document.getElementById('playlist-filebrowser-addtrack').addEventListener("click", (e) => {
-                returnSelectedTracks();
-            });
-            document.getElementById('playlist-filebrowser-upload').addEventListener("click", (e) => {
-               uploadFiles();
-            });
-            document.getElementById('playlist-filebrowser-mkdir').addEventListener("click", (e) => {
-               createDirectory();
-            });
-            document.getElementById('playlist-filebrowser-delete').addEventListener("click", (e) => {
-               deleteItems();
-            });
-            tree.init();
-        }
-
-        async function onShow(intent) {
-            console.log(intent)
-            document.getElementById('playlist-filebrowser-addtrack').disabled = true;
-
-            const title = document.getElementById('playlist-filebrowser-title');
-            const cancelButton = document.getElementById('playlist-filebrowser-cancel');
-            const addTracksButton = document.getElementById('playlist-filebrowser-addtrack');
-
-            if (intent !== 'refresh') {
-                isFilesystemMode = (intent === 'filesystem');
-
-                document.getElementById('playlist-filebrowser-upload-progress').value = 0;
-                document.getElementById("playlist-filebrowser-upload-files").value = "";
-            }
-
-            if (isFilesystemMode) {
-                title.innerText = "Filesystem";
-                cancelButton.style.display = 'none';
-                addTracksButton.style.display = 'none';
-            } else {
-                title.innerText = "Playlist Editor";
-                cancelButton.style.display = ''
-                addTracksButton.style.display = ''
-            }
-
-            tree = document.getElementById("playlist-filebrowser-tree");
-            tree.innerHTML = "Loading...";
-            fetch('/api/v1/audiofiles')
-                .then((res) => res.json())
-                .then((files) => renderFilebrowserForm(files))
-                .catch((err) => {
-                    alert("Failed to load file list: " + err);
-                });
-        }
-
-        function findChildByName(node, name) {
-            for (const child of node.querySelectorAll(':scope > li')) {
-                const childLabel = child.querySelector(':scope > span.node');
-                if (childLabel.innerText === name) 
-                    return child.querySelector(':scope > ul');
-            }
-            return null;
-        }
-
-        function addTreeNode(parent, name, type, data) {
-            const node = document.createElement('li');
-            const caret = document.createElement('span');
-            const label = document.createElement('span');
-            caret.className = 'caret';
-            label.className = 'node';
-            label.innerText = name;
-            node.appendChild(caret);
-            node.appendChild(label);
-            if (data !== null)
-                label.setAttribute('data-path', data);
-            label.setAttribute('data-type', type);
-            if (type === 'directory') {
-                const nested = document.createElement('ul');
-                node.appendChild(nested);
-                parent.appendChild(node);
-                return nested;
-            }
-            parent.appendChild(node);
-            return null;
-        }
-        
-        function renderFilebrowserForm(files) {
-            const tree = document.getElementById("playlist-filebrowser-tree");
-            tree.innerHTML = "";
-            const rootnode = document.createElement('ul');
-            tree.appendChild(rootnode);
-        
-            files.sort((a, b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));    
-            for (const file of files) {
-                const path = file.name.split('/').slice(1);
-                let treeIterator = rootnode;
-                let curPath = ''
-                for (const elem of path) {
-                    curPath += '/' + elem;
-                    let node = findChildByName(treeIterator, elem);
-                    if (node === null) {
-                        node = addTreeNode(treeIterator, elem, file.type, curPath);
-                    }
-                    treeIterator = node;
-                }
-            }
-            
-            document.getElementById('playlist-filebrowser-addtrack').disabled = false;
-        }
-
-        function returnSelectedTracks() {
-            const tree = document.getElementById("playlist-filebrowser-tree");
-            const selectedNodes = [...tree.querySelectorAll(".selected")];
-            const tracks = [];
-            for (const node of selectedNodes) {
-                if (node.getAttribute('data-type') === "file") {
-                    tracks.push(node.getAttribute('data-path'));
-                } else {
-                    // recursivly add directory contents
-                    for (const child of node.parentNode.querySelector('ul').querySelectorAll("span.node")) {
-                        if (child.getAttribute('data-type') === "file")
-                            tracks.push(child.getAttribute('data-path'));
-                    }
-                }
-            }
-            showScreen("playlist_edit", {addtracks: tracks});
-        }
-
-        function uploadFiles() {
-            const tree = document.getElementById("playlist-filebrowser-tree");
-            const selectedNodes = [...tree.querySelectorAll(".selected")];
-            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
-            if (selectedNodes.length !== 1 ||
-               selectedNodes[0].getAttribute('data-type') !== "directory") {
-                alert("Please select a single directory for upload");
-                return;
-            }
-            uploadFileHelper(files.length, 0, selectedNodes[0].getAttribute('data-path'), files);
-        }
-
-        function uploadFileHelper(totalcount, donecount, destdir, files) {
-            // Upload files sequentially by recursivly calling this function from the 'load' callback when
-            // the previous upload is completed.
-            if (files.length === 0)
-                return;
-            const reader = new FileReader();
-            const ctrl = document.getElementById("playlist-filebrowser-upload-progress");
-            const xhr = new XMLHttpRequest();
-            const location = destdir + '/' + files[0].name;
-
-            xhr.upload.addEventListener("progress", (e) => {
-                if (e.lengthComputable) {
-                    const percentage = Math.round((e.loaded * 100) / e.total / totalcount + donecount * 100 / totalcount);
-                    ctrl.value = percentage;
-                }
-            });
-            //xhr.upload.addEventListener("load", (e) => {
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status !== 204) {
-                        alert(`File upload failed: ${xhr.responseText} (${xhr.status})`);
-                        return;
-                    }
-                    if (donecount + 1 === totalcount) {
-                        // Reload file list from device
-                        onShow('refresh');
-                    } else {
-                        uploadFileHelper(totalcount, donecount + 1, destdir, files.slice(1));
-                    }
-                }
-            };
-            xhr.open("POST", `/api/v1/audiofiles?type=file&location=${encodeURIComponent(location)}`);
-            xhr.overrideMimeType("audio/mpeg");
-            xhr.send(files[0]);
-        }
-
-        async function createDirectory() {
-            const name = document.getElementById('playlist-filebrowser-mkdir-name');
-            const selectedNodes = [...tree.querySelectorAll(".selected")];
-            const files = [...document.getElementById("playlist-filebrowser-upload-files").files];
-            if (selectedNodes.length > 1 ||
-                (selectedNodes.length === 1 &&
-                 selectedNodes[0].getAttribute('data-type') !== "directory")) {
-                alert("Please select a single directory for upload");
-                return;
-            }
-            const location = selectedNodes.length === 1
-                ? selectedNodes[0].getAttribute('data-path') + '/' + name.value
-                : '/' + name.value;
-            const saveRes = await fetch(`/api/v1/audiofiles?type=directory&location=${encodeURIComponent(location)}`,
-                  {method: 'POST'});
-            // Reload file list from device
-            onShow('refresh');
-        }
-
-        async function deleteItems() {
-            const tree = document.getElementById("playlist-filebrowser-tree");
-            const selectedNodes = [...tree.querySelectorAll(".selected")];
-            if (selectedNodes.length === 0) {
-                alert("Please select something to delete");
-                return;
-            }
-            const items = selectedNodes.map(n => n.getAttribute('data-path'));
-            items.sort();
-            items.reverse();
-            for (const item of items) {
-                const saveRes = await fetch(`/api/v1/audiofiles?location=${encodeURIComponent(item)}`,
-                  {method: 'DELETE'});
-                if (!saveRes.ok) {
-                    alert(`Failed to delete item ${item}: ${await saveRes.text()}`);
-                }
-            }
-            // Reload file list from device
-            onShow('refresh');
-        }
-        
-        let tree = (() => {
-            let tree = null;
-            function init() {
-                tree = document.getElementById("playlist-filebrowser-tree");
-                tree.addEventListener("click", (e) => {
-                    // CARET CLICK → expand/collapse
-                    const caret = e.target.closest(".caret");
-                    if (caret) {
-                        const li = caret.parentElement;
-                        if (li.querySelector("ul")) {
-                          li.classList.toggle("expanded");
-                        }
-                        return; // IMPORTANT: don't affect selection
-                    }
-                    
-                    // NODE LABEL CLICK → selection only
-                    const node = e.target.closest(".node");
-                    if (!node) return;
-                    
-                    if (e.shiftKey && lastSelected) {
-                        selectRange(lastSelected, node);
-                    } else if (e.ctrlKey || e.metaKey) {
-                        node.classList.toggle("selected");
-                    } else {
-                        clearSelection();
-                        node.classList.add("selected");
-                    }
-                    
-                    lastSelected = node;
-                });
-            }
-
-            function clearSelection() {
-                tree.querySelectorAll(".selected").forEach(n =>
-                    n.classList.remove("selected")
-                );
-            }
-            
-            function selectRange(start, end) {
-                const nodes = [...tree.querySelectorAll(".node")];
-                const startIndex = nodes.indexOf(start);
-                const endIndex = nodes.indexOf(end);
-        
-                const [from, to] = startIndex < endIndex
-                    ? [startIndex, endIndex]
-                    : [endIndex, startIndex];
-        
-                clearSelection();
-                nodes.slice(from, to + 1).forEach(n =>
-                    n.classList.add("selected")
-                );
-            }
-
-            return { init };
-        })();
-        
-        return { init, onShow };
-    })();
-
-// Misc
-    async function requestReboot() {
-        const resp = await fetch('/api/v1/reboot/bootloader', {'method': 'POST'});
-        if (!resp.ok) {
-            alert('Reboot to bootloader failed: ' + await resp.text());
-        }
-    }
-    
-// Initialization
-    Object.values(Screens).forEach(screen => {
-        screen.init?.();
+function showConfirm(title, msg) {
+    return new Promise(function(resolve) {
+        var ov = document.createElement('div');
+        ov.className = 'modal-overlay';
+        ov.innerHTML = '<div class="modal"><div class="modal-title">' + title + '</div>' +
+            '<div class="modal-msg">' + msg + '</div>' +
+            '<div class="modal-actions">' +
+            '<button type="button" class="btn-sm" id="_mc">Cancel</button>' +
+            '<button type="button" class="btn-danger btn-sm" id="_mo">Confirm</button>' +
+            '</div></div>';
+        document.body.appendChild(ov);
+        ov.querySelector('#_mc').onclick = function(){ ov.remove(); resolve(false); };
+        ov.querySelector('#_mo').onclick = function(){ ov.remove(); resolve(true); };
     });
+}
 
-    showScreen("menu");
+// ── Screen switching ──────────────────────────────────────────────────────────
+var Screens = {};
+var activeScreen = null;
+var navMap = {menu:'menu', config:'config', playlist:'playlist',
+              playlist_edit:'playlist', filebrowser:'filebrowser'};
 
-    fetch('/api/v1/info')
-        .then((resp) => resp.json())
-        .then((info) => {
-            const version = document.getElementById('footer-version');
-            version.innerText = info.version;
+function showScreen(name, arg) {
+    if (arg === undefined) arg = null;
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById('screen-' + name).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(function(b){
+        b.classList.toggle('active', b.dataset.screen === navMap[name]);
+    });
+    activeScreen = name;
+    if (Screens[name] && Screens[name].onShow) Screens[name].onShow(arg);
+}
+
+// ── Config editor ─────────────────────────────────────────────────────────────
+Screens.config = (function() {
+    var screenroot;
+
+    function init() {
+        screenroot = document.getElementById('screen-config');
+        document.getElementById('config-save-btn').addEventListener('click', async function() {
+            var res = await fetch('/api/v1/config');
+            var original = await res.json();
+            var updated = serialize(original);
+            try {
+                var saveRes = await fetch('/api/v1/config', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(updated, null, 2)
+                });
+                if (!saveRes.ok) { showToast('Failed to save: ' + await saveRes.text(), 'error'); return; }
+                showToast('Saved! Device is rebooting…', 'success');
+                await fetch('/api/v1/reboot/application', {method: 'POST'});
+            } catch(err) {
+                showToast('Error: ' + err, 'error');
+            }
         });
-</script>
+    }
 
+    async function onShow() {
+        var container = document.getElementById('config-container');
+        container.innerHTML = 'Loading…';
+        document.getElementById('config-save-btn').disabled = true;
+        try {
+            var res = await fetch('/api/v1/config');
+            var config = await res.json();
+            render(config);
+        } catch(err) {
+            container.innerHTML = '<p style="color:var(--danger)">Failed to load config: ' + err + '</p>';
+        }
+    }
+
+    function render(config) {
+        var container = document.getElementById('config-container');
+        container.innerHTML = '';
+        container.appendChild(renderObject(config, 'root'));
+        document.getElementById('config-save-btn').disabled = false;
+    }
+
+    var config_names = {
+        'root.IDLE_TIMEOUT_SECS': 'Idle Timeout (seconds)',
+        'root.BUTTON_MAP': 'Button map',
+        'root.BUTTON_MAP.NEXT': 'Next track',
+        'root.BUTTON_MAP.PREV': 'Previous track',
+        'root.BUTTON_MAP.VOLUP': 'Volume up',
+        'root.BUTTON_MAP.VOLDOWN': 'Volume down',
+        'root.BUTTON_MAP.PLAY_PAUSE': 'Play/Pause',
+        'root.TAG_TIMEOUT_SECS': 'Tag removal timeout (seconds)',
+        'root.TAGMODE': 'Tag mode',
+        'root.LED_COUNT': 'Length of WS2812 LED chain',
+        'root.VOLUME_MAX': 'Maximum volume (0–255)',
+        'root.VOLUME_BOOT': 'Volume at startup (0–255)',
+        'root.LED_MAX': 'Maximum LED brightness (0–255)',
+        'root.WIFI.SSID': 'Network name (SSID) — leave empty for AP mode',
+        'root.WIFI.PASSPHRASE': 'Password',
+        'root.WIFI.SECURITY': 'Security mode'
+    };
+    var config_input_override = {
+        'root.TAGMODE': {element:'select', values:{tagremains:'Play until tag is removed', tagstartstop:'Present tag once to start, again to stop'}},
+        'root.BUTTON_MAP.NEXT':       {'input-type':'number'},
+        'root.BUTTON_MAP.PREV':       {'input-type':'number'},
+        'root.BUTTON_MAP.VOLUP':      {'input-type':'number'},
+        'root.BUTTON_MAP.VOLDOWN':    {'input-type':'number'},
+        'root.BUTTON_MAP.PLAY_PAUSE': {'input-type':'number'},
+        'root.IDLE_TIMEOUT_SECS':     {'input-type':'number'},
+        'root.TAG_TIMEOUT_SECS':      {'input-type':'number'},
+        'root.LED_COUNT':             {'input-type':'number'},
+        'root.WIFI.SSID':             {'input-type':'text'},
+        'root.WIFI.PASSPHRASE':       {'input-type':'text'},
+        'root.WIFI.SECURITY': {element:'select', values:{open:'Open', wpa_wpa2:'WPA/WPA2 (PSK Mixed)', wpa3:'WPA3 (SAE AES)', wpa2_wpa3:'WPA2/WPA3 (PSK AES)'}},
+        'root.VOLUME_MAX':  {'input-type':'number'},
+        'root.VOLUME_BOOT': {'input-type':'number'},
+        'root.LED_MAX':     {'input-type':'number'}
+    };
+
+    function renderObject(obj, path) {
+        var wrapper = document.createElement('div');
+        Object.entries(obj).forEach(function([key, value]) {
+            var currentPath = path + '.' + key;
+            var label = document.createElement('label');
+            label.textContent = config_names[currentPath] || key;
+
+            if (value !== null && typeof value === 'object') {
+                wrapper.appendChild(label);
+                var nested = document.createElement('div');
+                nested.className = 'nested';
+                nested.appendChild(renderObject(value, currentPath));
+                wrapper.appendChild(nested);
+            } else {
+                var fg = document.createElement('div');
+                fg.className = 'form-group';
+                fg.appendChild(label);
+                var override = config_input_override[currentPath];
+                if (override && override.element === 'select') {
+                    var sel = document.createElement('select');
+                    sel.dataset.path = currentPath;
+                    Object.entries(override.values).forEach(function([val, text]) {
+                        var opt = document.createElement('option');
+                        opt.value = val; opt.textContent = text;
+                        if (val === value) opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+                    fg.appendChild(sel);
+                } else {
+                    var inp = document.createElement('input');
+                    if (override && override['input-type']) inp.type = override['input-type'];
+                    inp.value = value === null ? '' : value;
+                    inp.dataset.path = currentPath;
+                    fg.appendChild(inp);
+                }
+                wrapper.appendChild(fg);
+            }
+        });
+        return wrapper;
+    }
+
+    function serialize(rootObj) {
+        screenroot.querySelectorAll('input[data-path],select[data-path]').forEach(function(input) {
+            var path = input.dataset.path.split('.').slice(1);
+            var current = rootObj;
+            for (var i = 0; i < path.length - 1; i++) current = current[path[i]];
+            var val = input.value.trim();
+            if (val === '') val = null;
+            else if (!isNaN(val) && input.type !== 'text') val = Number(val);
+            current[path[path.length - 1]] = val;
+        });
+        return rootObj;
+    }
+
+    return {init: init, onShow: onShow};
+})();
+
+// ── Playlist list ─────────────────────────────────────────────────────────────
+Screens.playlist = (function() {
+    var lastSelected = null;
+
+    function init() {
+        document.getElementById('playlist-new-button-gettag').addEventListener('click', updateLastTag);
+        document.getElementById('playlist-new-button-new').addEventListener('click', function() {
+            var tagid = document.getElementById('playlist-new-tag').value;
+            if (/^[0-9a-fA-F]+$/.test(tagid)) {
+                showScreen('playlist_edit', {create: tagid});
+            } else {
+                showToast('Invalid tag ID — must be hexadecimal', 'error');
+            }
+        });
+        document.getElementById('playlist-exist-button-delete').addEventListener('click', async function() {
+            if (!lastSelected) return;
+            var tagid = lastSelected.getAttribute('data-tag');
+            var ok = await showConfirm('Delete playlist', 'Delete playlist for tag ' + tagid + '?');
+            if (ok) {
+                await fetch('/api/v1/playlist/' + tagid, {method: 'DELETE'});
+                showToast('Playlist deleted', 'success');
+                showScreen('playlist');
+            }
+        });
+        document.getElementById('playlist-exist-button-gettag').addEventListener('click', selectLastTag);
+        document.getElementById('playlist-exist-button-edit').addEventListener('click', function() {
+            if (lastSelected) showScreen('playlist_edit', {load: lastSelected.getAttribute('data-tag')});
+        });
+        document.getElementById('playlist-exist-list').addEventListener('click', function(e) {
+            var node = e.target.closest('li');
+            if (!node) return;
+            document.getElementById('playlist-exist-list').querySelectorAll('.selected').forEach(function(n){ n.classList.remove('selected'); });
+            node.classList.add('selected');
+            lastSelected = node;
+        });
+    }
+
+    async function onShow() {
+        var container = document.getElementById('playlist-exist-list');
+        container.innerHTML = '<li>Loading…</li>';
+        lastSelected = null;
+        fetch('/api/v1/playlists')
+            .then(function(r){ return r.json(); })
+            .then(renderPlaylistForm)
+            .catch(function(err){ container.innerHTML = '<li style="color:var(--danger)">Failed to load: ' + err + '</li>'; });
+        fetch('/api/v1/last_tag_uid')
+            .then(function(r){ return r.json(); })
+            .then(function(tag){ if (tag.tag !== null) { fillLastTag(tag); selectTag(tag); } });
+    }
+
+    function updateLastTag() {
+        fetch('/api/v1/last_tag_uid').then(function(r){ return r.json(); }).then(fillLastTag);
+    }
+    function selectLastTag() {
+        fetch('/api/v1/last_tag_uid').then(function(r){ return r.json(); }).then(selectTag);
+    }
+
+    function renderPlaylistForm(playlists) {
+        var container = document.getElementById('playlist-exist-list');
+        container.innerHTML = '';
+        if (!playlists.length) {
+            container.innerHTML = '<li style="color:var(--text-muted);text-align:center;padding:24px 14px">No playlists yet</li>';
+            return;
+        }
+        playlists.forEach(function(p) {
+            var li = document.createElement('li');
+            li.innerHTML = '<strong>' + (p.name || '(unnamed)') + '</strong>' +
+                '<br><small style="color:var(--text-muted)">' + p.tag + '</small>';
+            li.className = 'node';
+            li.setAttribute('data-tag', p.tag);
+            container.appendChild(li);
+        });
+    }
+
+    function bytesToHex(bytes) {
+        return bytes.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    }
+    function fillLastTag(tag) {
+        if (tag.tag !== null) document.getElementById('playlist-new-tag').value = bytesToHex(tag.tag);
+    }
+    function selectTag(tag) {
+        if (tag.tag === null) return;
+        var tagtext = bytesToHex(tag.tag);
+        document.getElementById('playlist-exist-list').querySelectorAll('li').forEach(function(n) {
+            if (n.getAttribute('data-tag') === tagtext) { n.classList.add('selected'); lastSelected = n; }
+            else n.classList.remove('selected');
+        });
+    }
+
+    return {init: init, onShow: onShow};
+})();
+
+// ── Playlist edit ─────────────────────────────────────────────────────────────
+Screens.playlist_edit = (function() {
+    var lastSelected = null;
+    var playlistId = null;
+
+    function init() {
+        document.getElementById('playlist-edit-list').addEventListener('click', function(e) {
+            var node = e.target.closest('li');
+            if (!node) return;
+            if (e.ctrlKey || e.metaKey) { node.classList.toggle('selected'); }
+            else { clearSelection(); node.classList.add('selected'); }
+            lastSelected = node;
+        });
+        document.getElementById('playlist-edit-trackmove-up').addEventListener('click', function(){ moveSelectedTracks(true); });
+        document.getElementById('playlist-edit-trackmove-down').addEventListener('click', function(){ moveSelectedTracks(false); });
+        document.getElementById('playlist-edit-removetrack').addEventListener('click', deleteSelectedTracks);
+        document.getElementById('playlist-edit-back').addEventListener('click', function(){ showScreen('playlist'); });
+        document.getElementById('playlist-edit-addtrack').addEventListener('click', function(){ showScreen('filebrowser', 'playlist'); });
+        document.getElementById('playlist-edit-save').addEventListener('click', save);
+    }
+
+    function clearSelection() {
+        document.getElementById('playlist-edit-list').querySelectorAll('.selected').forEach(function(n){ n.classList.remove('selected'); });
+    }
+
+    async function onShow(intent) {
+        var container = document.getElementById('playlist-edit-list');
+        if ('load' in intent) {
+            document.getElementById('playlist-edit-save').disabled = true;
+            container.innerHTML = '<li>Loading…</li>';
+            fetch('/api/v1/playlist/' + intent.load)
+                .then(function(r){ return r.json(); })
+                .then(function(data){ playlistId = intent.load; renderPlaylistForm(data); document.getElementById('playlist-edit-save').disabled = false; })
+                .catch(function(err){ container.innerHTML = '<li style="color:var(--danger)">Failed to load: ' + err + '</li>'; });
+        } else if ('create' in intent) {
+            container.innerHTML = '';
+            playlistId = intent.create;
+            document.getElementById('playlist-edit-type').value = 'album';
+            document.getElementById('playlist-edit-name').value = '';
+            document.getElementById('playlist-edit-save').disabled = false;
+        } else if ('addtracks' in intent) {
+            intent.addtracks.forEach(function(track) {
+                var li = document.createElement('li');
+                li.textContent = track;
+                li.className = 'node';
+                container.appendChild(li);
+            });
+        }
+    }
+
+    function renderPlaylistForm(playlist) {
+        var container = document.getElementById('playlist-edit-list');
+        container.innerHTML = '';
+        playlist.paths.forEach(function(track) {
+            var li = document.createElement('li');
+            li.textContent = track;
+            li.className = 'node';
+            container.appendChild(li);
+        });
+        var type = document.getElementById('playlist-edit-type');
+        if      (playlist.persist==='no'     && playlist.shuffle==='no')  type.value = 'album';
+        else if (playlist.persist==='offset' && playlist.shuffle==='no')  type.value = 'audiobook';
+        else if (playlist.persist==='no'     && playlist.shuffle==='yes') type.value = 'random';
+        else if (playlist.persist==='track'  && playlist.shuffle==='no')  type.value = 'audioplay';
+        document.getElementById('playlist-edit-name').value = playlist.name;
+    }
+
+    async function save() {
+        var data = {};
+        switch (document.getElementById('playlist-edit-type').value) {
+            case 'album':     data.persist='no';     data.shuffle='no';  break;
+            case 'audiobook': data.persist='offset'; data.shuffle='no';  break;
+            case 'random':    data.persist='no';     data.shuffle='yes'; break;
+            case 'audioplay': data.persist='track';  data.shuffle='no';  break;
+        }
+        data.name = document.getElementById('playlist-edit-name').value;
+        data.paths = Array.from(document.getElementById('playlist-edit-list').querySelectorAll('li')).map(function(n){ return n.innerText; });
+        var res = await fetch('/api/v1/playlist/' + playlistId, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) { showToast('Failed to save: ' + await res.text(), 'error'); return; }
+        showToast('Playlist saved', 'success');
+        showScreen('playlist');
+    }
+
+    function moveSelectedTracks(up) {
+        var container = document.getElementById('playlist-edit-list');
+        var nodes = Array.from(container.querySelectorAll('.selected'));
+        if (!up) nodes = nodes.reverse();
+        nodes.forEach(function(node) {
+            var sib = up ? node.previousElementSibling : node.nextElementSibling;
+            if (!sib || sib.classList.contains('selected')) return;
+            container.insertBefore(node, up ? sib : sib.nextElementSibling);
+        });
+    }
+
+    function deleteSelectedTracks() {
+        document.getElementById('playlist-edit-list').querySelectorAll('.selected').forEach(function(n){ n.remove(); });
+    }
+
+    return {init: init, onShow: onShow};
+})();
+
+// ── File browser ──────────────────────────────────────────────────────────────
+Screens.filebrowser = (function() {
+    var isFilesystemMode = false;
+    var lastSelected = null;
+
+    function init() {
+        document.getElementById('playlist-filebrowser-cancel').addEventListener('click', function(){ showScreen('playlist_edit', {}); });
+        document.getElementById('playlist-filebrowser-addtrack').addEventListener('click', returnSelectedTracks);
+        document.getElementById('playlist-filebrowser-upload').addEventListener('click', uploadFiles);
+        document.getElementById('playlist-filebrowser-mkdir').addEventListener('click', createDirectory);
+        document.getElementById('playlist-filebrowser-delete').addEventListener('click', deleteItems);
+
+        document.getElementById('playlist-filebrowser-tree').addEventListener('click', function(e) {
+            var caret = e.target.closest('.caret');
+            if (caret) {
+                var li = caret.parentElement;
+                if (li.querySelector('ul')) li.classList.toggle('expanded');
+                return;
+            }
+            var node = e.target.closest('.node');
+            if (!node) return;
+            if (e.shiftKey && lastSelected) {
+                selectRange(lastSelected, node);
+            } else if (e.ctrlKey || e.metaKey) {
+                node.classList.toggle('selected');
+            } else {
+                clearTreeSelection();
+                node.classList.add('selected');
+            }
+            lastSelected = node;
+        });
+    }
+
+    function clearTreeSelection() {
+        document.getElementById('playlist-filebrowser-tree').querySelectorAll('.selected').forEach(function(n){ n.classList.remove('selected'); });
+    }
+
+    function selectRange(start, end) {
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        var nodes = Array.from(tree.querySelectorAll('.node'));
+        var si = nodes.indexOf(start), ei = nodes.indexOf(end);
+        var from = Math.min(si,ei), to = Math.max(si,ei);
+        clearTreeSelection();
+        nodes.slice(from, to+1).forEach(function(n){ n.classList.add('selected'); });
+    }
+
+    async function onShow(intent) {
+        document.getElementById('playlist-filebrowser-addtrack').disabled = true;
+        if (intent !== 'refresh') {
+            isFilesystemMode = (intent === 'filesystem');
+            document.getElementById('playlist-filebrowser-upload-progress').value = 0;
+            document.getElementById('playlist-filebrowser-upload-files').value = '';
+        }
+        var title = document.getElementById('playlist-filebrowser-title');
+        var cancelBtn = document.getElementById('playlist-filebrowser-cancel');
+        var addBtn = document.getElementById('playlist-filebrowser-addtrack');
+        if (isFilesystemMode) {
+            title.textContent = 'Filesystem';
+            cancelBtn.style.display = 'none';
+            addBtn.style.display = 'none';
+        } else {
+            title.textContent = 'Add Tracks';
+            cancelBtn.style.display = '';
+            addBtn.style.display = '';
+        }
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        tree.innerHTML = '<ul><li style="padding:16px;color:var(--text-muted)">Loading…</li></ul>';
+        fetch('/api/v1/audiofiles')
+            .then(function(r){ return r.json(); })
+            .then(renderFilebrowserForm)
+            .catch(function(err){ showToast('Failed to load files: ' + err, 'error'); });
+    }
+
+    function findChildByName(node, name) {
+        var children = node.querySelectorAll(':scope > li');
+        for (var i = 0; i < children.length; i++) {
+            var lbl = children[i].querySelector(':scope > span.node');
+            if (lbl && lbl.innerText === name) return children[i].querySelector(':scope > ul');
+        }
+        return null;
+    }
+
+    function addTreeNode(parent, name, type, data) {
+        var node = document.createElement('li');
+        var caret = document.createElement('span');
+        var label = document.createElement('span');
+        caret.className = 'caret';
+        label.className = 'node';
+        label.innerText = name;
+        node.appendChild(caret);
+        node.appendChild(label);
+        if (data !== null) label.setAttribute('data-path', data);
+        label.setAttribute('data-type', type);
+        if (type === 'directory') {
+            var nested = document.createElement('ul');
+            node.appendChild(nested);
+            parent.appendChild(node);
+            return nested;
+        }
+        parent.appendChild(node);
+        return null;
+    }
+
+    function renderFilebrowserForm(files) {
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        tree.innerHTML = '';
+        var rootnode = document.createElement('ul');
+        tree.appendChild(rootnode);
+        files.sort(function(a,b){ return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+        files.forEach(function(file) {
+            var path = file.name.split('/').slice(1);
+            var treeIt = rootnode, curPath = '';
+            path.forEach(function(elem) {
+                curPath += '/' + elem;
+                var node = findChildByName(treeIt, elem);
+                if (node === null) node = addTreeNode(treeIt, elem, file.type, curPath);
+                treeIt = node;
+            });
+        });
+        document.getElementById('playlist-filebrowser-addtrack').disabled = false;
+    }
+
+    function returnSelectedTracks() {
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        var tracks = [];
+        tree.querySelectorAll('.selected').forEach(function(node) {
+            if (node.getAttribute('data-type') === 'file') {
+                tracks.push(node.getAttribute('data-path'));
+            } else {
+                var ul = node.parentNode.querySelector('ul');
+                if (ul) ul.querySelectorAll('span.node').forEach(function(child) {
+                    if (child.getAttribute('data-type') === 'file') tracks.push(child.getAttribute('data-path'));
+                });
+            }
+        });
+        showScreen('playlist_edit', {addtracks: tracks});
+    }
+
+    function uploadFiles() {
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        var selected = Array.from(tree.querySelectorAll('.selected'));
+        var files = Array.from(document.getElementById('playlist-filebrowser-upload-files').files);
+        if (selected.length !== 1 || selected[0].getAttribute('data-type') !== 'directory') {
+            showToast('Select a single directory for upload', 'error'); return;
+        }
+        if (!files.length) { showToast('No files selected', 'error'); return; }
+        uploadFileHelper(files.length, 0, selected[0].getAttribute('data-path'), files);
+    }
+
+    function uploadFileHelper(total, done, destdir, files) {
+        if (!files.length) return;
+        var xhr = new XMLHttpRequest();
+        var location = destdir + '/' + files[0].name;
+        var progress = document.getElementById('playlist-filebrowser-upload-progress');
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable)
+                progress.value = Math.round(e.loaded * 100 / e.total / total + done * 100 / total);
+        });
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (xhr.status !== 204) { showToast('Upload failed: ' + xhr.responseText + ' (' + xhr.status + ')', 'error'); return; }
+            if (done + 1 === total) { showToast(total + ' file(s) uploaded', 'success'); onShow('refresh'); }
+            else uploadFileHelper(total, done + 1, destdir, files.slice(1));
+        };
+        xhr.open('POST', '/api/v1/audiofiles?type=file&location=' + encodeURIComponent(location));
+        xhr.overrideMimeType('audio/mpeg');
+        xhr.send(files[0]);
+    }
+
+    async function createDirectory() {
+        var name = document.getElementById('playlist-filebrowser-mkdir-name').value.trim();
+        if (!name) { showToast('Enter a directory name', 'error'); return; }
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        var selected = Array.from(tree.querySelectorAll('.selected'));
+        if (selected.length > 1 || (selected.length === 1 && selected[0].getAttribute('data-type') !== 'directory')) {
+            showToast('Select a single directory or nothing for root', 'error'); return;
+        }
+        var location = selected.length === 1
+            ? selected[0].getAttribute('data-path') + '/' + name
+            : '/' + name;
+        await fetch('/api/v1/audiofiles?type=directory&location=' + encodeURIComponent(location), {method: 'POST'});
+        showToast('Directory created', 'success');
+        document.getElementById('playlist-filebrowser-mkdir-name').value = '';
+        onShow('refresh');
+    }
+
+    async function deleteItems() {
+        var tree = document.getElementById('playlist-filebrowser-tree');
+        var selected = Array.from(tree.querySelectorAll('.selected'));
+        if (!selected.length) { showToast('Select items to delete', 'error'); return; }
+        var paths = selected.map(function(n){ return n.getAttribute('data-path'); }).sort().reverse();
+        var ok = await showConfirm('Delete files', 'Delete ' + paths.length + ' selected item(s)? This cannot be undone.');
+        if (!ok) return;
+        var errors = 0;
+        for (var i = 0; i < paths.length; i++) {
+            var res = await fetch('/api/v1/audiofiles?location=' + encodeURIComponent(paths[i]), {method: 'DELETE'});
+            if (!res.ok) errors++;
+        }
+        if (errors) showToast(errors + ' deletion(s) failed', 'error');
+        else showToast('Deleted successfully', 'success');
+        onShow('refresh');
+    }
+
+    return {init: init, onShow: onShow};
+})();
+
+// ── Misc ──────────────────────────────────────────────────────────────────────
+async function requestReboot() {
+    var ok = await showConfirm('Reboot to bootloader', 'The device will restart in UF2 bootloader mode.');
+    if (!ok) return;
+    var resp = await fetch('/api/v1/reboot/bootloader', {method: 'POST'});
+    if (!resp.ok) showToast('Reboot failed: ' + await resp.text(), 'error');
+    else showToast('Rebooting…', 'info');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+Object.values(Screens).forEach(function(s){ if (s.init) s.init(); });
+showScreen('menu');
+fetch('/api/v1/info')
+    .then(function(r){ return r.json(); })
+    .then(function(info){ document.getElementById('footer-version').textContent = info.version; })
+    .catch(function(){});
+</script>
 </body>
 </html>
