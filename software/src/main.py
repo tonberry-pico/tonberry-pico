@@ -88,6 +88,7 @@ def run():
         # Force default access point
         setup_wifi('', '', network.WLAN.SEC_OPEN)
     else:
+        wifi_passphrase = config.get_wifi_passphrase()
         secstring = config.get_wifi_security()
         security = network.WLAN.SEC_WPA_WPA2
         if secstring == 'open':
@@ -98,7 +99,10 @@ def run():
             security = network.WLAN.SEC_WPA3
         elif secstring == 'wpa2_wpa3':
             security = network.WLAN.SEC_WPA2_WPA3
-        setup_wifi(config.get_wifi_ssid(), config.get_wifi_passphrase(), security)
+        if wifi_passphrase is None or wifi_passphrase == '':
+            security = network.WLAN.SEC_OPEN
+            print("WiFi password not set, disabling WiFi security")
+        setup_wifi(config.get_wifi_ssid(), wifi_passphrase, security)
 
     # Setup MP3 player
     with SDContext(mosi=hwconfig.SD_DI, miso=hwconfig.SD_DO, sck=hwconfig.SD_SCK, ss=hwconfig.SD_CS,
