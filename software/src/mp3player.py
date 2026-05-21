@@ -66,6 +66,18 @@ class MP3Player:
                 if bytes_read == 0:
                     # End of file
                     break
+                if self.pos == 0 and bytes_read >= 10:
+                    if bytes(data[0:3]) == b'ID3':
+                        size = data[6] << (3*7) | data[7] << (2*7) | data[8] << 7 | data[9]
+                        print(f"Skipping ID3 header of size {size}")
+                        if size + 10 > bytes_read:
+                            stream.seek(size + 10 - bytes_read, 1)
+                            self.pos += bytes_read + size + 10
+                            continue
+                        else:
+                            data = data[size+10:]
+                            bytes_read -= size + 10
+                            self.pos += size + 10
                 _, _, underruns = await self.audiocore.async_put(data[:bytes_read])
                 self.pos += bytes_read
                 if underruns > known_underruns:
