@@ -84,17 +84,18 @@ void __time_critical_func(core1_main)(void)
         if ((buf = i2s_next_buf()) != NULL) {
             unsigned samplerate;
             // decode one frame
-            if (mp3_decode(buf, &samplerate)) {
+            const unsigned samples = mp3_decode(buf, &samplerate);
+            if (samples > 0) {
                 if (!playing) {
                     i2s_play(samplerate);
                     playing = true;
                 }
-                volume_adjust((int16_t *)buf, MP3_FRAME_SIZE * 2, current_volume);
-                i2s_commit_buf(buf);
+                volume_adjust((int16_t *)buf, samples * 2, current_volume);
+                i2s_commit_buf(buf, samples);
                 send_consume_notify();
                 continue;
             }
-            /* mp3_decode returned false: not enough data in buffer */
+            /* mp3_decode returned 0: not enough data in buffer */
             if (flushing) {
                 mp3_reset();
                 i2s_stop();

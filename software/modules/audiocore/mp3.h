@@ -11,6 +11,6 @@
 bool mp3_init(void);
 void mp3_deinit(void);
 
-bool mp3_decode(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate);
+unsigned mp3_decode(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate);
 
 void mp3_reset(void);
