@@ -26,6 +26,7 @@ struct i2s_context {
     int cur_playing;
     int out_pin, sideset_base;
     bool has_data[AUDIO_BUFS];
+    unsigned samples[AUDIO_BUFS];
     bool playback_active;
 };
 
@@ -37,17 +38,19 @@ static void __time_critical_func(dma_isr)(void)
         return;
     dma_channel_acknowledge_irq1(i2s_context.dma_ch);
     const int next_buf = (i2s_context.cur_playing + 1) % AUDIO_BUFS;
+    unsigned samples = I2S_DMA_BUF_SIZE;
     if (i2s_context.playback_active && i2s_context.has_data[next_buf]) {
         i2s_context.cur_playing = next_buf;
+        samples = i2s_context.samples[next_buf];
         i2s_context.has_data[next_buf] = false;
     } else {
         memset(i2s_context.dma_buf[i2s_context.cur_playing], 0, sizeof(uint32_t) * I2S_DMA_BUF_SIZE);
         if (i2s_context.playback_active) {
             ++shared_context.underruns;
         }
+        samples = I2S_DMA_BUF_SIZE;
     }
-    dma_channel_transfer_from_buffer_now(i2s_context.dma_ch, i2s_context.dma_buf[i2s_context.cur_playing],
-                                         I2S_DMA_BUF_SIZE);
+    dma_channel_transfer_from_buffer_now(i2s_context.dma_ch, i2s_context.dma_buf[i2s_context.cur_playing], samples);
 }
 
 static void setup_dma_config(void)
@@ -71,13 +74,14 @@ uint32_t *__time_critical_func(i2s_next_buf)(void)
     return ret;
 }
 
-void __time_critical_func(i2s_commit_buf)(uint32_t *buf)
+void __time_critical_func(i2s_commit_buf)(uint32_t *buf, unsigned samples)
 {
     const long flags = save_and_disable_interrupts();
     for (int i = 1; i < AUDIO_BUFS; ++i) {
         const int next_buf = (i2s_context.cur_playing + i) % AUDIO_BUFS;
         if (i2s_context.dma_buf[next_buf] == buf) {
             i2s_context.has_data[next_buf] = true;
+            i2s_context.samples[next_buf] = samples;
             if (i == AUDIO_BUFS - 1) {
                 i2s_context.playback_active = true;
             }

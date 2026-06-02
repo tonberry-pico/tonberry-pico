@@ -72,12 +72,12 @@ static void __time_critical_func(mp3_consume_data)(size_t bytes_used)
     spin_unlock(shared_context.lock, flags);
 }
 
-bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate)
+unsigned __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], unsigned *samplerate)
 {
     unsigned char *readptr;
     size_t bytes_avail = mp3_get_continuous_data(&readptr);
     if (!bytes_avail)
-        return false;
+        return 0;
     if (!synced) {
         const int ofs = MP3FindSyncWord((unsigned char *)readptr, bytes_avail);
         if (ofs == -1) {
@@ -85,7 +85,7 @@ bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], u
             printf("MP3 sync word not found\n");
 #endif
             mp3_consume_data(bytes_avail);
-            return false;
+            return 0;
         }
 
         readptr += ofs;
@@ -97,18 +97,18 @@ bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], u
         synced = true;
     }
     if (!bytes_avail)
-        return false;
+        return 0;
 
     // Decode one frame
     int int_bytes_avail = bytes_avail;
     const int status = MP3Decode(mp3dec, &readptr, &int_bytes_avail, (short *)pcm_buf, 0);
     if (status) {
         if (status == ERR_MP3_INDATA_UNDERFLOW) {
-            return false;
+            return 0;
         } else /*if (status== ERR_MP3_MAINDATA_UNDERFLOW)*/ {
             mp3_consume_data(1);
             synced = false;
-            return false;
+            return 0;
         }
     }
     mp3_consume_data(bytes_avail - int_bytes_avail);
@@ -123,14 +123,33 @@ bool __time_critical_func(mp3_decode)(uint32_t pcm_buf[static MP3_FRAME_SIZE], u
     }
 #endif
     *samplerate = info.samprate;
-
-    if (info.outputSamps != MP3_FRAME_SIZE * 2) {
+    if (info.bitsPerSample != 16) {
+#ifdef MP3_DEBUG
+        printf("Unsupported bits per sample (need 16): %d\n", info.bitsPerSample);
+#endif
+        return 0;
+    }
+    if (info.outputSamps > MP3_FRAME_SIZE * 2) {
 #ifdef MP3_DEBUG
         printf("Unexpected number of output samples: %d\n", info.outputSamps);
 #endif
-        return false;
+        return 0;
     }
-    return true;
+    if (info.nChans == 1) {
+        // duplicate samples in output buffer, as our i2s driver expects stereo
+        // copy in reverse order to not overwrite the data we still need to copy
+        for (int i = info.outputSamps; i >= 0; --i) {
+            memmove((char *)pcm_buf + i * 4, (char *)pcm_buf + i * 2, 2);
+            memmove((char *)pcm_buf + i * 4 + 2, (char *)pcm_buf + i * 2, 2);
+        }
+        return info.outputSamps;
+    } else if (info.nChans != 2) {
+#ifdef MP3_DEBUG
+        printf("Unsupported channels (need 1 or 2): %d\n", info.nChans);
+#endif
+        return 0;
+    }
+    return info.outputSamps / 2;
 }
 
 void mp3_reset(void)

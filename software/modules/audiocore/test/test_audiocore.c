@@ -25,7 +25,7 @@ bool i2s_init(int out_pin, int sideset_base, bool dclk_first)
 
 uint32_t *i2s_next_buf(void) { return NULL; }
 
-void i2s_commit_buf(uint32_t *buf) {}
+void i2s_commit_buf(uint32_t *buf, unsigned samples) {}
 
 void i2s_play(int samplerate) {}
 

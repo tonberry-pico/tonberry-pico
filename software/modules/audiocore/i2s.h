@@ -15,4 +15,4 @@ void i2s_play(int samplerate);
 void i2s_stop(void);
 
 uint32_t *i2s_next_buf(void);
-void i2s_commit_buf(uint32_t *buf);
+void i2s_commit_buf(uint32_t *buf, unsigned samples);
