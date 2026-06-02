@@ -68,6 +68,12 @@ class FakeNfcReader:
 
 
 class FakeButtons:
+    VOLUP = 1
+    VOLDOWN = 2
+    NEXT = 3
+    PREV = 4
+    PLAY_PAUSE = 5
+
     def __init__(self): pass
 
 
@@ -332,3 +338,28 @@ def test_idle_shutdown_after_playback(micropythonify, faketimermanager, monkeypa
         # Elapse idle timer
         faketimermanager.testing_run_queued()
         assert not fake_hwconfig.powered
+
+
+def test_next_restarts_finished_playlist(micropythonify, faketimermanager, monkeypatch):
+    fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3'])
+    fake_mp3 = FakeMp3Player()
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        fake_mp3.track = None
+        dut.onPlaybackDone()
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track2.mp3'
+
+        fake_mp3.track = None
+        dut.onPlaybackDone()
+        assert fake_mp3.track is None
+
+        dut.onButtonPressed(FakeButtons.NEXT)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'

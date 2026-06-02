@@ -79,9 +79,9 @@ class PlayerApp:
         """
         Callback (typically called by TagStateMachine) to signal that a new tag has been presented.
         """
-        uid_str = b''.join('{:02x}'.format(x).encode() for x in new_tag)
-        if self.tag_mode == 'tagremains' or (self.tag_mode == 'tagstartstop' and new_tag != self.playing_tag):
-            self._set_playlist(uid_str)
+        if self.tag_mode == 'tagremains' or (self.tag_mode == 'tagstartstop' and
+                                             not (new_tag == self.playing_tag and self.playing)):
+            self._set_playlist(new_tag)
             self.playing_tag = new_tag if self.playlist is not None else None
         elif self.tag_mode == 'tagstartstop':
             print('Tag presented again, stopping playback')
@@ -107,14 +107,14 @@ class PlayerApp:
             self.volume_pos = max(self.volume_pos - 1, 0)
             self.player.set_volume(VOLUME_CURVE[self.volume_pos])
         elif what == self.buttons.NEXT:
-            self._play_next()
+            self._play_next(True)
         elif what == self.buttons.PREV:
             self._play_prev()
         elif what == self.buttons.PLAY_PAUSE:
             self._pause_toggle()
 
     def onPlaybackDone(self):
-        self._play_next()
+        self._play_next(False)
 
     def onIdleTimeout(self):
         if self.hwconfig.get_on_battery():
@@ -130,12 +130,13 @@ class PlayerApp:
     def is_playing(self) -> bool:
         return self.playing
 
-    def _set_playlist(self, tag: bytes):
+    def _set_playlist(self, tag: list[int]):
+        uid_str = b''.join('{:02x}'.format(x).encode() for x in tag)
         if self.playlist is not None:
             pos = self.player.stop()
             if pos is not None:
                 self.playlist.setPlaybackOffset(pos)
-        self.playlist = self.playlist_db.getPlaylistForTag(tag)
+        self.playlist = self.playlist_db.getPlaylistForTag(uid_str)
         self._play(self.playlist.getCurrentPath() if self.playlist is not None else None,
                    self.playlist.getPlaybackOffset() if self.playlist is not None else 0)
 
@@ -147,12 +148,14 @@ class PlayerApp:
                 self.playlist.setPlaybackOffset(pos)
             self.playlist = None
 
-    def _play_next(self):
+    def _play_next(self, from_user):
+        if self.playlist is None and self.playing_tag is not None and from_user:
+            self._set_playlist(self.playing_tag)
+            return
         filename = self.playlist.getNextPath() if self.playlist is not None else None
         self._play(filename)
         if filename is None:
             self.playlist = None
-            self.playing_tag = None
 
     def _play_prev(self):
         if self.playlist is None:
@@ -161,7 +164,6 @@ class PlayerApp:
         self._play(filename)
         if filename is None:
             self.playlist = None
-            self.playing_tag = None
 
     def _play(self, filename: bytes | None, offset=0):
         if self.mp3file is not None:
