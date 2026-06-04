@@ -1,7 +1,12 @@
 ---
 name: Build RPi Pico firmware image
 "on":
+  # Build on branch pushes. Tag pushes are handled by release.yaml, which
+  # calls this workflow via workflow_call to avoid building twice.
   push:
+    branches:
+      - "**"
+  workflow_call:
 
 jobs:
   Build-Firmware:
@@ -17,6 +22,9 @@ jobs:
             python3 python3-venv
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          # Full history + tags so 'git describe' can derive TONBERRY_VERSION
+          fetch-depth: 0
       - name: Initialize submodules
         run: cd software && ./update-submodules.sh
       - name: Prepare venv
@@ -27,7 +35,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: firmware-RPi-Pico-W
-          path: software/build/firmware-*.uf2
+          # Exclude the filesystem images; they have their own artifact below.
+          path: |
+            software/build/firmware-*.uf2
+            !software/build/firmware-filesystem-*.uf2
       - name: Upload firmware w/ filesystem
         uses: actions/upload-artifact@v4
         with:
