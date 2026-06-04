@@ -4,8 +4,12 @@ on:
 
 jobs:
   Check-C-Format:
-    runs-on: ubuntu-22.04-full
+    runs-on: ubuntu-22.04
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang-format
       - name: Check out repository code
         uses: actions/checkout@v4
       - name: Run clang format
@@ -13,11 +17,11 @@ jobs:
           cmake software -B build
           cmake --build build -- check-format
   Check-Python-Flake8:
-    runs-on: ubuntu-22.04-full
+    runs-on: ubuntu-22.04
     steps:
       - name: Get Flake8
         run: |
-          python -m venv flake-venv
+          python3 -m venv flake-venv
           flake-venv/bin/pip install flake8==7.0
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -31,8 +35,12 @@ jobs:
             find modules -iname '*.py' -exec ../../flake-venv/bin/flake8 {} +
             )
   Check-Bash-Shellcheck:
-    runs-on: ubuntu-22.04-full
+    runs-on: ubuntu-22.04
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
