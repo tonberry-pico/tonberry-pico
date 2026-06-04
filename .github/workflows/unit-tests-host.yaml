@@ -4,8 +4,12 @@ on:
 
 jobs:
   Run-Unit-Tests:
-    runs-on: ubuntu-22.04-full
+    runs-on: ubuntu-22.04
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ruby
       - name: Check out repository code
         uses: actions/checkout@v4
       - name: Build and test
@@ -14,7 +18,7 @@ jobs:
           cmake --build build
           ctest --test-dir build
       - name: Upload test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: junit-xml
           path: build/junit.xml
