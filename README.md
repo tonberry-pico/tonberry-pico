@@ -17,4 +17,4 @@ Elektronik- und Programmier-Unerfahrene ist erhalten bleiben.  Deswegen:
 
 # Design
 
-[Überlegungen zum Design](https://git.ka.blankertz.org/TonBERRY/tonberry-pico/wiki/Design) gibt's im Wiki.
+[Überlegungen zum Design](https://github.com/tonberry-pico/tonberry-pico/wiki/Design) gibt's im Wiki.
