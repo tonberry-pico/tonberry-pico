@@ -29,7 +29,7 @@ execute_process(COMMAND ${GIT} rev-parse HEAD
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-execute_process(COMMAND ${GIT} describe --match v* --always --dirty
+execute_process(COMMAND ${GIT} describe --tags --match v\* --always --dirty
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     OUTPUT_VARIABLE TONBERRY_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE

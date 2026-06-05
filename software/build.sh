@@ -4,6 +4,9 @@ TOPDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 set -eu
 
+echo "GIT version" "$(git describe --tags --match v\* --always --dirty)"
+git show-ref --tags
+
 ( cd lib/micropython
   make -C mpy-cross -j "$(nproc)"
 
