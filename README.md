@@ -15,6 +15,25 @@ Elektronik- und Programmier-Unerfahrene ist erhalten bleiben.  Deswegen:
  - Die Kombination aus Raspberry Pi Pico W und sonstigen nötigen Modulen sollte nicht nennenswert
    teurer sein als die Arduino-Module des TonUNIO.
 
-# Design
+## Anleitung
+
+[Aufbau- und Bedienungsanleitung](https://tonberry-pico.github.io/tonberry-pico/doc/MANUAL.de.html)
+
+### Benötigte Hardware
+
+| Bezeichnung | Berrybase- oder Reichelt-Link |
+| --- | --- |
+| RFID-RC522 | <https://www.berrybase.de/rfid-lesegeraet-mit-spi-schnittstelle-inkl.-karte-dongle> oder andere RC522 Module (ggf. Pinout beachten) |
+| SparkFun microSD Transflash Breakout | [~~https://www.berrybase.de/sparkfun-microsd-transflash-breakout~~](https://www.berrybase.de/sparkfun-microsd-transflash-breakout) Leider nicht mehr verfügbar. [Hier](https://git.ka.blankertz.org/TonBERRY/sparkfun_microSD_Transflash_Breakout) ist das Layout in EAGLE und KiCad zum nachmachen lassen. |
+| SparkFun MAX98357A | <https://www.berrybase.de/sparkfun-i2s-audio-breakout-max98357a> oder <https://www.berrybase.de/adafruit-i2s-3w-class-d-verstaerker-breakout-max98357a> oder <https://www.amazon.de/dp/B0F21T7Q3P> |
+| Raspberry Pi Pico W | <https://www.berrybase.de/raspberry-pi-pico-w-rp2040-wlan-mikrocontroller-board> |
+| Adafruit bq25185 Ladegerät/Spannungswandler für Akkus ab 500mAh, JST PH-2 Pin, USB/DC/Solar, 5V, 1A |  <https://www.berrybase.de/adafruit-bq25185-ladegeraet-spannungswandler-fuer-akkus-ab-500mah-jst-ph-2-pin-usb-dc-solar-5v-1a> |
+| Übrige Komponenten | <https://www.reichelt.de/my/2314794> |
+
+### Software
+
+Die Software ist [auf Github](https://github.com/tonberry-pico/tonberry-pico) zu finden.
+
+## Design
 
 [Überlegungen zum Design](https://github.com/tonberry-pico/tonberry-pico/wiki/Design) gibt's im Wiki.
