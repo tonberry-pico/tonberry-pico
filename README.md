@@ -34,6 +34,10 @@ Elektronik- und Programmier-Unerfahrene ist erhalten bleiben.  Deswegen:
 
 Die Software ist [auf Github](https://github.com/tonberry-pico/tonberry-pico) zu finden.
 
+### Gehäuse
+
+Test-Aufbau für Entwickler: <https://www.printables.com/model/1745596-tonberry-pico-test-rig>
+
 ## Design
 
 [Überlegungen zum Design](https://github.com/tonberry-pico/tonberry-pico/wiki/Design) gibt's im Wiki.
