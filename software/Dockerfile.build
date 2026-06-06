@@ -1,4 +1,3 @@
-# Image: git.ka.blankertz.org/tonberry/tonberry-pico/build:latest
 FROM gitea/runner-images:ubuntu-22.04
 
 # Install gcc-arm-none-eabi
