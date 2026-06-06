@@ -34,6 +34,46 @@ Allgemeine Hinweise zum Aufbau:
   auf dem BQ25185-Module kann zwar genutzt werden um das Gerät mit Strom zu versorgen. Es ist aber
   ohne weiteres keine Datenverbindung möglich um die Software zu installieren.
 
+### Pinbelegung der Steckverbinder
+
+#### RC522 (J3)
+
+1. Pin ist links. Die Beschriftung auf der Platine (Silkscreen) ist leider in der Rev 1.2 falsch herum.
+
+| Pin | Belegung |
+|-----|----------|
+| 1   | VCC      |
+| 2   | RST      |
+| 3   | GND      |
+| 4   | IRQ      |
+| 5   | MISO     |
+| 6   | MOSI     |
+| 7   | SCK      |
+| 8   | SS       |
+
+*Sollte* 1:1 der Belegung des
+[RFID-RC522](https://www.berrybase.de/rfid-lesegeraet-mit-spi-schnittstelle-inkl.-karte-dongle)
+entsprechen. Die Belegung der RC522-Boards kann sich aber unterscheiden, am besten immer überprüfen.
+
+#### LED WS2812 (J6)
+
+| Pin | Belegung |
+|-----|----------|
+| 1   | 5V       |
+| 2   | Data     |
+| 3   | GND      |
+
+#### Buttons (J7)
+
+| Pin | Belegung              |
+|-----|-----------------------|
+| 1   | GND                   |
+| 2   | Power/Button 4 (GP21) |
+| 3   | Button 2 (GP19)       |
+| 4   | Button 1 (GP18)       |
+| 5   | Button 0 (GP17)       |
+| 6   | Button 3 (GP20)       |
+
 ## Inbetriebnahme
 
 ### Softwareinstallation
