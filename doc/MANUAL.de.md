@@ -38,7 +38,7 @@ Allgemeine Hinweise zum Aufbau:
 
 #### RC522 (J3)
 
-1. Pin ist links. Die Beschriftung auf der Platine (Silkscreen) ist leider in der Rev 1.2 falsch herum.
+Pin 1 ist links, wenn die Platinenbeschriftung normal lesbar ist. Vorsicht, hier hat sich in Hardware Version Rev 1.2 ein Fehler eingeschlichen: die Pin-1-Markierung auf der Platine (Silkscreen) ist leider auf dem falschen Pin.
 
 | Pin | Belegung |
 |-----|----------|
@@ -51,9 +51,9 @@ Allgemeine Hinweise zum Aufbau:
 | 7   | SCK      |
 | 8   | SS       |
 
-*Sollte* 1:1 der Belegung des
-[RFID-RC522](https://www.berrybase.de/rfid-lesegeraet-mit-spi-schnittstelle-inkl.-karte-dongle)
-entsprechen. Die Belegung der RC522-Boards kann sich aber unterscheiden, am besten immer überprüfen.
+Diese Belegung *sollte* 1:1 der Belegung des
+[RFID-RC522 Moduls](https://www.berrybase.de/rfid-lesegeraet-mit-spi-schnittstelle-inkl.-karte-dongle)
+entsprechen. Die Belegung der RC522-Moduls kann sich allerdings bei einzelnen Varianten unterscheiden, daher bitte immer überprüfen.
 
 #### LED WS2812 (J6)
 
