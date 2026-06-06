@@ -271,7 +271,7 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
 
     int timeout = 0;
     bool got_done = false;
-    for (timeout = 0; timeout < 131072; ++timeout) {
+    for (timeout = 0; timeout < 524288; ++timeout) {
         sd_spi_read_blocking(0xff, buf, 1);
         if (buf[0] != 0x0) {
             got_done = true;
