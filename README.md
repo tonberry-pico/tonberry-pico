@@ -27,7 +27,7 @@ Elektronik- und Programmier-Unerfahrene ist erhalten bleiben.  Deswegen:
 | SparkFun microSD Transflash Breakout | [~~https://www.berrybase.de/sparkfun-microsd-transflash-breakout~~](https://www.berrybase.de/sparkfun-microsd-transflash-breakout) Leider nicht mehr verfügbar. [Hier](https://git.ka.blankertz.org/TonBERRY/sparkfun_microSD_Transflash_Breakout) ist das Layout in EAGLE und KiCad zum nachmachen lassen. |
 | SparkFun MAX98357A | <https://www.berrybase.de/sparkfun-i2s-audio-breakout-max98357a> oder <https://www.berrybase.de/adafruit-i2s-3w-class-d-verstaerker-breakout-max98357a> oder <https://www.amazon.de/dp/B0F21T7Q3P> |
 | Raspberry Pi Pico W | <https://www.berrybase.de/raspberry-pi-pico-w-rp2040-wlan-mikrocontroller-board> |
-| Adafruit bq25185 Ladegerät/Spannungswandler für Akkus ab 500mAh, JST PH-2 Pin, USB/DC/Solar, 5V, 1A |  <https://www.berrybase.de/adafruit-bq25185-ladegeraet-spannungswandler-fuer-akkus-ab-500mah-jst-ph-2-pin-usb-dc-solar-5v-1a> |
+| Adafruit bq25185 Ladegerät/Spannungswandler für Akkus ab 500mAh, JST PH-2 Pin, USB/DC/Solar, 5V, 1A | <ul><li><https://www.berrybase.de/adafruit-bq25185-ladegeraet-spannungswandler-fuer-akkus-ab-500mah-jst-ph-2-pin-usb-dc-solar-5v-1a></li><li><https://www.kiwi-electronics.com/en/adafruit-bq25185-usb-dc-solar-charger-with-5v-boost-board-20429?search=Adafruit%20bq25185></li></ul> |
 | Übrige Komponenten | <https://www.reichelt.de/my/2314794> |
 
 ### Software
