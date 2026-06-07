@@ -1,0 +1,28 @@
+(version 1)
+(rule "Pad to Silkscreen"
+	(constraint silk_clearance (min 0.15mm))
+	(layer outer)
+	(condition "A.Type == 'pad' && (B.Type == 'text' || B.Type == 'graphic')"))
+
+(rule "drill hole size (mechanical)"
+	(constraint hole_size (min 0.2mm) (max 6.3mm)))
+
+(rule "Minimum Via Hole Size"
+	(constraint hole_size (min 0.2mm))
+	(condition "A.Type == 'via'"))
+
+(rule "Minimum Via Diameter"
+	(constraint via_diameter (min 0.35mm))
+	(condition "A.Type == 'via'"))
+
+(rule "PTH Hole Size"
+	(constraint hole_size (min 0.2mm) (max 6.35mm))
+	(condition "A.isPlated()"))
+
+(rule "Minimum Non-plated Hole Size"
+	(constraint hole_size (min 0.5mm))
+	(condition "A.Type == 'pad' && !A.isPlated()"))
+
+(rule "Pad to Track clearance"
+	(constraint clearance (min 0.1mm))
+	(condition "A.isPlated() && A.Type != 'Via' && B.Type == 'track'"))
