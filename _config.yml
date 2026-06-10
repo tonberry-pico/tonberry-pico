@@ -1,5 +1,10 @@
+markdown: CommonMarkGhPages
 plugins:
+  - jekyll-commonmark-ghpages
   - jekyll-relative-links
+commonmark:
+  options: ["UNSAFE", "SMART"]
+  extensions: ["table", "strikethrough", "autolink", "tagfilter"]
 relative_links:
   enabled: true
   collections: true
