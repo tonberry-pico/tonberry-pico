@@ -9,8 +9,14 @@
 #include <hardware/gpio.h>
 #include <hardware/spi.h>
 #include <hardware/sync.h>
+#include <hardware/timer.h>
 #include <pico/time.h>
 #include <string.h>
+
+// SD card standard specification defines timeouts of 100 ms for read and 500 ms for write
+// operations.  We add a generous safety margin to compensate for low quality cards.
+#define SD_WRITE_TIMEOUT_US 750000
+#define SD_READ_TIMEOUT_US 250000
 
 typedef enum { DMA_READ_TOKEN, DMA_READ, DMA_IDLE } sd_dma_state;
 
@@ -21,6 +27,7 @@ struct sd_dma_context {
     uint8_t read_token_buf;
     uint8_t wrdata;
     _Atomic sd_dma_state state;
+    uint64_t deadline;
 };
 
 struct sd_spi_context {
@@ -93,14 +100,19 @@ static void __time_critical_func(sd_spi_dma_isr)(void)
                     sd_spi_context.sd_dma_context.state = DMA_IDLE;
                 }
             } else {
-                // try again
-                dma_channel_configure(sd_spi_context.spi_dma_rd, &sd_spi_context.spi_dma_rd_cfg,
-                                      &sd_spi_context.sd_dma_context.read_token_buf,
-                                      &SD_PIO->rxf[sd_spi_context.spi_sm], 1, false);
-                dma_channel_configure(sd_spi_context.spi_dma_wr, &sd_spi_context.spi_dma_wr_cfg,
-                                      &SD_PIO->txf[sd_spi_context.spi_sm], &sd_spi_context.sd_dma_context.wrdata, 1,
-                                      false);
-                dma_start_channel_mask((1 << sd_spi_context.spi_dma_rd) | (1 << sd_spi_context.spi_dma_wr));
+                if (time_us_64() > sd_spi_context.sd_dma_context.deadline) {
+                    // Read timeout, abort transfer
+                    sd_spi_context.sd_dma_context.state = DMA_IDLE;
+                } else {
+                    // try again
+                    dma_channel_configure(sd_spi_context.spi_dma_rd, &sd_spi_context.spi_dma_rd_cfg,
+                                          &sd_spi_context.sd_dma_context.read_token_buf,
+                                          &SD_PIO->rxf[sd_spi_context.spi_sm], 1, false);
+                    dma_channel_configure(sd_spi_context.spi_dma_wr, &sd_spi_context.spi_dma_wr_cfg,
+                                          &SD_PIO->txf[sd_spi_context.spi_sm], &sd_spi_context.sd_dma_context.wrdata, 1,
+                                          false);
+                    dma_start_channel_mask((1 << sd_spi_context.spi_dma_rd) | (1 << sd_spi_context.spi_dma_wr));
+                }
             }
         }
     }
@@ -143,6 +155,7 @@ static bool sd_spi_read_dma(uint8_t wrdata, uint8_t *data, size_t len)
     sd_spi_context.sd_dma_context.len = len;
     sd_spi_context.sd_dma_context.read_buf = data;
     sd_spi_context.sd_dma_context.wrdata = wrdata;
+    sd_spi_context.sd_dma_context.deadline = time_us_64() + SD_READ_TIMEOUT_US;
     dma_start_channel_mask((1 << sd_spi_context.spi_dma_rd) | (1 << sd_spi_context.spi_dma_wr));
     return true;
 }
@@ -269,9 +282,9 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
         goto abort;
     }
 
-    int timeout = 0;
     bool got_done = false;
-    for (timeout = 0; timeout < 524288; ++timeout) {
+    const uint64_t deadline = time_us_64() + SD_WRITE_TIMEOUT_US;
+    while (deadline >= time_us_64()) {
         sd_spi_read_blocking(0xff, buf, 1);
         if (buf[0] != 0x0) {
             got_done = true;
@@ -279,7 +292,7 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
         }
     }
 #ifdef SD_DEBUG
-    printf("dbg write end: %d, %2hhx\n", timeout, buf[0]);
+    printf("dbg write end: %2hhx\n", buf[0]);
 #endif
     if (!got_done)
         goto abort;
