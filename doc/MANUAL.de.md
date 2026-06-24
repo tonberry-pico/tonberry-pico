@@ -83,6 +83,13 @@ bereits mp3-Dateien auf die SD Karte kopiert werden. Die Karte sollte aber nicht
 da eine interne Playlist-Datenbank ebenfalls auf der SD-Karte abgelegt wird und ggf. über die Zeit
 größer werden wird. Empfohlen wird, etwa 10 MB frei zu lassen.
 
+> [!IMPORTANT]
+>
+> Die microSD-Karte muss ohne Partitionstabelle formatiert werden, sonst fährt der TonBERRY nicht
+> korrekt hoch (WiFi und Ping funktionieren, nicht aber das Web-Interface).
+> 
+> Auf Linux: `mkfs.fat /dev/sdX` statt `mkfs.fat /dev/sdX1` verwenden.
+
 Zur Erstinstallation die Firmware `firmware-filesystem-Rev1.uf2` auf den Raspberry Pi Pico W
 installieren. Dazu die "BOOTSEL"-Taste auf dem Pi Pico gedrückt halten und währenddessen das Gerät
 über die Micro-USB Buchse auf dem Pi Pico mit dem PC verbinden. Es sollte dann ein USB-Laufwerk
