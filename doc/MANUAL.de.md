@@ -111,6 +111,29 @@ Je nach Bedarf können auch Akkus mit einer kleineren oder größeren Kapazität
 > Wir haben noch keine Messungen bezüglich der zu erwartenden Batterielaufzeit. Dies ist ein
 > offenes TODO und wird später nachgereicht.
 
+#### Lautsprecher (an J2)
+
+Die Wahl eines geeigneten Lautsprechers hängt sehr von der Bauform der Box ab, weshalb allgemeingültige
+Empfehlungen schwierig sind. Grundsätzlich sollte der verwendete Lautsprecher jedoch die folgenden
+technischen Eigenschaften haben:
+
+* Eingangsimpedanz: 8 Ohm (empfohlen)
+  Eine niedrigere Impedanz (z.B. 4 Ohm) führt zu höherer Maximallautstärke und größerer Belastung des Verstärkers.
+  Eine höhere Impedanz (z.B. 16 Ohm) hat den gegenteiligen Effekt.
+* Nennleistung: 20 W (empfohlen)
+
+Folgende Modelle wurden getestet:
+
+* [Visaton R 10 S - 8 Ohm](https://www.reichelt.de/de/de/shop/produkt/breitbandlautsprecher_r_10s_20_w_8_ohm-22417)
+  Gute Tonqualität, gute Sprachverständlichkeit auch bei niedrigen und hohen Lautstärken
+* [Waveshare 8 Ohm 5 W](https://www.berrybase.de/8-ohm-5w-lautsprecher-passend-fuer-waveshare-displays)
+  Für Tests geeignet
+
+Der verwendete Lautsprecher wird am Verstärkermodul J2 angeschlossen. Die Kabel können entweder direkt auf das
+Verstärkermodul aufgelötet werden, es kann aber auch ein Stecker mit Rastermaß 2,54mm verwendet werden:
+
+![loudspeaker-amplifier-connected](assets/loudspeaker-amplifier-connected.jpg "Lautsprecher, mit Steckverbinder angeschlossen")
+
 ## Inbetriebnahme
 
 ### Softwareinstallation
