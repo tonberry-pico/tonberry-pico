@@ -32,7 +32,7 @@ Allgemeine Hinweise zum Aufbau:
 
 * Die "primäre" USB-Buchse ist der micro-USB Anschluss des Raspberry Pi Pico W. Der USB-Anschluss
   auf dem BQ25185-Module kann zwar genutzt werden um das Gerät mit Strom zu versorgen. Es ist aber
-  ohne weiteres keine Datenverbindung möglich um die Software zu installieren.
+  ohne Weiteres keine Datenverbindung möglich um die Software zu installieren.
 
 ### Pinbelegung der Steckverbinder
 
@@ -73,6 +73,43 @@ entsprechen. Die Belegung der RC522-Moduls kann sich allerdings bei einzelnen Va
 | 4   | Button 1 (GP18)       |
 | 5   | Button 0 (GP17)       |
 | 6   | Button 3 (GP20)       |
+
+#### Akku (an J4)
+
+Bei gewünschtem Akkubetrieb muss neben den oben beschriebenen Komponenten auch ein geeigneter Akku ausgewählt werden.
+Das [Ladereglermodul](https://www.adafruit.com/product/6106) unterstützt folgende Akkutypen:
+
+* Lithium-Ionen (Li-ion)
+* Lithium-Polymer (Li-po)
+* Lithium-Eisenphosphat (LiFePO4)
+
+Der Akku wird am Ladereglermodul wie dargestellt angeschlossen:
+![charger-battery-disconnected](assets/charger-battery-disconnected.jpg "Ladereglermodul von Akku getrennt")
+![charger-battery-connected](assets/charger-battery-connected.jpg "Ladereglermodul und Akku verbunden")
+
+Gut geeignet sind Akkus, die bereits einen fertig vorkonfektionierten Stecker vom Typ JST-PH (2 Pin)
+haben, da diese direkt am Modul angesteckt werden können. Bewährt haben sich LiPo-Akkus mit einer
+Ausgangsspannung von 3,7 V und einer Kapazität von 1200 oder 2500 mAh. Bei Berrybase aktuellgut
+verfügbare Modelle sind der [503759 (1200 mAh)](https://www.berrybase.de/soldered-li-ion-akku-lithium-polymer-503759-3-7v-1200mah-mit-2-pin-jst-stecker)
+oder der [LP-785060 (2500 mAh)](https://www.berrybase.de/lp-785060-lithium-polymer-lipo-akku-3-7v-2500mah-mit-2-pin-jst-stecker).
+Je nach Bedarf können auch Akkus mit einer kleineren oder größeren Kapazität verwendet werden.
+
+> [!IMPORTANT]
+>
+> Das Ladereglermodul verfügt über eine Schutzfunktion, die den Ladevorgang nach einer maximalen
+> Ladezeit von 720 Minuten automatisch beendet. Während des Ladevorgangs gibt das Modul (im
+> Auslieferungszustand) einen maximalen Ladestrom von 1 A an den Akku ab.
+>
+> Berücksichtigt man nun die Nichtlinearität des Ladevorgangs sowie die thermische Verlustleistung
+> beim Laden, so ergibt sich eine maximale, realistische Akkukapazität von etwa 10.000 mAh.
+>
+> Es ist also nicht sinnvoll, einen Akku mit einer größeren Kapazität zu verwenden, da dieser niemals
+> vollständig geladen werden wird.
+
+> [!NOTE]
+>
+> Wir haben noch keine Messungen bezüglich der zu erwartenden Batterielaufzeit. Dies ist ein
+> offenes TODO und wird später nachgereicht.
 
 ## Inbetriebnahme
 
