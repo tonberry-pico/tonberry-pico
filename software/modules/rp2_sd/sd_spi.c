@@ -18,6 +18,8 @@
 #define SD_WRITE_TIMEOUT_US 750000
 #define SD_READ_TIMEOUT_US 250000
 
+extern void sd_printf(const char *fmt, ...);
+
 typedef enum { DMA_READ_TOKEN, DMA_READ, DMA_IDLE } sd_dma_state;
 
 struct sd_dma_context {
@@ -234,28 +236,23 @@ bool sd_cmd_read_complete(void)
     gpio_put(sd_spi_context.ss, true);
     sd_spi_read_blocking(0xff, &buf, 1);
     if (sd_spi_context.sd_dma_context.read_token_buf != 0xfe) {
-#ifdef SD_DEBUG
-        printf("read failed: invalid read token %02hhx\n", sd_spi_context.sd_dma_context.read_token_buf);
-#endif
+        sd_printf("Read failed: invalid read token %02x\n", sd_spi_context.sd_dma_context.read_token_buf);
         return false;
     }
 #ifdef SD_READ_CRC_CHECK
     const uint16_t expect_crc = sd_crc16(sd_spi_context.sd_dma_context.len, sd_spi_context.sd_dma_context.read_buf);
     const uint16_t act_crc = sd_spi_context.sd_dma_context.crc_buf[0] << 8 | sd_spi_context.sd_dma_context.crc_buf[1];
     if (act_crc != expect_crc) {
-#ifdef SD_DEBUG
-        printf("read CRC fail: got %04hx, expected %04hx\n", act_crc, expect_crc);
-#endif
+        sd_printf("Read CRC fail: got %04x, expected %04x\n", act_crc, expect_crc);
         return false;
     }
 #endif
     return true;
 }
 
-bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen])
+static bool sd_cmd_write_begin(uint8_t cmd, uint32_t arg)
 {
-    uint8_t buf[2];
-    const uint16_t crc = sd_crc16(datalen, data);
+    uint8_t buf[1];
     sd_spi_cmd_send(cmd, arg);
     // Read up to 8 garbage bytes (0xff), followed by R1 (MSB is zero)
     bool got_r1 = false;
@@ -266,9 +263,18 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
             break;
         }
     }
-    if (!got_r1 || buf[0] != 0x00)
-        goto abort;
-    buf[0] = 0xfe;
+    if (!got_r1 || buf[0] != 0x00) {
+        sd_printf("Write cmd fail: %02x\n", buf[0]);
+        return false;
+    }
+    return true;
+}
+
+static bool sd_cmd_write_block(uint8_t token, unsigned datalen, uint8_t data[const static datalen])
+{
+    uint8_t buf[2];
+    const uint16_t crc = sd_crc16(datalen, data);
+    buf[0] = token;
     sd_spi_write_blocking(buf, 1);
     sd_spi_write_blocking(data, datalen);
     buf[0] = crc >> 8;
@@ -276,12 +282,15 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
     sd_spi_write_blocking(buf, 2);
     sd_spi_read_blocking(0xff, buf, 1);
     if ((buf[0] & 0x1f) != 0x5) {
-#ifdef SD_DEBUG
-        printf("Write fail: %2hhx\n", buf[0]);
-#endif
-        goto abort;
+        sd_printf("Write fail: %2x\n", buf[0]);
+        return false;
     }
+    return true;
+}
 
+static bool sd_cmd_write_wait_nbusy(void)
+{
+    uint8_t buf[1];
     bool got_done = false;
     const uint64_t deadline = time_us_64() + SD_WRITE_TIMEOUT_US;
     while (deadline >= time_us_64()) {
@@ -291,14 +300,68 @@ bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[cons
             break;
         }
     }
+    if (!got_done) {
+        sd_printf("Write timeout: %2x\n", buf[0]);
+    }
 #ifdef SD_DEBUG
-    printf("dbg write end: %2hhx\n", buf[0]);
+    else {
+        sd_printf("dbg write end: %2hhx\n", buf[0]);
+    }
 #endif
-    if (!got_done)
+    return got_done;
+}
+
+bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen])
+{
+#ifdef SD_DEBUG
+    sd_printf("write 1 block at %u\n", arg);
+#endif
+    uint8_t buf[2];
+    if (!sd_cmd_write_begin(cmd, arg))
+        goto abort;
+    if (!sd_cmd_write_block(0xfe, datalen, data))
+        goto abort;
+    if (!sd_cmd_write_wait_nbusy())
         goto abort;
 
     gpio_put(sd_spi_context.ss, true);
     sd_spi_read_blocking(0xff, buf, 1);
+#ifdef SD_DEBUG
+    sd_printf("write ok\n");
+#endif
+    return true;
+
+abort:
+    gpio_put(sd_spi_context.ss, true);
+    sd_spi_read_blocking(0xff, buf, 1);
+    return false;
+}
+
+bool sd_cmd_write_multiple(uint8_t cmd, uint32_t arg, unsigned blocks, unsigned datalen, uint8_t *const data)
+{
+#ifdef SD_DEBUG
+    sd_printf("write %u blocks at %u\n", blocks, arg);
+#endif
+    uint8_t buf[2];
+    if (!sd_cmd_write_begin(cmd, arg))
+        goto abort;
+    for (unsigned i = 0; i < blocks; ++i) {
+        if (!sd_cmd_write_block(0b11111100, datalen, data + datalen * i))
+            goto abort;
+        if (!sd_cmd_write_wait_nbusy())
+            goto abort;
+    }
+    buf[0] = 0b11111101;
+    buf[1] = 0xff;
+    sd_spi_write_blocking(buf, 2);
+    if (!sd_cmd_write_wait_nbusy())
+        goto abort;
+
+    gpio_put(sd_spi_context.ss, true);
+    sd_spi_read_blocking(0xff, buf, 1);
+#ifdef SD_DEBUG
+    sd_printf("write ok\n");
+#endif
     return true;
 
 abort:

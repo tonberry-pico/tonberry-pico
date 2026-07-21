@@ -1,17 +1,28 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
+#include <stdarg.h>
+
 #include "py/obj.h"
 #include "sd.h"
 
 // Include MicroPython API.
 #include "py/mperrno.h"
+#include "py/mpprint.h"
 #include "py/runtime.h"
 
 // This module is RP2 specific
 #include "mphalport.h"
 
 #include <string.h>
+
+void sd_printf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    mp_vprintf(&mp_sys_stdout_print, fmt, ap);
+    va_end(ap);
+}
 
 const mp_obj_type_t sdcard_type;
 struct sdcard_obj {
@@ -89,11 +100,14 @@ static mp_obj_t sdcard_writeblocks(mp_obj_t self_obj, mp_obj_t block_obj, mp_obj
     if (bufinfo.len % SD_SECTOR_SIZE != 0)
         mp_raise_ValueError(MP_ERROR_TEXT("Buffer length is invalid"));
     const int nblocks = bufinfo.len / SD_SECTOR_SIZE;
-    for (int block = 0; block < nblocks; block++) {
-        // TODO: Implement CMD25 write multiple blocks
-        if (!sd_writeblock(&self->sd_context, start_block + block, bufinfo.buf + block * SD_SECTOR_SIZE))
-            mp_raise_OSError(MP_EIO);
+    bool ret;
+    if (nblocks > 1) {
+        ret = sd_writeblocks(&self->sd_context, start_block, nblocks, bufinfo.buf);
+    } else {
+        ret = sd_writeblock(&self->sd_context, start_block, bufinfo.buf);
     }
+    if (!ret)
+        mp_raise_OSError(MP_EIO);
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_3(sdcard_writeblocks_obj, sdcard_writeblocks);

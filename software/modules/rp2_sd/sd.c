@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// #define SD_DEBUG
+extern void sd_printf(const char *fmt, ...);
 
 #define SD_R1_ILLEGAL_COMMAND (1 << 2)
 
@@ -26,14 +26,14 @@ static bool sd_early_init(void)
     for (int i = 0; i < 500; ++i) {
         if (sd_cmd(0, 0, 1, &buf)) {
 #ifdef SD_DEBUG
-            printf("CMD0 resp %02hhx\n", buf);
+            sd_printf("CMD0 resp %02x\n", buf);
 #endif
             if (buf == 0x01) {
                 return true;
             }
         }
 #ifdef SD_DEBUG
-        printf("CMD0 timeout, try again...\n");
+        sd_printf("CMD0 timeout, try again...\n");
 #endif
     }
     return false;
@@ -44,14 +44,14 @@ static bool sd_check_interface_condition(void)
     uint8_t buf[5];
     if (sd_cmd(8, 0x000001AA, 5, buf)) {
         if ((buf[3] & 0xf) != 0x1 || buf[4] != 0xAA) {
-            printf("sd_init: check interface condition failed\n");
+            sd_printf("sd_init: check interface condition failed\n");
             return false;
         }
     } else {
         if (buf[0] & SD_R1_ILLEGAL_COMMAND) {
-            printf("sd_init: check interface condition returned illegal command - old card?\n");
+            sd_printf("sd_init: check interface condition returned illegal command - old card?\n");
         } else {
-            printf("sd_init: check interface condition failed\n");
+            sd_printf("sd_init: check interface condition failed\n");
             return false;
         }
     }
@@ -72,12 +72,12 @@ static bool sd_send_op_cond(void)
         if (!result) {
             if (use_acmd && buf & SD_R1_ILLEGAL_COMMAND) {
 #ifdef SD_DEBUG
-                printf("sd_init: card does not understand ACMD41, try CMD1...\n");
+                sd_printf("sd_init: card does not understand ACMD41, try CMD1...\n");
 #endif
                 use_acmd = false;
                 continue;
             } else if (buf != 0x01) {
-                printf("sd_init: send_op_cond failed\n");
+                sd_printf("sd_init: send_op_cond failed\n");
                 return false;
             } else {
                 continue;
@@ -87,7 +87,7 @@ static bool sd_send_op_cond(void)
             return true;
         }
     }
-    printf("sd_init: send_op_cond: timeout waiting for !idle\n");
+    sd_printf("sd_init: send_op_cond: timeout waiting for !idle\n");
     return false;
 }
 
@@ -107,7 +107,7 @@ static void sd_dump_cid [[maybe_unused]] (void)
         const uint8_t crc = sd_crc7(15, buf);
         const uint8_t card_crc = buf[15] >> 1;
         if (card_crc != crc) {
-            printf("CRC mismatch: Got %02hhx, expected %02hhx\n", card_crc, crc);
+            sd_printf("CRC mismatch: Got %02x, expected %02x\n", card_crc, crc);
             // Some cheap SD cards always report CRC=0, don't fail in that case
             if (card_crc != 0) {
                 return;
@@ -122,8 +122,8 @@ static void sd_dump_cid [[maybe_unused]] (void)
         uint32_t psn = buf[9] << 24 | buf[10] << 16 | buf[11] << 8 | buf[12];
         int mdt_year = 2000 + ((buf[13] & 0xf) << 4 | (buf[14] & 0xf0) >> 4);
         int mdt_month = buf[14] & 0x0f;
-        printf("CID: mid: %02hhx, oid: %.2s, pnm: %.5s, prv: %02hhx, psn: %08" PRIx32 ", mdt_year: %d, mdt_month: %d\n",
-               mid, oid, pnm, prv, psn, mdt_year, mdt_month);
+        sd_printf("CID: mid: %02x, oid: %.2s, pnm: %.5s, prv: %02x, psn: %08" PRIx32 ", mdt_year: %d, mdt_month: %d\n",
+                  mid, oid, pnm, prv, psn, mdt_year, mdt_month);
     }
 }
 
@@ -131,15 +131,15 @@ static bool sd_read_csd(struct sd_context *sd_context)
 {
     uint8_t buf[16];
     if (!sd_cmd_read(9, 0, 16, buf)) {
-        printf("Failed to read CSD\n");
+        sd_printf("Failed to read CSD\n");
         return false;
     }
     const uint8_t crc = sd_crc7(15, buf);
     const uint8_t card_crc = buf[15] >> 1;
     if (card_crc != crc) {
-        printf("CRC mismatch: Got %02hhx, expected %02hhx\n", card_crc, crc);
-        // Some cheap SD cards always report CRC=0, don't fail in that case
         if (card_crc != 0) {
+            // Some cheap SD cards always report CRC=0, don't fail in that case
+            sd_printf("CRC mismatch: Got %02x, expected %02x\n", card_crc, crc);
             return false;
         }
     }
@@ -151,12 +151,12 @@ static bool sd_read_csd(struct sd_context *sd_context)
     switch (csd_ver) {
     case 0: {
         if (sd_context->sdhc_sdxc) {
-            printf("sd_init: Got CSD v1.0 but card is SDHC/SDXC?\n");
+            sd_printf("sd_init: Got CSD v1.0 but card is SDHC/SDXC?\n");
             return false;
         }
         const unsigned read_bl_len = buf[5] & 0xf;
         if (read_bl_len < 9 || read_bl_len > 11) {
-            printf("Invalid read_bl_len in CSD 1.0\n");
+            sd_printf("Invalid read_bl_len in CSD 1.0\n");
             return false;
         }
         blocksize = 1 << (buf[5] & 0xf);
@@ -176,16 +176,14 @@ static bool sd_read_csd(struct sd_context *sd_context)
         break;
     }
     case 2: {
-        printf("sd_init: Got CSD v3.0, but SDUC does not support SPI.\n");
+        sd_printf("sd_init: Got CSD v3.0, but SDUC does not support SPI.\n");
         return false;
     }
     }
     sd_context->blocks = blocks;
     sd_context->blocksize = blocksize;
-#ifdef SD_DEBUG
-    printf("CSD version %u.0, blocksize %u, blocks %u, capacity %llu MiB, max speed %u\n", version, blocksize, blocks,
-           ((uint64_t)blocksize * blocks) / (1024 * 1024), max_speed);
-#endif
+    sd_printf("CSD version %u.0, blocksize %u, blocks %u, capacity %u MiB, max speed %u\n", version, blocksize, blocks,
+              (uint32_t)(((uint64_t)blocksize * blocks) / (1024 * 1024)), max_speed);
     return true;
 }
 
@@ -205,11 +203,11 @@ bool sd_init(struct sd_context *sd_context, int mosi, int miso, int sck, int ss,
 
     uint32_t ocr;
     if (!sd_read_ocr(&ocr)) {
-        printf("sd_init: read OCR failed\n");
+        sd_printf("sd_init: read OCR failed\n");
         goto out_spi;
     }
     if ((ocr & 0x00380000) != 0x00380000) {
-        printf("sd_init: unsupported card voltage range\n");
+        sd_printf("sd_init: unsupported card voltage range\n");
         goto out_spi;
     }
 
@@ -219,11 +217,11 @@ bool sd_init(struct sd_context *sd_context, int mosi, int miso, int sck, int ss,
     sd_spi_set_bitrate(rate);
 
     if (!sd_read_ocr(&ocr)) {
-        printf("sd_init: read OCR failed\n");
+        sd_printf("sd_init: read OCR failed\n");
         goto out_spi;
     }
     if (!(ocr & (1 << 31))) {
-        printf("sd_init: card not powered up but !idle?\n");
+        sd_printf("sd_init: card not powered up but !idle?\n");
         goto out_spi;
     }
     sd_context->sdhc_sdxc = (ocr & (1 << 30));
@@ -234,27 +232,25 @@ bool sd_init(struct sd_context *sd_context, int mosi, int miso, int sck, int ss,
 
     if (sd_context->blocksize != SD_SECTOR_SIZE) {
         if (sd_context->blocksize != 1024 && sd_context->blocksize != 2048) {
-            printf("sd_init: Unsupported block size %u\n", sd_context->blocksize);
+            sd_printf("sd_init: Unsupported block size %u\n", sd_context->blocksize);
             goto out_spi;
         }
         // Attempt SET_BLOCKLEN command
         uint8_t resp[1];
         if (!sd_cmd(16, SD_SECTOR_SIZE, 1, resp)) {
-            printf("sd_init: SET_BLOCKLEN failed\n");
+            sd_printf("sd_init: SET_BLOCKLEN failed\n");
             goto out_spi;
         }
         // Successfully set blocksize to SD_SECTOR_SIZE, adjust context
         sd_context->blocks *= sd_context->blocksize / SD_SECTOR_SIZE;
 #ifdef SD_DEBUG
-        printf("Adjusted blocksize from %u to 512, card now has %u blocks\n", sd_context->blocksize,
-               sd_context->blocks);
+        sd_printf("Adjusted blocksize from %u to 512, card now has %u blocks\n", sd_context->blocksize,
+                  sd_context->blocks);
 #endif
         sd_context->blocksize = SD_SECTOR_SIZE;
     }
 
-#ifdef SD_DEBUG
     sd_dump_cid();
-#endif
 
     sd_context->initialized = true;
     return true;
@@ -307,7 +303,7 @@ bool sd_readblock_complete(struct sd_context *sd_context)
 
 bool sd_readblock_is_complete(struct sd_context *sd_context) { return sd_cmd_read_is_complete(); }
 
-bool sd_writeblock(struct sd_context *sd_context, size_t sector_num, uint8_t buffer[const static SD_SECTOR_SIZE])
+bool sd_writeblock(struct sd_context *sd_context, const size_t sector_num, uint8_t buffer[const static SD_SECTOR_SIZE])
 {
     if (!sd_context->initialized || sector_num >= sd_context->blocks)
         return false;
@@ -318,4 +314,21 @@ bool sd_writeblock(struct sd_context *sd_context, size_t sector_num, uint8_t buf
         addr *= SD_SECTOR_SIZE;
     }
     return sd_cmd_write(24, addr, SD_SECTOR_SIZE, buffer);
+}
+
+bool sd_writeblocks(struct sd_context *sd_context, const size_t sector_num, const size_t sectors, uint8_t *const buffer)
+{
+    if (!sd_context->initialized || sector_num + sectors >= sd_context->blocks)
+        return false;
+
+    if (!sd_context->sdhc_sdxc) {
+        // Don't use multi-block writes for SDSC for now
+        // Need to configure WRITE_BL_LEN correctly
+        for (size_t sector = 0; sector < sectors; ++sector) {
+            if (!sd_writeblock(sd_context, sector_num + sector, buffer + sector * SD_SECTOR_SIZE))
+                return false;
+        }
+        return true;
+    }
+    return sd_cmd_write_multiple(25, sector_num, sectors, SD_SECTOR_SIZE, buffer);
 }

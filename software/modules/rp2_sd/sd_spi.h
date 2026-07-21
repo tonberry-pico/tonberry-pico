@@ -27,3 +27,4 @@ bool sd_cmd_read_complete(void);
 bool sd_cmd_read_is_complete(void);
 
 bool sd_cmd_write(uint8_t cmd, uint32_t arg, unsigned datalen, uint8_t data[const static datalen]);
+bool sd_cmd_write_multiple(uint8_t cmd, uint32_t arg, unsigned blocks, unsigned datalen, uint8_t *const data);

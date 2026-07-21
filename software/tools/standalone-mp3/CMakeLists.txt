@@ -15,6 +15,8 @@ option(ENABLE_PLAY_TEST "Enable mp3 playback test" OFF)
 option(ENABLE_SD_READ_CRC "Enable crc check when reading from sd card" OFF)
 option(ENABLE_SD_DEBUG "Enable debug output for sd card driver" OFF)
 
+set(PICO_USE_FASTEST_SUPPORTED_CLOCK 1)
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
@@ -62,7 +64,7 @@ add_subdirectory(../../lib/helix_mp3 helix_mp3)
 
 target_link_libraries(standalone_mp3 PRIVATE pico_stdlib hardware_dma hardware_spi hardware_sync hardware_pio helix_mp3)
 target_include_directories(standalone_mp3 PRIVATE ${SD_LIB_DIR})
-target_compile_options(standalone_mp3 PRIVATE -Og -DSD_DEBUG)
+target_compile_options(standalone_mp3 PRIVATE -Og)
 
 
 pico_add_extra_outputs(standalone_mp3)
