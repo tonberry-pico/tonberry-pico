@@ -49,7 +49,7 @@ Pin 1 ist links, wenn die Platinenbeschriftung normal lesbar ist. Vorsicht, hier
 | 5   | MISO     |
 | 6   | MOSI     |
 | 7   | SCK      |
-| 8   | SS       |
+| 8   | SDA (=SS)|
 
 Diese Belegung *sollte* 1:1 der Belegung des
 [RFID-RC522 Moduls](https://www.berrybase.de/rfid-lesegeraet-mit-spi-schnittstelle-inkl.-karte-dongle)
