@@ -81,7 +81,7 @@ Das [Ladereglermodul](https://www.adafruit.com/product/6106) unterstützt folgen
 
 * Lithium-Ionen (Li-ion)
 * Lithium-Polymer (Li-po)
-* Lithium-Eisenphosphat (LiFePO4)
+* Lithium-Eisenphosphat (LiFePO4) (Achtung: Ladeschlussspannung ist fix auf 4,2 V eingestellt)
 
 Der Akku wird am Ladereglermodul wie dargestellt angeschlossen:
 ![charger-battery-disconnected](assets/charger-battery-disconnected.jpg "Ladereglermodul von Akku getrennt")
@@ -89,7 +89,7 @@ Der Akku wird am Ladereglermodul wie dargestellt angeschlossen:
 
 Gut geeignet sind Akkus, die bereits einen fertig vorkonfektionierten Stecker vom Typ JST-PH (2 Pin)
 haben, da diese direkt am Modul angesteckt werden können. Bewährt haben sich LiPo-Akkus mit einer
-Ausgangsspannung von 3,7 V und einer Kapazität von 1200 oder 2500 mAh. Bei Berrybase aktuellgut
+Ausgangsspannung von 3,7 V und einer Kapazität von 1200 oder 2500 mAh. Bei Berrybase aktuell gut
 verfügbare Modelle sind der [503759 (1200 mAh)](https://www.berrybase.de/soldered-li-ion-akku-lithium-polymer-503759-3-7v-1200mah-mit-2-pin-jst-stecker)
 oder der [LP-785060 (2500 mAh)](https://www.berrybase.de/lp-785060-lithium-polymer-lipo-akku-3-7v-2500mah-mit-2-pin-jst-stecker).
 Je nach Bedarf können auch Akkus mit einer kleineren oder größeren Kapazität verwendet werden.
