@@ -85,22 +85,21 @@ class BTreeDB(IPlaylistDB):
             """
             Get path of file that should be played.
             """
+            if self.pos >= self.length:
+                return None
             return self.parent._getPlaylistEntry(self.tag, self._getPlaylistPos())
 
         def getNextPath(self):
             """
             Select next track and return path.
             """
-            if self.pos + 1 >= self.length:
-                self.pos = 0
-                if self.persist != BTreeDB.PERSIST_NO:
-                    self.parent._setPlaylistPos(self.tag, self.pos)
-                    self.setPlaybackOffset(0)
-                    self._shuffle(True)
-                return None
-
             self.pos += 1
-            if self.persist != BTreeDB.PERSIST_NO:
+            if self.pos >= self.length:
+                if self.persist != BTreeDB.PERSIST_NO:
+                    self.parent._setPlaylistPos(self.tag, 0)
+                    self.setPlaybackOffset(0)
+                self.pos = self.length
+            elif self.persist != BTreeDB.PERSIST_NO:
                 self.parent._setPlaylistPos(self.tag, self.pos)
                 self.setPlaybackOffset(0)
             return self.getCurrentPath()
@@ -115,6 +114,12 @@ class BTreeDB(IPlaylistDB):
                 self.parent._setPlaylistPos(self.tag, self.pos)
                 self.setPlaybackOffset(0)
             return self.getCurrentPath()
+
+        def restart(self):
+            if self.persist != BTreeDB.PERSIST_NO:
+                self.parent._setPlaylistPos(self.tag, 0)
+                self.setPlaybackOffset(0)
+            self.pos = 0
 
         def setPlaybackOffset(self, offset):
             """

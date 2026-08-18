@@ -99,6 +99,30 @@ def test_playlist_nextpath_last():
     assert contents.saved_contents[b'foo/playlistpos'] == b'0'
 
 
+def test_playlist_nextpath_last2():
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
+                       b'foo/playlistpos': b'1'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getNextPath() is None
+    assert pl.getCurrentPath() is None
+    assert contents.saved_contents[b'foo/playlistpos'] == b'0'
+
+
+def test_playlist_restart():
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
+                       b'foo/playlistpos': b'1'
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getNextPath() is None
+    pl.restart()
+    assert pl.getCurrentPath() == b'track1'
+
+
 def test_playlist_create():
     contents = FakeDB({b'foo/playlist/00000': b'track1',
                        b'foo/playlist/00001': b'track2',

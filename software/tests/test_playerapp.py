@@ -89,11 +89,20 @@ class FakePlaylistDb:
         def getNextPath(self):
             self.pos += 1
             if self.pos >= len(self.parent.tracklist):
+                self.pos = len(self.parent.tracklist)
                 return None
             return self.parent.tracklist[self.pos]
 
+        def getPrevPath(self):
+            if self.pos > 0:
+                self.pos -= 1
+            return self.getCurrentPath()
+
         def getPlaybackOffset(self):
             return 0
+
+        def restart(self):
+            self.pos = 0
 
     def __init__(self, tracklist=[b'test/path.mp3']):
         self.tracklist = tracklist
