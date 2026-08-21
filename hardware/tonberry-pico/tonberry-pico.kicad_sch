@@ -3086,6 +3086,350 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "MSD-6-A:MSD-6-A"
+			(pin_names
+				(offset 1.016)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at -10.16 21.082 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Value" "MSD-6-A"
+				(at -10.16 -27.94 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Footprint" "MSD-6-A:CUI_MSD-6-A"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "PARTREV" "1.0"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+				)
+			)
+			(property "STANDARD" "Manufacturer Recommendations"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+				)
+			)
+			(property "MAXIMUM_PACKAGE_HEIGHT" "2.05mm"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+				)
+			)
+			(property "MANUFACTURER" "CUI Devices"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+				)
+			)
+			(symbol "MSD-6-A_0_0"
+				(rectangle
+					(start -10.16 -25.4)
+					(end 10.16 20.32)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin bidirectional line
+					(at -15.24 -2.54 0)
+					(length 5.08)
+					(name "DAT2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -15.24 -5.08 0)
+					(length 5.08)
+					(name "CD/DAT3"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -15.24 7.62 0)
+					(length 5.08)
+					(name "CMD"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -15.24 17.78 0)
+					(length 5.08)
+					(name "VDD"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin input clock
+					(at -15.24 12.7 0)
+					(length 5.08)
+					(name "CLK"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -15.24 -17.78 0)
+					(length 5.08)
+					(name "VSS"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -15.24 2.54 0)
+					(length 5.08)
+					(name "DAT0"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -15.24 0 0)
+					(length 5.08)
+					(name "DAT1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -15.24 -10.16 0)
+					(length 5.08)
+					(name "CD"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "CD1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -15.24 -12.7 0)
+					(length 5.08)
+					(name "CD__1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "CD2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -15.24 -20.32 0)
+					(length 5.08)
+					(name "COVER_GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "G1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -15.24 -22.86 0)
+					(length 5.08)
+					(name "COVER_GND__1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "G2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Switch:SW_Push"
 			(pin_numbers
 				(hide yes)
@@ -4351,6 +4695,12 @@
 		(uuid "452c8973-7269-4bec-a957-7087bc8cd10f")
 	)
 	(junction
+		(at 139.7 161.29)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6a7908ed-cbe0-4f70-8730-63e10eb115ec")
+	)
+	(junction
 		(at 276.86 128.27)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4437,6 +4787,10 @@
 		(uuid "23f62fd2-ba7e-4f83-94e2-dc4574850872")
 	)
 	(no_connect
+		(at 138.43 153.67)
+		(uuid "2c194f38-0c95-4407-a364-e7ebc6d0a849")
+	)
+	(no_connect
 		(at 132.08 41.91)
 		(uuid "327eca18-19ed-4df2-b4a4-b6473b4637be")
 	)
@@ -4449,8 +4803,8 @@
 		(uuid "696674ad-fd1c-4248-9fc0-1003332d8daa")
 	)
 	(no_connect
-		(at 86.36 41.91)
-		(uuid "7ab28346-082b-4356-be7a-df2c77025691")
+		(at 138.43 143.51)
+		(uuid "cc9ffa02-d331-40b7-83d8-4e922f89205e")
 	)
 	(no_connect
 		(at 53.34 123.19)
@@ -4459,6 +4813,10 @@
 	(no_connect
 		(at 53.34 120.65)
 		(uuid "e8b7d520-eb50-40b1-8a3e-6e56378012e9")
+	)
+	(no_connect
+		(at 138.43 140.97)
+		(uuid "f256685a-38dd-4d50-9254-88052098737b")
 	)
 	(wire
 		(pts
@@ -4529,6 +4887,16 @@
 			(type default)
 		)
 		(uuid "09b1fa4c-55b7-4d92-a140-2f0d9e836ab6")
+	)
+	(wire
+		(pts
+			(xy 138.43 128.27) (xy 143.51 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "09b37ac6-f430-4b1c-89d7-591621c97958")
 	)
 	(wire
 		(pts
@@ -4722,6 +5090,26 @@
 	)
 	(wire
 		(pts
+			(xy 138.43 146.05) (xy 143.51 146.05)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3206c501-7fae-4f5c-9aa8-474dae3ca569")
+	)
+	(wire
+		(pts
+			(xy 143.51 158.75) (xy 139.7 158.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "35c249be-28e3-4a91-98aa-8e83b4163f9c")
+	)
+	(wire
+		(pts
 			(xy 276.86 148.59) (xy 276.86 151.13)
 		)
 		(stroke
@@ -4912,6 +5300,16 @@
 	)
 	(wire
 		(pts
+			(xy 139.7 158.75) (xy 139.7 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "57f4bb71-5f9d-4b6d-9946-2a47353fae2a")
+	)
+	(wire
+		(pts
 			(xy 100.33 57.15) (xy 100.33 59.69)
 		)
 		(stroke
@@ -4929,6 +5327,16 @@
 			(type default)
 		)
 		(uuid "665357a2-f522-48a1-88ae-f95bcdced20e")
+	)
+	(wire
+		(pts
+			(xy 139.7 163.83) (xy 143.51 163.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66cd7ced-8efc-4d5b-baa1-81aa6c71d2c8")
 	)
 	(wire
 		(pts
@@ -5082,6 +5490,26 @@
 	)
 	(wire
 		(pts
+			(xy 138.43 133.35) (xy 143.51 133.35)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "80613526-ef37-4814-b377-9df8efc0a453")
+	)
+	(wire
+		(pts
+			(xy 138.43 151.13) (xy 143.51 151.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "807483c6-c25d-445d-aa4a-de867a2b0255")
+	)
+	(wire
+		(pts
 			(xy 115.57 49.53) (xy 132.08 49.53)
 		)
 		(stroke
@@ -5129,6 +5557,16 @@
 			(type default)
 		)
 		(uuid "86fce508-3694-4c40-b18c-20022116d062")
+	)
+	(wire
+		(pts
+			(xy 138.43 153.67) (xy 143.51 153.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "872f8f9f-26d6-4ba4-871a-42d9f7707b2e")
 	)
 	(wire
 		(pts
@@ -5192,6 +5630,16 @@
 	)
 	(wire
 		(pts
+			(xy 138.43 143.51) (xy 143.51 143.51)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8f37d9b6-626f-46fd-9361-8f3c457088c8")
+	)
+	(wire
+		(pts
 			(xy 200.66 52.07) (xy 201.93 52.07)
 		)
 		(stroke
@@ -5199,6 +5647,16 @@
 			(type default)
 		)
 		(uuid "921b08e3-b042-4794-a78e-0908dc58073b")
+	)
+	(wire
+		(pts
+			(xy 139.7 161.29) (xy 143.51 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "93d68a06-a804-4aea-be65-ae74038e57d0")
 	)
 	(wire
 		(pts
@@ -5229,6 +5687,16 @@
 			(type default)
 		)
 		(uuid "978f7b9f-e53b-464d-8884-26acf6a14eac")
+	)
+	(wire
+		(pts
+			(xy 138.43 138.43) (xy 143.51 138.43)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "981a65c6-a780-4d5d-aa92-de028da53db4")
 	)
 	(wire
 		(pts
@@ -5289,6 +5757,16 @@
 			(type default)
 		)
 		(uuid "9d9ed882-a31b-445f-833c-142b7ba4e54b")
+	)
+	(wire
+		(pts
+			(xy 133.35 161.29) (xy 139.7 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a00f1e63-aa27-4565-bd1b-c62f177f1e35")
 	)
 	(wire
 		(pts
@@ -5379,6 +5857,16 @@
 			(type default)
 		)
 		(uuid "a89b76eb-6e00-4eb6-8151-275a65b635ae")
+	)
+	(wire
+		(pts
+			(xy 139.7 161.29) (xy 139.7 163.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aaea83ef-6eaa-489f-98fb-bcfa05e8fb1e")
 	)
 	(wire
 		(pts
@@ -5509,6 +5997,16 @@
 			(type default)
 		)
 		(uuid "b9e86cd5-62ae-4c3b-a56a-56c718b29774")
+	)
+	(wire
+		(pts
+			(xy 138.43 123.19) (xy 143.51 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bb1ddae1-7bab-4402-929c-d173ca665f7c")
 	)
 	(wire
 		(pts
@@ -5762,6 +6260,16 @@
 	)
 	(wire
 		(pts
+			(xy 138.43 140.97) (xy 143.51 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e5e2e63e-807b-41df-8e47-7787b778cd24")
+	)
+	(wire
+		(pts
 			(xy 111.76 74.93) (xy 111.76 92.71)
 		)
 		(stroke
@@ -5970,6 +6478,16 @@
 		)
 		(uuid "3796ef78-a417-4118-8a8d-41948ea2b14c")
 	)
+	(label "SD_DO"
+		(at 138.43 138.43 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3e6dd388-495a-4dd5-a7c1-c60bb2530734")
+	)
 	(label "I2S_LRCLK"
 		(at 41.91 62.23 0)
 		(effects
@@ -6040,6 +6558,16 @@
 		)
 		(uuid "5721889b-6e25-4492-bc64-10df9c5bf7ea")
 	)
+	(label "SD_CS"
+		(at 138.43 146.05 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "62cf46cf-f6d0-4b5b-9326-1d4c72c5978a")
+	)
 	(label "SD_CD"
 		(at 78.74 41.91 0)
 		(effects
@@ -6059,6 +6587,16 @@
 			(justify left bottom)
 		)
 		(uuid "72febd5d-dd0e-403a-91e7-73014a6cefc8")
+	)
+	(label "SD_CD"
+		(at 138.43 151.13 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7a52dd81-c2a4-4ab0-ac21-da6f05dba4e9")
 	)
 	(label "I2S_SD"
 		(at 41.91 72.39 0)
@@ -6100,6 +6638,16 @@
 		)
 		(uuid "ac406863-67b8-4ba5-8c2d-212ab96c3465")
 	)
+	(label "GND"
+		(at 133.35 161.29 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c8b9e8d0-e1fa-4320-b367-82909997edbe")
+	)
 	(label "BQ_D-"
 		(at 44.45 123.19 0)
 		(effects
@@ -6140,6 +6688,16 @@
 		)
 		(uuid "e1d1967e-dc1f-4f1f-9d11-b5c8286dc635")
 	)
+	(label "SD_DI"
+		(at 138.43 133.35 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "eb3785c8-9143-4a85-af68-ab21581cc0b4")
+	)
 	(label "RC522_MISO"
 		(at 83.82 90.17 0)
 		(effects
@@ -6150,6 +6708,16 @@
 		)
 		(uuid "ef716abf-d5c9-485a-8d9b-cba5d9b64623")
 	)
+	(label "+3V3"
+		(at 138.43 123.19 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "fca46514-28e8-41d9-8b66-bfb4312540c5")
+	)
 	(label "BQ_EN"
 		(at 49.53 135.89 180)
 		(effects
@@ -6159,6 +6727,16 @@
 			(justify right bottom)
 		)
 		(uuid "fe860686-d06b-49b6-b00b-aec71d901363")
+	)
+	(label "SD_SCK"
+		(at 138.43 128.27 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ff4da078-7a0a-4ae1-9068-f97888b40ece")
 	)
 	(global_label "RP_RUN"
 		(shape input)
@@ -7501,6 +8079,189 @@
 			(project "tonberry-pico"
 				(path "/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7"
 					(reference "D1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "MSD-6-A:MSD-6-A")
+		(at 158.75 140.97 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "4a905eb6-ae7e-4482-8dc2-20d29ee18a92")
+		(property "Reference" "J9"
+			(at 170.18 142.2399 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MSD-6-A"
+			(at 170.18 144.7799 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "MSD-6-A:CUI_MSD-6-A"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "Datasheet" ""
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "PARTREV" "1.0"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "STANDARD" "Manufacturer Recommendations"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "MAXIMUM_PACKAGE_HEIGHT" "2.05mm"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "MANUFACTURER" "CUI Devices"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "DigiKey Part" "MSD-6-A"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC Part" "C1121870"
+			(at 158.75 140.97 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "CD2"
+			(uuid "e45662d0-ac50-473d-baa0-01fa3b4e6da4")
+		)
+		(pin "CD1"
+			(uuid "421fd32e-9634-48ed-9150-b5b1aa3fbdad")
+		)
+		(pin "G1"
+			(uuid "e91611fd-2bf7-444f-8ee0-efa0655c4162")
+		)
+		(pin "8"
+			(uuid "99851c62-90ad-4eb3-a5a5-b9bc747c0c5c")
+		)
+		(pin "6"
+			(uuid "74c2c92e-b42a-4345-ac5f-6b0253e38c13")
+		)
+		(pin "G2"
+			(uuid "07c646fe-0f04-4a46-acc5-6a8fc196295c")
+		)
+		(pin "4"
+			(uuid "4d6b3df7-17f0-4f22-a01b-bfd8fa25e750")
+		)
+		(pin "7"
+			(uuid "ccb9d284-569e-4b2b-84a2-a7c683dc852f")
+		)
+		(pin "5"
+			(uuid "f023e26b-2255-42ad-8218-431251f2c984")
+		)
+		(pin "3"
+			(uuid "5c8af9a6-f07a-44bd-9431-340a362ba330")
+		)
+		(pin "2"
+			(uuid "86cbedfe-55c3-49b7-9e48-d83be378b0d7")
+		)
+		(pin "1"
+			(uuid "4947eaa3-f29c-49cf-b136-65506c4aa4b3")
+		)
+		(instances
+			(project "tonberry-pico"
+				(path "/7226ca0f-138a-46b4-89f3-dc32dfb1f9f7"
+					(reference "J9")
 					(unit 1)
 				)
 			)
