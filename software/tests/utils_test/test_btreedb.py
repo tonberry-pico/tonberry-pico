@@ -219,3 +219,20 @@ def test_playlist_shuffle():
             break
     # A false negative ratr of 1 in 256! should be good enough for this test
     assert shuffled
+
+
+def test_playlist_repeat():
+    contents = FakeDB({b'foo/playlist/00000': b'track1',
+                       b'foo/playlist/00001': b'track2',
+                       b'foo/playlist/00002': b'track3',
+                       b'foo/playlistpersist': b'no',
+                       b'foo/playlistrepeat': b'yes',
+                       })
+    uut = BTreeDB(contents)
+    pl = uut.getPlaylistForTag(b'foo')
+    assert pl.getCurrentPath() == b'track1'
+    assert pl.getNextPath() == b'track2'
+    assert pl.getNextPath() == b'track3'
+    assert pl.getNextPath() == b'track1'
+    assert pl.getNextPath() == b'track2'
+    assert pl.getNextPath() == b'track3'

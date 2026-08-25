@@ -31,15 +31,18 @@ class BTreeDB(IPlaylistDB):
     PERSIST_NO = b'no'
     PERSIST_TRACK = b'track'
     PERSIST_OFFSET = b'offset'
+    REPEAT_NO = b'no'
+    REPEAT_YES = b'yes'
 
     class Playlist(IPlaylist):
-        def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle, name):
+        def __init__(self, parent: "BTreeDB", tag: bytes, pos: int, persist, shuffle, name, repeat: bool):
             self.parent = parent
             self.tag = tag
             self.pos = pos
             self.persist = persist
             self.shuffle = shuffle
             self.name = name
+            self.repeat = repeat
             self.length = self.parent._getPlaylistLength(self.tag)
             self._shuffle()
 
@@ -98,7 +101,10 @@ class BTreeDB(IPlaylistDB):
                 if self.persist != BTreeDB.PERSIST_NO:
                     self.parent._setPlaylistPos(self.tag, 0)
                     self.setPlaybackOffset(0)
-                self.pos = self.length
+                if self.repeat == BTreeDB.REPEAT_YES:
+                    self.pos = 0
+                else:
+                    self.pos = self.length
             elif self.persist != BTreeDB.PERSIST_NO:
                 self.parent._setPlaylistPos(self.tag, self.pos)
                 self.setPlaybackOffset(0)
@@ -178,6 +184,10 @@ class BTreeDB(IPlaylistDB):
     def _keyPlaylistName(tag):
         return b''.join([tag, b'/playlistname'])
 
+    @staticmethod
+    def _keyPlaylistRepeat(tag):
+        return b''.join([tag, b'/playlistrepeat'])
+
     def _flush(self):
         """
         Flush the database and call the flush_func if it was provided.
@@ -232,13 +242,14 @@ class BTreeDB(IPlaylistDB):
             raise RuntimeError("Malformed playlist key")
         return int(elements[2])+1
 
-    def _savePlaylist(self, tag, entries, persist, shuffle, name, flush=True):
+    def _savePlaylist(self, tag, entries, persist, shuffle, name, repeat, flush=True):
         self._deletePlaylist(tag, False)
         for idx, entry in enumerate(entries):
             self.db[self._keyPlaylistEntry(tag, idx)] = entry
         self.db[self._keyPlaylistPersist(tag)] = persist
         self.db[self._keyPlaylistShuffle(tag)] = shuffle
         self.db[self._keyPlaylistName(tag)] = name.encode()
+        self.db[self._keyPlaylistRepeat(tag)] = repeat
         if flush:
             self._flush()
 
@@ -251,7 +262,8 @@ class BTreeDB(IPlaylistDB):
                 pass
         for k in (self._keyPlaylistPos(tag), self._keyPlaylistPosOffset(tag),
                   self._keyPlaylistPersist(tag), self._keyPlaylistShuffle(tag),
-                  self._keyPlaylistShuffleSeed(tag), self._keyPlaylistName(tag)):
+                  self._keyPlaylistShuffleSeed(tag), self._keyPlaylistName(tag),
+                  self._keyPlaylistRepeat(tag)):
             try:
                 del self.db[k]
             except KeyError:
@@ -291,17 +303,19 @@ class BTreeDB(IPlaylistDB):
             pos = 0
         name = self.db.get(self._keyPlaylistName(tag), b'').decode()
         shuffle = self.db.get(self._keyPlaylistShuffle(tag), self.SHUFFLE_NO)
-        return self.Playlist(self, tag, pos, persist, shuffle, name)
+        repeat = self.db.get(self._keyPlaylistRepeat(tag), self.REPEAT_NO)
+        return self.Playlist(self, tag, pos, persist, shuffle, name, repeat)
 
     def createPlaylistForTag(self, tag: bytes, entries: typing.Iterable[bytes], persist=PERSIST_TRACK,
-                             shuffle=SHUFFLE_NO, name: str = ''):
+                             shuffle=SHUFFLE_NO, repeat=REPEAT_NO, name: str = ''):
         """
         Create and save a playlist for 'tag' and return the Playlist object. If a playlist already existed for 'tag' it
         is overwritten.
         """
         assert persist in (self.PERSIST_NO, self.PERSIST_TRACK, self.PERSIST_OFFSET)
         assert shuffle in (self.SHUFFLE_NO, self.SHUFFLE_YES)
-        self._savePlaylist(tag, entries, persist, shuffle, name)
+        assert repeat in (self.REPEAT_NO, self.REPEAT_YES)
+        self._savePlaylist(tag, entries, persist, shuffle, name, repeat)
         return self.getPlaylistForTag(tag)
 
     def deletePlaylistForTag(self, tag: bytes):
@@ -373,6 +387,12 @@ class BTreeDB(IPlaylistDB):
                     fail(f'Bad playlistpersist value for {last_tag}: {val!r}')
                 elif dump:
                     print(f'\tPersist: {val.decode()}')
+            elif fields[1] == b'playlistrepeat':
+                val = self.db[k]
+                if val not in (b'no', b'yes'):
+                    fail(f'Bad playlistrepeat value for {last_tag}: {val!r}')
+                if dump and val == b'yes':
+                    print('\tRepeat')
             elif fields[1] == b'playlistshuffleseed':
                 val = self.db[k]
                 try:
