@@ -295,6 +295,8 @@ class PlayerApp:
             self.playlist.restart()
             filename = self.playlist.getCurrentPath()
         else:
+            # When the playlist is ended (the internal playlist position is at "one past the end"),
+            # getPrevPath will go back to and return the last track of the playlist.
             filename = self.playlist.getPrevPath()
         self._play(filename)
         self._st_setstate(PlaybackStates.PLAYING, direction, filename)
