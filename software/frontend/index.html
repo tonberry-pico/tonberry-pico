@@ -46,6 +46,10 @@
         margin-top: 10px;
     }
 
+    input[type="checkbox"] {
+        width: unset;
+    }
+
     /* Tree view */
     .tree ul {
       list-style: none;
@@ -213,6 +217,9 @@
                     <option value="random">Random Collection (shuffle)</option>
                     <option value="audioplay">Audioplay (no shuffle, start at previous track)</option>
                 </select>
+            </div>
+            <div>
+                <label>Playlist repeat <input type="checkbox" id="playlist-edit-repeat" /></label>
             </div>
             <div>
                 <label>Playlist name</label>
@@ -688,6 +695,8 @@
                 playlistId = intent.create;
                 const playlisttype = document.getElementById('playlist-edit-type');
                 playlisttype.value = "album";
+                const playlistrepeat = document.getElementById('playlist-edit-repeat');
+                playlistrepeat.checked = false;
                 document.getElementById('playlist-edit-save').disabled = false;
             } else if ('addtracks' in intent) {
                 const container = document.getElementById('playlist-edit-list');
@@ -719,6 +728,8 @@
             } else if (playlist.persist === "track" && playlist.shuffle === "no") {
                 playlisttype.value = "audioplay";
             }
+            const playlistrepeat = document.getElementById('playlist-edit-repeat')
+            playlistrepeat.checked = (playlist.repeat === "yes");
             const playlistname = document.getElementById('playlist-edit-name');
             playlistname.value = playlist.name;
         }
@@ -743,6 +754,8 @@
                     playlistData.shuffle = "no";
                     break;
             }
+            const playlistrepeat = document.getElementById('playlist-edit-repeat')
+            playlistData.repeat = playlistrepeat.checked ? "yes" : "no";
             const playlistname = document.getElementById('playlist-edit-name');
             playlistData.name = playlistname.value;
             const container = document.getElementById('playlist-edit-list');
