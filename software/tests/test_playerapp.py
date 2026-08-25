@@ -89,11 +89,20 @@ class FakePlaylistDb:
         def getNextPath(self):
             self.pos += 1
             if self.pos >= len(self.parent.tracklist):
+                self.pos = len(self.parent.tracklist)
                 return None
             return self.parent.tracklist[self.pos]
 
+        def getPrevPath(self):
+            if self.pos > 0:
+                self.pos -= 1
+            return self.getCurrentPath()
+
         def getPlaybackOffset(self):
             return 0
+
+        def restart(self):
+            self.pos = 0
 
     def __init__(self, tracklist=[b'test/path.mp3']):
         self.tracklist = tracklist
@@ -363,3 +372,84 @@ def test_next_restarts_finished_playlist(micropythonify, faketimermanager, monke
         dut.onButtonPressed(FakeButtons.NEXT)
         assert fake_mp3.track is not None
         assert fake_mp3.track.filename == b'track1.mp3'
+
+
+def test_next_plays_next_track(micropythonify, faketimermanager, monkeypatch):
+    fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3'])
+    fake_mp3 = FakeMp3Player()
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        dut.onButtonPressed(FakeButtons.NEXT)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track2.mp3'
+
+        dut.onButtonPressed(FakeButtons.NEXT)
+        assert fake_mp3.track is None
+
+
+def test_prev_plays_prev_track(micropythonify, faketimermanager, monkeypatch):
+    fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3'])
+    fake_mp3 = FakeMp3Player()
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        dut.onPlaybackDone()
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track2.mp3'
+
+        dut.onButtonPressed(FakeButtons.PREV)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        dut.onButtonPressed(FakeButtons.PREV)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+
+def test_pause_resume(micropythonify, faketimermanager, monkeypatch):
+    fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3'])
+    fake_mp3 = FakeMp3Player()
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        dut.onButtonPressed(FakeButtons.PLAY_PAUSE)
+        assert fake_mp3.track is None
+
+        dut.onButtonPressed(FakeButtons.PLAY_PAUSE)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+
+def test_pause_next_resumes(micropythonify, faketimermanager, monkeypatch):
+    fake_db = FakePlaylistDb([b'track1.mp3', b'track2.mp3'])
+    fake_mp3 = FakeMp3Player()
+    deps = _makedeps(mp3player=fake_mp3, playlistdb=fake_db)
+    dut = app.PlayerApp(deps)
+    with monkeypatch.context() as m:
+        m.setattr(builtins, 'open', fake_open)
+        FakeNfcReader.tag_callback.onTagChange([23, 42, 1, 2, 3])
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track1.mp3'
+
+        dut.onButtonPressed(FakeButtons.PLAY_PAUSE)
+        assert fake_mp3.track is None
+
+        dut.onButtonPressed(FakeButtons.NEXT)
+        assert fake_mp3.track is not None
+        assert fake_mp3.track.filename == b'track2.mp3'
