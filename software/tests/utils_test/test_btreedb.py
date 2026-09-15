@@ -133,7 +133,7 @@ def test_playlist_create():
     new_pl = uut.createPlaylistForTag(b'foo', newplaylist)
     assert list(new_pl.getPaths()) == newplaylist
     assert new_pl.getCurrentPath() == newplaylist[0]
-    assert uut.validate(True)
+    assert uut.validate()
 
 
 def test_playlist_load_notexist():

@@ -3,12 +3,12 @@
 
 import aiorepl  # type: ignore
 import asyncio
+import logging
 import machine
 import micropython
 import network
 import time
 import ubinascii
-import sys
 
 # Own modules
 import app
@@ -21,10 +21,17 @@ from rp2_neopixel import NeoPixel
 from utils import BTreeFileManager, Buttons, SDContext, TimerManager, LedManager, Configuration
 from webserver import start_webserver
 
+logging.basicConfig(level=logging.INFO)
+# Workaround: Set the handler log levels to DEBUG.  Which messages are logged is then only
+# controlled by the loggers' log levels, not the handlers' log levels
+for handler in logging.getLogger().handlers:
+    handler.setLevel(logging.DEBUG)
+logger = logging.getLogger("main")
+
 try:
     import hwconfig
 except ImportError:
-    print("Fatal: No hwconfig.py found")
+    logger.critical("No hwconfig.py found")
     raise
 
 micropython.alloc_emergency_exception_buf(100)
@@ -40,12 +47,12 @@ def setup_wifi(ssid='', passphrase='', security=network.WLAN.SEC_WPA_WPA2):
     network.hostname("TonberryPico")
     if ssid is None or ssid == '':
         apname = f"TonberryPicoAP_{machine.unique_id().hex()}"
-        print(f"Create AP {apname}")
+        logger.info(f"Create AP {apname}")
         wlan = network.WLAN(network.WLAN.IF_AP)
         wlan.config(ssid=apname, password=passphrase if passphrase is not None else '', security=security)
         wlan.active(True)
     else:
-        print(f"Connect to SSID {ssid} with passphrase {passphrase}...")
+        logger.info(f"Connect to SSID {ssid} with passphrase {passphrase}...")
         wlan = network.WLAN()
         wlan.active(True)
         wlan.connect(ssid, passphrase if passphrase is not None else '', security=security)
@@ -54,11 +61,11 @@ def setup_wifi(ssid='', passphrase='', security=network.WLAN.SEC_WPA_WPA2):
     wlan.config(pm=network.WLAN.PM_PERFORMANCE)
 
     mac = ubinascii.hexlify(network.WLAN().config('mac'), ':').decode()
-    print(f"     mac: {mac}")
-    print(f" channel: {wlan.config('channel')}")
-    print(f"   essid: {wlan.config('essid')}")
-    print(f" txpower: {wlan.config('txpower')}")
-    print(f"ifconfig: {wlan.ifconfig()}")
+    logger.info(f"     mac: {mac}")
+    logger.info(f" channel: {wlan.config('channel')}")
+    logger.info(f"   essid: {wlan.config('essid')}")
+    logger.info(f" txpower: {wlan.config('txpower')}")
+    logger.info(f"ifconfig: {wlan.ifconfig()}")
 
 
 async def wdt_task(wdt):
@@ -101,7 +108,7 @@ def run():
             security = network.WLAN.SEC_WPA2_WPA3
         if wifi_passphrase is None or wifi_passphrase == '':
             security = network.WLAN.SEC_OPEN
-            print("WiFi password not set, disabling WiFi security")
+            logger.info("WiFi password not set, disabling WiFi security")
         setup_wifi(config.get_wifi_ssid(), wifi_passphrase, security)
 
     # Setup MP3 player
@@ -151,7 +158,7 @@ if __name__ == '__main__':
         try:
             run()
         except Exception as ex:
-            sys.print_exception(ex)
+            logger.exception("Failed to start application", exc_info=ex)
             error_blink()
     else:
         np.fill((led_max, 0, 0))

@@ -3,11 +3,14 @@
 
 from errno import ENOENT
 import json
+import logging
 import os
 try:
     from typing import TYPE_CHECKING, Mapping, Any
 except ImportError:
     TYPE_CHECKING = False
+
+logger = logging.getLogger(__name__)
 
 
 class Configuration:
@@ -46,7 +49,7 @@ class Configuration:
             else:
                 raise
         except ValueError as ex:
-            print(f"Warning: Could not load configuration {self.config_path}:\n{ex}")
+            logger.exception("Could not load configuration %s", self.config_path, ex)
             self._move_config_to_backup()
             self.config = Configuration.DEFAULT_CONFIG
 
