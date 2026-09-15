@@ -136,6 +136,7 @@ async def playlist_get(request, tag):
     return {
             'shuffle': playlist.shuffle,
             'persist': playlist.persist,
+            'repeat': playlist.repeat,
             'paths': [(p[len(fsroot):] if p.startswith(fsroot) else p).decode()
                       for p in playlist.getPaths()],
             'name': playlist.name
@@ -154,11 +155,15 @@ async def playlist_put(request, tag):
     if 'shuffle' in playlist and \
        playlist['shuffle'] not in ['no', 'yes']:
         return "Invalid 'shuffle' setting", 400
+    if 'repeat' in playlist and \
+       playlist['repeat'] not in ['no', 'yes']:
+        return "Invalid 'repeat' setting", 400
 
     playlist_db.createPlaylistForTag(tag.encode(),
                                      (fsroot + path.encode() for path in playlist.get('paths', [])),
                                      playlist.get('persist', 'track').encode(),
                                      playlist.get('shuffle', 'no').encode(),
+                                     playlist.get('repeat', 'no').encode(),
                                      playlist.get('name', ''))
     return '', 204
 
