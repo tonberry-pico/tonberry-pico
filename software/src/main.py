@@ -78,6 +78,7 @@ async def wdt_task(wdt):
 DB_PATH = '/sd/tonberry.db'
 
 config = Configuration()
+logging.getLogger().setLevel(config.get_log_level())
 
 # Setup LEDs
 np = NeoPixel(hwconfig.LED_DIN, config.get_led_count(), sm=1)
