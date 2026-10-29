@@ -1,6 +1,7 @@
 include("$(PORT_DIR)/boards/manifest.py")
 
 require("bundle-networking")
+require("logging")
 
 # Bluetooth
 require("aioble")

@@ -3,6 +3,7 @@
 
 import asyncio
 from array import array
+import logging
 from utils import TimerManager
 try:
     from typing import TYPE_CHECKING  # type: ignore
@@ -13,6 +14,8 @@ if TYPE_CHECKING:
 
     class PlayerCallback(typing.Protocol):
         def onPlaybackDone(self) -> None: ...
+
+logger = logging.getLogger(__name__)
 
 
 class MP3Player:
@@ -69,7 +72,7 @@ class MP3Player:
                 if self.pos == 0 and bytes_read >= 10:
                     if bytes(data[0:3]) == b'ID3':
                         size = data[6] << (3*7) | data[7] << (2*7) | data[8] << 7 | data[9]
-                        print(f"Skipping ID3 header of size {size}")
+                        logger.info("Skipping ID3 header of size %d", size)
                         if size + 10 > bytes_read:
                             stream.seek(size + 10 - bytes_read, 1)
                             self.pos += bytes_read + size + 10
@@ -81,7 +84,7 @@ class MP3Player:
                 _, _, underruns = await self.audiocore.async_put(data[:bytes_read])
                 self.pos += bytes_read
                 if underruns > known_underruns:
-                    print(f"{underruns:x}")
+                    logger.warning("underrun: %x", underruns)
                     known_underruns = underruns
             # Call onPlaybackDone after flush
             send_done = True

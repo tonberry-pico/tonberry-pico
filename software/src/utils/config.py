@@ -3,11 +3,14 @@
 
 from errno import ENOENT
 import json
+import logging
 import os
 try:
     from typing import TYPE_CHECKING, Mapping, Any
 except ImportError:
     TYPE_CHECKING = False
+
+logger = logging.getLogger(__name__)
 
 
 class Configuration:
@@ -31,6 +34,7 @@ class Configuration:
         'VOLUME_MAX': 255,
         'VOLUME_BOOT': 16,
         'LED_MAX': 255,
+        'LOG_LEVEL': logging.INFO
     }
 
     def __init__(self, config_path='/config.json'):
@@ -46,7 +50,7 @@ class Configuration:
             else:
                 raise
         except ValueError as ex:
-            print(f"Warning: Could not load configuration {self.config_path}:\n{ex}")
+            logger.exception("Could not load configuration %s", self.config_path, ex)
             self._move_config_to_backup()
             self.config = Configuration.DEFAULT_CONFIG
 
@@ -113,6 +117,9 @@ class Configuration:
     def get_volume_boot(self) -> int:
         return self._get('VOLUME_BOOT')
 
+    def get_log_level(self) -> int:
+        return self._get('LOG_LEVEL')
+
     # For the web API
     def get_config(self) -> Mapping[str, Any]:
         return self.config
@@ -133,6 +140,8 @@ class Configuration:
         if 'WLAN' in config and 'SECURITY' in config['WLAN'] and \
            config['WLAN']['SECURITY'] not in ['open', 'wpa_wpa2', 'wpa3', 'wpa2_wpa3']:
             raise ValueError("Invalid WLAN SECURITY: Must be 'open', 'wpa_wpa2', 'wpa3' or 'wpa2_wpa3'")
+        if 'LOG_LEVEL' in config and config['LOG_LEVEL'] not in logging._level_dict:
+            raise ValueError("Invalid LOG_LEVEL")
         self._merge_configs(self.config, config)
         self.config = config
         self._save()

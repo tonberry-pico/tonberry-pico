@@ -2,7 +2,10 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 from array import array
+import logging
 import struct
+
+logger = logging.getLogger(__name__)
 
 
 class MBRPartition:
@@ -20,7 +23,7 @@ class MBRPartition:
         (boot_ind, _, _, _,
          parttype, _, _, _,
          lba_start, lba_len) = struct.unpack_from('<BBBBBBBBLL', mbr, partofs)
-        print(f'Partition {partno} bi {boot_ind} type {parttype} start {lba_start} len {lba_len}')
+        logger.info('Partition %d bi %d type %d start %d len %d', partno, boot_ind, parttype, lba_start, lba_len)
         if (boot_ind != 0x00 and boot_ind != 0x80) or parttype == 0x00:
             raise ValueError("Not a valid partition")
         self.offset = lba_start

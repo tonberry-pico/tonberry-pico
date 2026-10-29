@@ -2,6 +2,7 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 import asyncio
+import logging
 import machine
 import micropython
 import time
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
 
     class ButtonCallback(typing.Protocol):
         def onButtonPressed(self, what: int) -> None: ...
+
+logger = logging.getLogger(__name__)
 
 
 class Buttons:
@@ -68,7 +71,7 @@ class Buttons:
             # debounce, discard
             return
         if button.value() == 0:
-            # print(f'B{keycode} {now}')
+            logger.debug('Button %s %d', keycode, now)
             self.pressed.append(keycode)
             self.int_flag.set()
             if keycode == self.VOLDOWN:
@@ -81,7 +84,7 @@ class Buttons:
             await self.int_flag.wait()
             while len(self.pressed) > 0:
                 what = self.pressed.pop()
-                safe_callback(lambda: self.cb.onButtonPressed(what), "button callback")
+                safe_callback(lambda: self.cb.onButtonPressed(what), logger, "button callback")
 
     def long_press_shutdown(self):
         if self.hwconfig.get_on_battery():
