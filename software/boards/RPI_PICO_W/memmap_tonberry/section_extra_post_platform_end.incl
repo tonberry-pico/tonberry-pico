@@ -1,0 +1,38 @@
+/* SKR: This is output from Claude. It seemingly leads to the same placements
+   as before, but the target is currently hanging up after initilaizing the sd
+   card. Needs more investigation. */
+
+/* Tonberry: shadow of ports/rp2/memmap_rp2040/section_extra_post_platform_end.incl,
+   copied verbatim except for __StackBottom (see below). Keep in sync with that file. */
+
+/* Defines/overrides the following symbols for use by code:
+    __GcHeapStart, __GcHeapEnd
+    __StackLimit
+    __StackBottom
+*/
+
+SECTIONS
+{
+    /* Change for MicroPython: __StackLimit is historically the maximum heap
+       pointer, i.e. the end of the C heap. */
+    __StackLimit = __bss_end__ + __micropy_c_heap_size__;
+
+    /* Define start and end of the GC heap. */
+    __GcHeapStart = __StackLimit; /* after the C heap (sbrk limit) */
+    __GcHeapEnd = ORIGIN(RAM) + LENGTH(RAM);
+
+    /* Change for MicroPython: expand the C stack down to __GcHeapEnd.
+       Tonberry: the bottom 2K of the merged scratch banks are core1's stack
+       (.stack1_dummy), so the core0/MicroPython stack window must stop above
+       it; deriving __StackBottom from __GcHeapEnd would let the C stack grow
+       into the core1 stack. This restores the placement from fork commit
+       "rp2: Increase micropython stack allocation". */
+    __StackBottom = __StackTop - SIZEOF(.stack_dummy);
+
+    /* Check GC heap is at least 32 KB. This is quarter the minimum RAM
+       suggested for full-featured MicroPython. This value accounts for large
+       static buffers included in user C or C++ modules, which might
+       significantly reduce the available heap but also lower demand for memory
+       at runtime. */
+    ASSERT((__GcHeapEnd - __GcHeapStart) > 32*1024, "GcHeap is too small")
+}

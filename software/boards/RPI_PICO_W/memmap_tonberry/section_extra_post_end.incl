@@ -1,0 +1,8 @@
+/* Tonberry: the scratch banks are merged (SCRATCH_X has length 0), so core1's
+   stack lives at the bottom of the merged SCRATCH_Y. Re-assign the symbols the
+   SDK derives from ORIGIN(SCRATCH_X)/LENGTH(SCRATCH_X). */
+SECTIONS
+{
+    __StackOneTop = ORIGIN(SCRATCH_Y) + SIZEOF(.stack1_dummy);
+    __StackOneBottom = ORIGIN(SCRATCH_Y);
+}
