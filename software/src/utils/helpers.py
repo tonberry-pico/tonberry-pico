@@ -4,9 +4,9 @@
 import sys
 
 
-def safe_callback(func, name="callback"):
+def safe_callback(func, logger, name="callback"):
     try:
         func()
     except Exception as ex:
-        print(f"Uncaught exception in {name}")
+        logger.error("Uncaught exception in %s", name)
         sys.print_exception(ex)

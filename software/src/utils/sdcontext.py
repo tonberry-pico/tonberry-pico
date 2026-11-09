@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
+import logging
 import os
 
 from . import MBRPartition
 from rp2_sd import SDCard
+
+logger = logging.getLogger(__name__)
 
 
 class SDContext:
@@ -23,7 +26,7 @@ class SDContext:
             os.mount(self.part, '/sd')
             return self
         except Exception:
-            print("Failed to mount SDCard partition, trying whole device...")
+            logger.warning("Failed to mount SDCard partition, trying whole device...")
         # Try whole device
         try:
             os.mount(self.sdcard, '/sd')

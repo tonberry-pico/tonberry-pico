@@ -3,10 +3,11 @@
 
 import asyncio
 import heapq
+import logging
 import time
 from utils import safe_callback
 
-TIMER_DEBUG = True
+logger = logging.getLogger(__name__)
 
 
 class TimerManager(object):
@@ -16,7 +17,6 @@ class TimerManager(object):
         if cls._instance is None:
             cls._instance = super(TimerManager, cls).__new__(cls)
             cls._instance.timers = []
-            cls._instance.timer_debug = TIMER_DEBUG
             cls._instance.task = asyncio.create_task(cls._instance._timer_worker())
             cls._instance.worker_event = asyncio.Event()
         return cls._instance
@@ -27,17 +27,15 @@ class TimerManager(object):
         heapq.heappush(self.timers, (when, what))
         if cur_nearest is None or cur_nearest > self.timers[0][0]:
             # New timer is closer than previous closest timer
-            if self.timer_debug:
-                print(f'cur_nearest: {cur_nearest}, new next: {self.timers[0][0]}')
-                print("schedule: wake")
+            logger.debug('cur_nearest: %r, new next: %r', cur_nearest, self.timers[0][0])
+            logger.debug("schedule: wake")
             self.worker_event.set()
 
     def cancel(self, what):
         remove_idx = self._remove_timer(what)
         if remove_idx == 0:
             # Cancel timer was closest timer
-            if self.timer_debug:
-                print("cancel: wake")
+            logger.debug("cancel: wake")
             self.worker_event.set()
         return True
 
@@ -52,23 +50,20 @@ class TimerManager(object):
 
     def _next_timeout(self):
         if len(self.timers) == 0:
-            if self.timer_debug:
-                print("timer: worker: queue empty")
+            logger.debug("timer: worker: queue empty")
             return None
         cur_nearest = self.timers[0][0]
         next_timeout = cur_nearest - time.ticks_ms()
-        if self.timer_debug:
-            if next_timeout > 0:
-                print(f"timer: worker: next is {self.timers[0]}, sleep {next_timeout} ms")
-            else:
-                print(f"timer: worker: {self.timers[0]} elapsed @{cur_nearest}, delay {-next_timeout} ms")
+        if next_timeout > 0:
+            logger.debug("timer: worker: next is %r, sleep %d ms", self.timers[0], next_timeout)
+        else:
+            logger.debug("timer: worker: %r elapsed @%d, delay %d ms", self.timers[0], cur_nearest, -next_timeout)
         return next_timeout
 
     async def _wait(self, timeout):
         try:
             await asyncio.wait_for_ms(self.worker_event.wait(), timeout)
-            if self.timer_debug:
-                print("timer: worker: event")
+            logger.debug("timer: worker: event")
             # got woken up due to event
             self.worker_event.clear()
             return True
@@ -82,4 +77,4 @@ class TimerManager(object):
                 await self._wait(next_timeout)
             else:
                 _, callback = heapq.heappop(self.timers)
-                safe_callback(callback, "timer callback")
+                safe_callback(callback, logger, "timer callback")

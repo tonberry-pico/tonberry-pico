@@ -5,6 +5,7 @@ Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 '''
 
 import asyncio
+import logging
 import time
 from utils import safe_callback
 
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
 
     class TagCallback(typing.Protocol):
         def onTagChange(self, uid: list[int]) -> None: ...
+
+logger = logging.getLogger(__name__)
 
 
 class Nfc:
@@ -75,7 +78,7 @@ class Nfc:
                 self.last_uid = uid
                 self.last_uid_timestamp = time.ticks_us()
             if self.cb is not None and last_callback_uid != uid:
-                safe_callback(lambda: self.cb.onTagChange(uid), "nfc tag change")
+                safe_callback(lambda: self.cb.onTagChange(uid), logger, "nfc tag change")
                 last_callback_uid = uid
 
             await asyncio.sleep_ms(poll_interval_ms)

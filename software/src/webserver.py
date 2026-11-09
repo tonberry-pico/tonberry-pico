@@ -8,6 +8,7 @@ import board
 import errno
 import hwconfig
 import json
+import logging
 import machine
 import network
 import os
@@ -17,6 +18,8 @@ import ubinascii
 from array import array
 from microdot import Microdot, redirect, send_file, Request
 from utils import TimerManager, LedManager
+
+logger = logging.getLogger(__name__)
 
 webapp = Microdot()
 server = None
@@ -50,26 +53,26 @@ async def before_request_handler(request):
 
 @webapp.route('/api/v1/hello')
 async def index(request):
-    print("wohoo, a guest :)")
-    print(f"  app: {request.app}")
-    print(f"  client: {request.client_addr}")
-    print(f"  method: {request.method}")
-    print(f"  url: {request.url}")
-    print(f"  headers: {request.headers}")
-    print(f"  cookies: {request.cookies}")
+    logger.info("wohoo, a guest :)")
+    logger.info("  app: %s", request.app)
+    logger.info("  client: %s", request.client_addr)
+    logger.info("  method: %s", request.method)
+    logger.info("  url: %s", request.url)
+    logger.info("  headers: %s", request.headers)
+    logger.info("  cookies: %s", request.cookies)
     return "TonberryPico says 'Hello World!'"
 
 
 @webapp.route('/api/v1/filesystem', methods=['POST'])
 async def filesystem_post(request):
     # curl -X POST -d "burp" http://192.168.4.1/api/v1/filesystem
-    print(request)
+    logger.debug(request)
     return {'success': False}
 
 
 @webapp.route('/api/v1/playlist', methods=['POST'])
 async def playlist_post(request):
-    print(request)
+    logger.debug(request)
     return {'success': False}
 
 
@@ -236,7 +239,7 @@ async def audiofile_upload(request):
     path = fsroot + '/' + request.args['location']
     type_ = request.args['type']
     length = request.content_length
-    print(f'Got upload request of type {type_} to {path} with length {length}')
+    logger.debug(f'Got upload request of type {type_} to {path} with length {length}')
     if type_ == 'directory':
         if length != 0:
             return 'directory request may not have content', 400

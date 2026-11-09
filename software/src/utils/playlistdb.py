@@ -2,6 +2,7 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 import btree
+import logging
 import random
 import time
 try:
@@ -23,6 +24,9 @@ else:
 
     class IPlaylist(object):
         ...
+
+
+logger = logging.getLogger(__name__)
 
 
 class BTreeDB(IPlaylistDB):
@@ -321,7 +325,7 @@ class BTreeDB(IPlaylistDB):
     def deletePlaylistForTag(self, tag: bytes):
         self._deletePlaylist(tag)
 
-    def validate(self, dump=False):
+    def validate(self):
         """
         Validate the structure of the playlist database.
         """
@@ -329,7 +333,7 @@ class BTreeDB(IPlaylistDB):
 
         def fail(msg):
             nonlocal result
-            print(msg)
+            logger.warning(msg)
             result = False
 
         last_tag = None
@@ -345,8 +349,7 @@ class BTreeDB(IPlaylistDB):
             if last_tag != fields[0]:
                 last_tag = fields[0]
                 last_pos = None
-                if dump:
-                    print(f'Tag {fields[0]}')
+                logger.debug('Tag %s', fields[0])
             if fields[1] == b'playlist':
                 if len(fields) != 3:
                     fail(f'Malformed playlist entry: {k!r}')
@@ -362,8 +365,7 @@ class BTreeDB(IPlaylistDB):
                    (last_pos is None and idx != 0):
                     fail(f'Bad playlist entry sequence for {last_tag} at {idx}')
                 last_pos = idx
-                if dump:
-                    print(f'\tTrack {idx}: {self.db[k]!r}')
+                logger.debug('\tTrack %d: %r', idx, self.db[k])
             elif fields[1] == b'playlistpos':
                 val = self.db[k]
                 try:
@@ -373,26 +375,26 @@ class BTreeDB(IPlaylistDB):
                     continue
                 if 0 > idx or idx > last_pos:
                     fail(f'Playlist position out of range for {last_tag}: {idx}')
-                elif dump:
-                    print(f'\tPosition {idx}')
+                else:
+                    logger.debug('\tPosition %d', idx)
             elif fields[1] == b'playlistshuffle':
                 val = self.db[k]
                 if val not in (b'no', b'yes'):
                     fail(f'Bad playlistshuffle value for {last_tag}: {val!r}')
-                if dump and val == b'yes':
-                    print('\tShuffle')
+                if val == b'yes':
+                    logger.debug('\tShuffle')
             elif fields[1] == b'playlistpersist':
                 val = self.db[k]
                 if val not in (b'no', b'track', b'offset'):
                     fail(f'Bad playlistpersist value for {last_tag}: {val!r}')
-                elif dump:
-                    print(f'\tPersist: {val.decode()}')
+                else:
+                    logger.debug('\tPersist: %s', val.decode())
             elif fields[1] == b'playlistrepeat':
                 val = self.db[k]
                 if val not in (b'no', b'yes'):
                     fail(f'Bad playlistrepeat value for {last_tag}: {val!r}')
-                if dump and val == b'yes':
-                    print('\tRepeat')
+                if val == b'yes':
+                    logger.debug('\tRepeat')
             elif fields[1] == b'playlistshuffleseed':
                 val = self.db[k]
                 try:
@@ -409,8 +411,7 @@ class BTreeDB(IPlaylistDB):
                 val = self.db[k]
                 try:
                     name = val.decode()
-                    if dump:
-                        print(f'\tName: {name}')
+                    logger.debug('\tName: %s', name)
                 except UnicodeError:
                     fail(f' Bad playlistname for {last_tag}: Not valid unicode')
             else:
@@ -433,7 +434,7 @@ class BTreeFileManager:
         try:
             self.db = btree.open(self.db_file, pagesize=512, cachesize=1024)
             btdb = BTreeDB(self.db, lambda: self.db_file.flush())
-            btdb.validate(True)  # while testing, validate and dump DB on startup
+            btdb.validate()  # while testing, validate and dump DB on startup
             return btdb
         except Exception:
             self.db_file.close()

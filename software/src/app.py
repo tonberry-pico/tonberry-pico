@@ -2,9 +2,11 @@
 # Copyright (c) 2025 Matthias Blankertz <matthias@blankertz.org>
 
 from collections import namedtuple
+import logging
 import time
 from utils import TimerManager
 
+logger = logging.getLogger(__name__)
 
 Dependencies = namedtuple('Dependencies', ('mp3player', 'nfcreader', 'buttons', 'playlistdb', 'hwconfig', 'leds',
                                            'config'))
@@ -192,8 +194,8 @@ class PlayerApp:
     #
 
     def _st_setstate(self, newstate, *dbgparams):
-        print(f"PlayerApp ST: ({PlaybackStates.to_string(self.playback_state)}) -> "
-              f"({PlaybackStates.to_string(newstate)}) {dbgparams}")
+        logger.debug("PlayerApp ST: (%s) -> (%s)) %s", PlaybackStates.to_string(self.playback_state),
+                     PlaybackStates.to_string(newstate), ', '.join(str(x) for x in dbgparams))
         if newstate == PlaybackStates.PLAYING and self.playback_state != PlaybackStates.PLAYING:
             self._onActive()
         elif newstate != PlaybackStates.PLAYING and self.playback_state == PlaybackStates.PLAYING:
@@ -268,7 +270,8 @@ class PlayerApp:
         """
         if filename is None:
             self._stop()
-            print("PlayerApp ST: (Playing, Paused) -> (Playing) got filename None, redirecting to (End of playlist)")
+            logger.debug("PlayerApp ST: (Playing, Paused) -> (Playing) got filename None, "
+                         "redirecting to (End of playlist)")
             self._st_playing_TO_end_of_playlist()
         else:
             self._play(filename)
@@ -310,11 +313,11 @@ class PlayerApp:
             self.player.stop()
             self.mp3file.close()
             self.mp3file = None
-        print(f'Playing {filename!r}')
+        logger.info("Playing %r", filename)
         try:
             self.mp3file = open(filename, 'rb')
         except OSError as ex:
-            print(f"Could not play file {filename}: {ex}")
+            logger.exception("Could not play file %r", filename, ex)
             return
         self.player.play(self.mp3file, offset)
 
